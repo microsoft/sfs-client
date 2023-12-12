@@ -1,6 +1,8 @@
 # Copyright (c) Microsoft Corporation.
 # Licensed under the MIT License.
 
+find_package(CURL REQUIRED)
+
 add_library(${PROJECT_NAME} STATIC)
 add_library(Microsoft::${PROJECT_NAME} ALIAS ${PROJECT_NAME})
 
@@ -14,3 +16,5 @@ target_sources(
             src/details/SFSClientImpl.cpp)
 
 target_include_directories(${PROJECT_NAME} PUBLIC include/sfsclient)
+
+target_link_libraries(${PROJECT_NAME} PRIVATE CURL::libcurl)

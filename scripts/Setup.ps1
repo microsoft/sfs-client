@@ -13,6 +13,8 @@ Use this on Windows platforms in a PowerShell session.
 PS> .\scripts\Setup.ps1
 #>
 
+$GitRoot = (Resolve-Path (&git -C $PSScriptRoot rev-parse --show-toplevel)).Path
+
 function Update-Env {
     $env:Path = [System.Environment]::GetEnvironmentVariable("Path", "Machine") + ";" + [System.Environment]::GetEnvironmentVariable("Path", "User")
 }
@@ -65,13 +67,27 @@ function Install-CppBuildTools {
 
     # - Microsoft.VisualStudio.Workload.VCTools is the C++ workload in the Visual Studio Build Tools
     # --wait makes the install synchronous
-    winget install Microsoft.VisualStudio.2022.BuildTools --silent --override "--wait --addProductLang En-us --add Microsoft.VisualStudio.Workload.VCTools --includeRecommended --remove Microsoft.VisualStudio.Component.VC.CMake.Project"
+    winget install Microsoft.VisualStudio.2022.BuildTools --silent --override "--wait --add ProductLang En-us --add Microsoft.VisualStudio.Workload.VCTools --includeRecommended --remove Microsoft.VisualStudio.Component.VC.CMake.Project"
+}
+
+function Install-Vcpkg {
+    Write-Host -ForegroundColor Cyan "`nSetting up vcpkg"
+
+    if (!(Test-Path vcpkg)) {
+        Write-Host "Cloning vcpkg repo"
+        git clone https://github.com/microsoft/vcpkg $GitRoot\vcpkg
+        & "$GitRoot\vcpkg\bootstrap-vcpkg.bat"
+    }
+    else {
+        Write-Host "Checking if vcpkg repo has new commits"
+        $NoUpdatesString = "Already up to date."
+        git -C "$GitRoot\vcpkg" pull --show-forced-updates | Select-String -Pattern $NoUpdatesString -NotMatch
+    }
 }
 
 function Set-GitHooks {
     Write-Host -ForegroundColor Cyan "`nSetting Git hooks"
 
-    $GitRoot = (Resolve-Path (&git -C $PSScriptRoot rev-parse --show-toplevel)).Path
     $HookDestDir = Join-Path $GitRoot "\.git\hooks" -Resolve
     $GitHooks = @{"pre-commit-wrapper.sh" = "pre-commit" }
     foreach ($i in $GitHooks.GetEnumerator()) {
@@ -92,17 +108,23 @@ function Set-Aliases {
     $PythonScriptsDir = python -c 'import os,sysconfig;print(sysconfig.get_path("scripts",f"{os.name}_user"))'
 
     $Aliases = [ordered]@{
+        "build"        = "$GitRoot\scripts\Build.ps1"
         "clang-format" = "$PythonScriptsDir\clang-format.exe"
         "cmake-format" = "$PythonScriptsDir\cmake-format.exe"
+        "vcpkg"        = "$GitRoot\vcpkg\vcpkg.exe"
     }
     foreach ($i in $Aliases.GetEnumerator()) {
         $Alias = $i.Name
         $Target = $i.Value
 
         # If the alias doesn't exist or is set to something different than the one we want to target, we'll add it.
-        if (!(Get-Alias $Alias -ErrorAction SilentlyContinue) -or (Get-Alias $Alias).Definition -ne $Target) {
-            New-Alias -Name "$Alias" -Value "$Target" -Scope Global
-            Write-Host "  Setup alias $Alias"
+        $AliasDoesNotExist = !(Get-Alias $Alias -ErrorAction SilentlyContinue)
+        if ($AliasDoesNotExist -or (Get-Alias $Alias).Definition -ne $Target) {
+            if (!$AliasDoesNotExist) {
+                Remove-Alias $Alias -Scope Global
+            }
+            New-Alias -Name $Alias -Value $Target -Scope Global
+            Write-Host "Setup alias $Alias"
         }
     }
 }
@@ -111,5 +133,6 @@ Install-Python
 Install-PipDependencies
 Install-CMake
 Install-CppBuildTools
+Install-Vcpkg
 Set-GitHooks
 Set-Aliases

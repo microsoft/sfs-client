@@ -1,7 +1,9 @@
 # Copyright (c) Microsoft Corporation.
 # Licensed under the MIT License.
 
-cmake_minimum_required(VERSION 3.13)
+cmake_minimum_required(VERSION 3.19)
+
+set(CMAKE_TOOLCHAIN_FILE "vcpkg/scripts/buildsystems/vcpkg.cmake")
 
 project(
     SFSClient
