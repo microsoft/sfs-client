@@ -61,6 +61,11 @@ try
 }
 SFS_CATCH_RETURN()
 
+Result File::Clone(std::unique_ptr<File>& out) noexcept
+{
+    return Make(m_fileId, m_url, m_sizeInBytes, m_hashes, out);
+}
+
 const std::string& File::GetFileId() const noexcept
 {
     return m_fileId;
@@ -85,7 +90,37 @@ Result Content::Make(std::string contentNameSpace,
                      std::string contentName,
                      std::string contentVersion,
                      std::string correlationVector,
-                     std::vector<std::unique_ptr<File>>& files,
+                     const std::vector<std::unique_ptr<File>>& files,
+                     std::unique_ptr<Content>& out) noexcept
+try
+{
+    out.reset();
+
+    std::unique_ptr<Content> tmp(new Content());
+    RETURN_IF_FAILED(ContentId::Make(std::move(contentNameSpace),
+                                     std::move(contentName),
+                                     std::move(contentVersion),
+                                     tmp->m_contentId));
+    tmp->m_correlationVector = std::move(correlationVector);
+
+    for (const auto& file : files)
+    {
+        std::unique_ptr<File> clone;
+        RETURN_IF_FAILED(file->Clone(clone));
+        tmp->m_files.push_back(std::move(clone));
+    }
+
+    out = std::move(tmp);
+
+    return Result::S_Ok;
+}
+SFS_CATCH_RETURN()
+
+Result Content::Make(std::string contentNameSpace,
+                     std::string contentName,
+                     std::string contentVersion,
+                     std::string correlationVector,
+                     std::vector<std::unique_ptr<File>>&& files,
                      std::unique_ptr<Content>& out) noexcept
 try
 {

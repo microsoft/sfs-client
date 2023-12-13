@@ -52,6 +52,8 @@ class File
                                      std::unordered_map<HashType, std::string> hashes,
                                      std::unique_ptr<File>& out) noexcept;
 
+    [[nodiscard]] Result Clone(std::unique_ptr<File>& out) noexcept;
+
     File(const File&) = delete;
     File& operator=(const File&) = delete;
 
@@ -72,11 +74,24 @@ class File
 class Content
 {
   public:
+    /**
+     * @brief This Make() method should be used when the caller wants the @param files to be cloned
+     */
     [[nodiscard]] static Result Make(std::string contentNameSpace,
                                      std::string contentName,
                                      std::string contentVersion,
                                      std::string correlationVector,
-                                     std::vector<std::unique_ptr<File>>& files,
+                                     const std::vector<std::unique_ptr<File>>& files,
+                                     std::unique_ptr<Content>& out) noexcept;
+
+    /**
+     * @brief This Make() method should be used when the caller wants the @param files to be moved
+     */
+    [[nodiscard]] static Result Make(std::string contentNameSpace,
+                                     std::string contentName,
+                                     std::string contentVersion,
+                                     std::string correlationVector,
+                                     std::vector<std::unique_ptr<File>>&& files,
                                      std::unique_ptr<Content>& out) noexcept;
 
     Content(const Content&) = delete;
