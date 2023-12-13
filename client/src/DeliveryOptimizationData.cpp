@@ -15,9 +15,9 @@ try
     out.reset();
 
     std::unique_ptr<DeliveryOptimizationData> tmp(new DeliveryOptimizationData());
-    out->m_description = std::move(description);
-    out->m_catalogId = std::move(catalogId);
-    out->m_properties = std::move(properties);
+    tmp->m_description = std::move(description);
+    tmp->m_catalogId = std::move(catalogId);
+    tmp->m_properties = std::move(properties);
 
     out = std::move(tmp);
     return Result::S_Ok;
