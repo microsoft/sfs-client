@@ -182,59 +182,6 @@ void LogResult(const SFS::Result& result)
     }
     std::cout << std::endl;
 }
-
-bool TestMake()
-{
-    std::cout << std::endl << "Testing Make methods." << std::endl;
-
-    std::unique_ptr<File> file1;
-    if (File::Make("fileId1", "url1", 1 /*sizeInBytes*/, {{HashType::Sha1, "sha1"}}, file1) != Result::S_Ok)
-    {
-        std::cout << "Failed to create file1." << std::endl;
-        return false;
-    }
-
-    std::unique_ptr<File> file2;
-    if (File::Make("fileId2", "url2", 1 /*sizeInBytes*/, {{HashType::Sha256, "sha256"}}, file2) != Result::S_Ok)
-    {
-        std::cout << "Failed to create file2." << std::endl;
-        return false;
-    }
-
-    std::vector<std::unique_ptr<File>> files1;
-    files1.push_back(std::move(file1));
-    files1.push_back(std::move(file2));
-
-    std::unique_ptr<Content> content1;
-    if (!Content::Make("contentNameSpace", "contentName", "contentVersion", "correlationVector", files1, content1))
-    {
-        return false;
-    }
-
-    std::unique_ptr<File> file3;
-    if (File::Make("fileId3", "url3", 3 /*sizeInBytes*/, {{HashType::Sha1, "sha1"}}, file1) != Result::S_Ok)
-    {
-        std::cout << "Failed to create file3." << std::endl;
-        return false;
-    }
-
-    std::vector<std::unique_ptr<File>> files2;
-    files1.push_back(std::move(file3));
-
-    std::unique_ptr<Content> content2;
-    if (!Content::Make("contentNameSpace2", "contentName2", "contentVersion2", "correlationVector2", files2, content2))
-    {
-        return false;
-    }
-
-    Contents contents;
-    contents.push_back(std::move(content1));
-    contents.push_back(std::move(content2));
-
-    DisplayResults(contents);
-
-    return true;
-}
 } // namespace
 
 int main(int argc, char* argv[])
@@ -278,12 +225,6 @@ int main(int argc, char* argv[])
 
     // Display results
     DisplayResults(responseContents);
-
-    // Testing - move to unit tests later
-    if (TestMake())
-    {
-        return 1;
-    }
 
     return 0;
 }

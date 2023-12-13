@@ -9,8 +9,16 @@ set(SFS_CLIENT_TESTS "SFSClientTests")
 
 add_executable(${SFS_CLIENT_TESTS})
 
-target_sources(${SFS_CLIENT_TESTS} PRIVATE unit/ApplicabilityDetailsTests.cpp
-                                           unit/ContentTests.cpp main.cpp)
+target_sources(
+    ${SFS_CLIENT_TESTS}
+    PRIVATE unit/ApplicabilityDetailsTests.cpp
+            unit/ContentTests.cpp
+            unit/DeliveryOptimizationDataTests.cpp
+            unit/details/ErrorHandlingTests.cpp
+            unit/details/SFSClientImplTests.cpp
+            unit/ResultTests.cpp
+            unit/SFSClientTests.cpp
+            main.cpp)
 
 set(SFS_CLIENT_LIB_NAME "Microsoft::${PROJECT_NAME}")
 add_dependencies(${SFS_CLIENT_TESTS} ${SFS_CLIENT_LIB_NAME})
@@ -23,8 +31,9 @@ target_link_libraries(
             GTest::gmock_main)
 
 target_include_directories(${SFS_CLIENT_TESTS} PUBLIC ../include)
+target_include_directories(${SFS_CLIENT_TESTS} PUBLIC ../src)
 
-add_test(Client ${SFS_CLIENT_TESTS})
+add_test(SFSClientTests ${SFS_CLIENT_TESTS})
 
 set_target_properties(
     ${SFS_CLIENT_TESTS} PROPERTIES RUNTIME_OUTPUT_DIRECTORY
