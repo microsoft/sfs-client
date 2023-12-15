@@ -12,6 +12,9 @@ Use this on Windows platforms in a PowerShell session.
 .EXAMPLE
 PS> .\scripts\Setup.ps1
 #>
+param (
+    [switch] $NoBuildTools
+)
 
 $GitRoot = (Resolve-Path (&git -C $PSScriptRoot rev-parse --show-toplevel)).Path
 
@@ -63,6 +66,11 @@ function Install-CMake {
 }
 
 function Install-CppBuildTools {
+    if ($NoBuildTools) {
+        Write-Host -ForegroundColor Yellow "`nSkipping C++ Build Tools installation"
+        return
+    }
+
     Write-Host -ForegroundColor Cyan "`nInstalling C++ Build Tools"
 
     # - Microsoft.VisualStudio.Workload.VCTools is the C++ workload in the Visual Studio Build Tools
@@ -111,6 +119,7 @@ function Set-Aliases {
         "build"        = "$GitRoot\scripts\Build.ps1"
         "clang-format" = "$PythonScriptsDir\clang-format.exe"
         "cmake-format" = "$PythonScriptsDir\cmake-format.exe"
+        "test"         = "$GitRoot\scripts\Test.ps1"
         "vcpkg"        = "$GitRoot\vcpkg\vcpkg.exe"
     }
     foreach ($i in $Aliases.GetEnumerator()) {

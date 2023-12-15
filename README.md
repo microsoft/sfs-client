@@ -105,7 +105,9 @@ Adding the following to your workspace settings.json will make CMake Tools autom
 ## Testing
 
 Tests are compiled alongside the library, and live in the client/tests subdirectory.
-To run the tests, you can run through the `ctest` tool:
+To run the tests, you can use the `test` command. It will run all tests directly and output the result to the console.
+
+If you want to customize the test run, you can make use of the `ctest` tool.
 
 ```
 ctest --test-dir .\build\client
