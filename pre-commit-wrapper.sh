@@ -1,6 +1,7 @@
 #!/bin/sh
 #
-# Copyright (c) Microsoft Corporation. All rights reserved.
+# Copyright (c) Microsoft Corporation.
+# Licensed under the MIT License.
 #
 # A wrapper script to call the pre-commit.sh script
 #

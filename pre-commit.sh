@@ -1,6 +1,7 @@
 #!/bin/sh
 #
-# Copyright (c) Microsoft Corporation. All rights reserved.
+# Copyright (c) Microsoft Corporation.
+# Licensed under the MIT License.
 #
 # A hook script to verify what is about to be committed.
 # Called by "git commit" with no arguments.  The hook should
