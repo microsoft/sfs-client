@@ -19,4 +19,7 @@ target_include_directories(${PROJECT_NAME} PUBLIC include/sfsclient)
 
 target_link_libraries(${PROJECT_NAME} PRIVATE CURL::libcurl)
 
+# Enables one to run tests through "ctest --test-dir .\build\client"
+enable_testing()
+
 add_subdirectory(tests)

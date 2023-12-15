@@ -1,9 +1,8 @@
 # Copyright (c) Microsoft Corporation.
 # Licensed under the MIT License.
 
-enable_testing()
-
 find_package(GTest CONFIG REQUIRED)
+include(GoogleTest)
 
 set(SFS_CLIENT_TESTS "SFSClientTests")
 
@@ -33,7 +32,7 @@ target_link_libraries(
 target_include_directories(${SFS_CLIENT_TESTS} PUBLIC ../include)
 target_include_directories(${SFS_CLIENT_TESTS} PUBLIC ../src)
 
-add_test(SFSClientTests ${SFS_CLIENT_TESTS})
+gtest_discover_tests(${SFS_CLIENT_TESTS})
 
 set_target_properties(
     ${SFS_CLIENT_TESTS} PROPERTIES RUNTIME_OUTPUT_DIRECTORY

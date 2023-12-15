@@ -105,10 +105,14 @@ Adding the following to your workspace settings.json will make CMake Tools autom
 ## Testing
 
 Tests are compiled alongside the library, and live in the client/tests subdirectory.
-To run the tests, you can use the `SFSClientTests.exe` executable, which is found at `.\build\tests\bin`.
+To run the tests, you can run through the `ctest` tool:
 
-To run specific tests, you can filter the chosen tests through the switch `--gtest_filter=POSITIVE_PATTERNS[-NEGATIVE_PATTERNS]`.
-For more test selection switches, use `SFSClientTests.exe --help`.
+```
+ctest --test-dir .\build\client
+```
+
+To run specific tests, you can filter the chosen tests through the switch `-R` or `--tests-regex`.
+For more test selection switches, use `ctest --help`.
 
 ## Contributing
 
