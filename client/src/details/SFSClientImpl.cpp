@@ -9,6 +9,8 @@
 using namespace SFS;
 using namespace SFS::details;
 
+constexpr const char* c_apiDomain = "api.cdp.microsoft.com";
+
 SFSClientImpl::SFSClientImpl(std::string&& accountId, std::string&& instanceId, std::string&& nameSpace)
     : m_accountId(accountId)
     , m_instanceId(instanceId)
@@ -43,4 +45,18 @@ Result SFSClientImpl::GetDownloadInfo([[maybe_unused]] std::string_view productN
 void SFSClientImpl::SetLoggingCallback(LoggingCallbackFn&& callback)
 {
     m_reportingHandler.SetLoggingCallback(std::move(callback));
+}
+
+void SFSClientImpl::SetCustomBaseUrl(std::string customBaseUrl)
+{
+    m_customBaseUrl = std::move(customBaseUrl);
+}
+
+std::string SFSClientImpl::GetBaseUrl() const
+{
+    if (m_customBaseUrl)
+    {
+        return *m_customBaseUrl;
+    }
+    return "https://" + m_accountId + "." + std::string(c_apiDomain);
 }
