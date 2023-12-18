@@ -14,5 +14,8 @@
       "version": "8.4.0"
     }
   ],
+  "vcpkg-configuration": {
+    "overlay-triplets": [ "./vcpkg-custom-triplets" ]
+  },
   "builtin-baseline": "f56238700757aa05975e41fa835739c632810f3f"
 }

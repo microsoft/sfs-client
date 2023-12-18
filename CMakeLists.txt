@@ -5,6 +5,10 @@ cmake_minimum_required(VERSION 3.19)
 
 set(CMAKE_TOOLCHAIN_FILE "vcpkg/scripts/buildsystems/vcpkg.cmake")
 
+if(WIN32)
+    set(VCPKG_TARGET_TRIPLET "x64-windows-static-custom")
+endif()
+
 project(
     SFSClient
     VERSION 0.1
@@ -25,6 +29,8 @@ else()
         -Wpedantic
         -Werror)
 endif()
+
+set(CMAKE_MSVC_RUNTIME_LIBRARY "MultiThreaded$<$<CONFIG:Debug>:Debug>")
 
 add_subdirectory(client)
 add_subdirectory(tool)
