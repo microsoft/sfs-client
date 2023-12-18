@@ -3,8 +3,15 @@
 
 #include "sfsclient/SFSClient.h"
 
+#include <filesystem>
+#include <iomanip>
 #include <iostream>
+#include <sstream>
+#include <time.h>
 #include <vector>
+
+// Avoid warnings on gmtime being unsafe, gmtime is the portable version of gmtime_s
+#pragma warning(disable : 4996)
 
 using namespace SFS;
 
@@ -181,6 +188,30 @@ void LogResult(const SFS::Result& result)
     }
     std::cout << std::endl;
 }
+
+std::string TimestampToString(std::chrono::time_point<std::chrono::system_clock> time)
+{
+    using namespace std::chrono;
+
+    // get number of milliseconds for the current second
+    // (remainder after division into seconds)
+    auto ms = duration_cast<milliseconds>(time.time_since_epoch()) % 1000;
+
+    auto timer = system_clock::to_time_t(time);
+
+    std::stringstream timeStream;
+    timeStream << std::put_time(std::gmtime(&timer), "%F %X"); // yyyy-mm-dd HH:MM:SS
+    timeStream << '.' << std::setfill('0') << std::setw(3) << ms.count();
+
+    return timeStream.str();
+}
+
+void LoggingCallback(const SFS::LogData& logData)
+{
+    std::cout << "Log: " << TimestampToString(logData.time) << " [" << ToString(logData.severity) << "]"
+              << " " << std::filesystem::path(logData.file).filename().string() << ":" << logData.line << " "
+              << logData.message << std::endl;
+}
 } // namespace
 
 int main(int argc, char* argv[])
@@ -209,6 +240,13 @@ int main(int argc, char* argv[])
         std::cout << "Failed to initialize SFSClient.";
         LogResult(result);
         return result.GetCode();
+    }
+
+    // Enable logging
+    if (!sfsClient->SetLoggingCallback(LoggingCallback))
+    {
+        std::cout << "Failed to set logging callback." << std::endl;
+        return 1;
     }
 
     // Perform operations using SFSClient
