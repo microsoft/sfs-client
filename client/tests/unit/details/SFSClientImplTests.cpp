@@ -47,3 +47,11 @@ TEST("Testing class SFSClientImpl()")
         // TODO
     }
 }
+
+TEST("Testing SFSClientImpl::SetLoggingCallback()")
+{
+    SFSClientImpl sfsClient("testAccountId", "testInstanceId", "testNameSpace");
+
+    sfsClient.SetLoggingCallback([](const LogData&) {});
+    sfsClient.SetLoggingCallback(nullptr);
+}

@@ -7,6 +7,7 @@
 
 #include <catch2/catch_test_macros.hpp>
 
+#define TEST(...) TEST_CASE("[SFSClientTests] " __VA_ARGS__)
 #define TEST_SCENARIO(...) TEST_CASE("[SFSClientTests] Scenario: " __VA_ARGS__)
 
 using namespace SFS;
@@ -140,4 +141,12 @@ TEST_SCENARIO("Testing SFSClient::GetApplicabilityDetails()")
             REQUIRE(sfsClient->GetApplicabilityDetails(*content, details) == Result::E_NotImpl);
         }
     }
+}
+
+TEST("Testing SFSClient::SetLoggingCallback()")
+{
+    auto sfsClient = GetSFSClient();
+
+    REQUIRE(sfsClient->SetLoggingCallback([](const LogData&) {}) == Result::S_Ok);
+    REQUIRE(sfsClient->SetLoggingCallback(nullptr) == Result::S_Ok);
 }
