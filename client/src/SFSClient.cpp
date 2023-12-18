@@ -75,3 +75,11 @@ try
     return Result::E_NotImpl;
 }
 SFS_CATCH_RETURN()
+
+Result SFSClient::SetLoggingCallback(LoggingCallbackFn callback) noexcept
+try
+{
+    m_impl->SetLoggingCallback(std::move(callback));
+    return Result::S_Ok;
+}
+SFS_CATCH_RETURN()

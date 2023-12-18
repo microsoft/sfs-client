@@ -4,6 +4,7 @@
 #pragma once
 
 #include "Content.h"
+#include "Logging.h"
 #include "Result.h"
 
 #include <memory>
@@ -116,6 +117,16 @@ class SFSClient
      */
     [[nodiscard]] Result GetApplicabilityDetails(const Content& content,
                                                  std::unique_ptr<ApplicabilityDetails>& details) const noexcept;
+
+    /// Configuration methods
+
+    /**
+     * @brief Set a logging callback function that is called when the SFSClient logs a message.
+     * @details This function returns logging information from the SFSClient through a LogData struct. The caller
+     * is responsible for logging this into their logging system, if desired.
+     * To unset, pass a nullptr.
+     */
+    [[nodiscard]] Result SetLoggingCallback(LoggingCallbackFn callback) noexcept;
 
   private:
     /**

@@ -4,6 +4,7 @@
 #pragma once
 
 #include "Content.h"
+#include "Logging.h"
 #include "Result.h"
 
 #include <memory>
@@ -49,5 +50,10 @@ class SFSClientInterface
                                                  std::string_view version,
                                                  const std::optional<SearchAttributes>& attributes,
                                                  std::unique_ptr<DownloadInfoResponse>& content) const = 0;
+
+    /**
+     * @brief Set a logging callback function that is called when the SFSClient logs a message.
+     */
+    virtual void SetLoggingCallback(LoggingCallbackFn&& callback) = 0;
 };
 } // namespace SFS::details

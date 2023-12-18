@@ -1,6 +1,7 @@
 # Copyright (c) Microsoft Corporation.
 # Licensed under the MIT License.
 
+# HTTP stack library
 find_package(CURL REQUIRED)
 
 add_library(${PROJECT_NAME} STATIC)
@@ -11,8 +12,10 @@ target_sources(
     PRIVATE src/ApplicabilityDetails.cpp
             src/Content.cpp
             src/DeliveryOptimizationData.cpp
+            src/Logging.cpp
             src/Result.cpp
             src/SFSClient.cpp
+            src/details/ReportingHandler.cpp
             src/details/SFSClientImpl.cpp
             src/details/Util.cpp)
 
