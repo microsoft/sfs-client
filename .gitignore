@@ -33,7 +33,6 @@
 
 # Build
 /build
-build.timestamps
 
 # VSCode specific folder
 /.vscode
