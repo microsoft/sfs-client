@@ -3,56 +3,84 @@
 
 #include "SFSClientImpl.h"
 
+#include "ErrorHandling.h"
 #include "Logging.h"
 #include "Responses.h"
+#include "connection/Connection.h"
+#include "connection/ConnectionManager.h"
+#include "connection/mock/MockConnectionManager.h"
 
 using namespace SFS;
 using namespace SFS::details;
 
 constexpr const char* c_apiDomain = "api.cdp.microsoft.com";
 
-SFSClientImpl::SFSClientImpl(std::string&& accountId, std::string&& instanceId, std::string&& nameSpace)
+template <typename ConnectionManagerT>
+SFSClientImpl<ConnectionManagerT>::SFSClientImpl(std::string&& accountId,
+                                                 std::string&& instanceId,
+                                                 std::string&& nameSpace)
     : m_accountId(accountId)
     , m_instanceId(instanceId)
     , m_nameSpace(nameSpace)
 {
+    static_assert(std::is_base_of<ConnectionManager, ConnectionManagerT>::value,
+                  "ConnectionManagerT not derived from ConnectionManager");
+    m_connectionManager = std::make_unique<ConnectionManagerT>(m_reportingHandler);
 }
 
-Result SFSClientImpl::GetLatestVersion([[maybe_unused]] std::string_view productName,
-                                       [[maybe_unused]] const std::optional<SearchAttributes>& attributes,
-                                       [[maybe_unused]] std::unique_ptr<VersionResponse>& response) const
+template <typename ConnectionManagerT>
+Result SFSClientImpl<ConnectionManagerT>::GetLatestVersion(
+    [[maybe_unused]] std::string_view productName,
+    [[maybe_unused]] const std::optional<SearchAttributes>& attributes,
+    [[maybe_unused]] Connection& connection,
+    [[maybe_unused]] std::unique_ptr<VersionResponse>& response) const
 {
     LOG_INFO(m_reportingHandler, "GetLatestVersion not implemented");
     return Result::E_NotImpl;
 }
 
-Result SFSClientImpl::GetSpecificVersion([[maybe_unused]] std::string_view productName,
-                                         [[maybe_unused]] std::string_view version,
-                                         [[maybe_unused]] const std::optional<SearchAttributes>& attributes,
-                                         [[maybe_unused]] std::unique_ptr<VersionResponse>& content) const
+template <typename ConnectionManagerT>
+Result SFSClientImpl<ConnectionManagerT>::GetSpecificVersion(
+    [[maybe_unused]] std::string_view productName,
+    [[maybe_unused]] std::string_view version,
+    [[maybe_unused]] const std::optional<SearchAttributes>& attributes,
+    [[maybe_unused]] Connection& connection,
+    [[maybe_unused]] std::unique_ptr<VersionResponse>& content) const
 {
     return Result::E_NotImpl;
 }
 
-Result SFSClientImpl::GetDownloadInfo([[maybe_unused]] std::string_view productName,
-                                      [[maybe_unused]] std::string_view version,
-                                      [[maybe_unused]] const std::optional<SearchAttributes>& attributes,
-                                      [[maybe_unused]] std::unique_ptr<DownloadInfoResponse>& content) const
+template <typename ConnectionManagerT>
+Result SFSClientImpl<ConnectionManagerT>::GetDownloadInfo(
+    [[maybe_unused]] std::string_view productName,
+    [[maybe_unused]] std::string_view version,
+    [[maybe_unused]] const std::optional<SearchAttributes>& attributes,
+    [[maybe_unused]] Connection& connection,
+    [[maybe_unused]] std::unique_ptr<DownloadInfoResponse>& content) const
 {
     return Result::E_NotImpl;
 }
 
-void SFSClientImpl::SetLoggingCallback(LoggingCallbackFn&& callback)
+template <typename ConnectionManagerT>
+ConnectionManager& SFSClientImpl<ConnectionManagerT>::GetConnectionManager()
+{
+    return *m_connectionManager;
+}
+
+template <typename ConnectionManagerT>
+void SFSClientImpl<ConnectionManagerT>::SetLoggingCallback(LoggingCallbackFn&& callback)
 {
     m_reportingHandler.SetLoggingCallback(std::move(callback));
 }
 
-void SFSClientImpl::SetCustomBaseUrl(std::string customBaseUrl)
+template <typename ConnectionManagerT>
+void SFSClientImpl<ConnectionManagerT>::SetCustomBaseUrl(std::string customBaseUrl)
 {
     m_customBaseUrl = std::move(customBaseUrl);
 }
 
-std::string SFSClientImpl::GetBaseUrl() const
+template <typename ConnectionManagerT>
+std::string SFSClientImpl<ConnectionManagerT>::GetBaseUrl() const
 {
     if (m_customBaseUrl)
     {
@@ -60,3 +88,6 @@ std::string SFSClientImpl::GetBaseUrl() const
     }
     return "https://" + m_accountId + "." + std::string(c_apiDomain);
 }
+
+template class SFS::details::SFSClientImpl<CurlConnectionManager>;
+template class SFS::details::SFSClientImpl<MockConnectionManager>;

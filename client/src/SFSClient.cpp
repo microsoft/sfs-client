@@ -5,6 +5,7 @@
 
 #include "details/ErrorHandling.h"
 #include "details/SFSClientImpl.h"
+#include "details/connection/ConnectionManager.h"
 
 using namespace SFS;
 
@@ -30,8 +31,9 @@ try
 {
     out.reset();
     std::unique_ptr<SFSClient> tmp(new SFSClient());
-    tmp->m_impl =
-        std::make_unique<details::SFSClientImpl>(std::move(accountId), std::move(instanceId), std::move(nameSpace));
+    tmp->m_impl = std::make_unique<details::SFSClientImpl<details::CurlConnectionManager>>(std::move(accountId),
+                                                                                           std::move(instanceId),
+                                                                                           std::move(nameSpace));
     out = std::move(tmp);
     return Result::S_Ok;
 }
