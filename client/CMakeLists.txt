@@ -4,6 +4,9 @@
 # HTTP stack library
 find_package(CURL REQUIRED)
 
+# JSON library
+find_package(nlohmann_json CONFIG REQUIRED)
+
 add_library(${PROJECT_NAME} STATIC)
 add_library(Microsoft::${PROJECT_NAME} ALIAS ${PROJECT_NAME})
 
@@ -30,6 +33,7 @@ target_sources(
 target_include_directories(${PROJECT_NAME} PUBLIC include/sfsclient)
 
 target_link_libraries(${PROJECT_NAME} PRIVATE CURL::libcurl)
+target_link_libraries(${PROJECT_NAME} PRIVATE nlohmann_json::nlohmann_json)
 
 # Enables one to run tests through "ctest --test-dir .\build\client"
 enable_testing()
