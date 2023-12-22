@@ -54,24 +54,9 @@ clang-format -i .\*.h
 
 ## Building
 
-Setup the CMake build a single time:
+To build, use the `build` command. It simplifies the CMake build commands and re-generates CMake configurations if needed.
 
-```
-cmake -S <repo_root> -B <build_dir>
-```
-
-For example, on PowerShell:
-
-```powershell
-Set-Location (git rev-parse --show-toplevel)
-cmake -S . -B build
-```
-
-Then to build:
-
-```
-cmake --build <build_dir>
-```
+If you face problems with compilation, try cleaning the build folder with `build -Clean`.
 
 ## VSCode
 
@@ -102,6 +87,20 @@ You can also access "Format" options by right clicking on an open file or over a
 
 If you want it, you can also make VSCode format on each Save operation by adding this to your User JSON settings:
 `"editor.formatOnSave": true`
+
+### vcpkg integration
+
+From [the vcpkg docs](https://github.com/Microsoft/vcpkg/#visual-studio-code-with-cmake-tools):
+
+Adding the following to your workspace settings.json will make CMake Tools automatically use vcpkg for libraries:
+
+```json
+{
+  "cmake.configureSettings": {
+    "CMAKE_TOOLCHAIN_FILE": "[vcpkg root]/scripts/buildsystems/vcpkg.cmake"
+  }
+}
+```
 
 ## Contributing
 

@@ -31,8 +31,12 @@
 *.out
 *.app
 
-# Default build directory
+# Build
 /build
 
 # VSCode specific folder
 /.vscode
+
+# Vcpkg
+/vcpkg
+/vcpkg_installed
