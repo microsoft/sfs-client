@@ -20,8 +20,9 @@
 #define RETURN_IF_FAILED(result)                                                                                       \
     do                                                                                                                 \
     {                                                                                                                  \
-        if (result.IsFailure())                                                                                        \
+        auto __result = (result); /* Assigning to a variable ensures a code block gets called only once */             \
+        if (__result.IsFailure())                                                                                      \
         {                                                                                                              \
-            return result;                                                                                             \
+            return __result;                                                                                           \
         }                                                                                                              \
     } while ((void)0, 0)
