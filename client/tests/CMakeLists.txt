@@ -22,7 +22,8 @@ target_sources(
             unit/details/ReportingHandlerTests.cpp
             unit/details/SFSClientImplTests.cpp
             unit/ResultTests.cpp
-            unit/SFSClientTests.cpp)
+            unit/SFSClientTests.cpp
+            util/TestHelper.cpp)
 
 set(SFS_CLIENT_LIB_NAME "Microsoft::${CMAKE_PROJECT_NAME}")
 add_dependencies(${PROJECT_NAME} ${SFS_CLIENT_LIB_NAME})
