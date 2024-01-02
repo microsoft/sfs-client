@@ -15,7 +15,9 @@ set(CMAKE_CXX_STANDARD_REQUIRED True)
 
 # Setting warning level and warnings as errors
 if(MSVC)
-    add_compile_options(/W4 /WX)
+    # C4062: Checks all enum values are handled in switch statements without a
+    # default label
+    add_compile_options(/W4 /WX /we4062)
 else()
     add_compile_options(
         -Wall
