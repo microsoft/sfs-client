@@ -27,7 +27,7 @@ class CurlConnection : public Connection
     [[nodiscard]] Result Post(std::string_view url, std::string_view data, std::string& response) override;
 
   protected:
-    [[nodiscard]] Result CurlPerform(std::string_view url, std::string& response);
+    [[nodiscard]] virtual Result CurlPerform(std::string_view url, std::string& response);
 
     CURL* m_handle;
     char m_errorBuffer[CURL_ERROR_SIZE];
