@@ -34,7 +34,7 @@ class SFSClientInterface
      * @brief Gets the metadata for the latest available version for the specified product that matches the optional
      * request attributes
      */
-    [[nodiscard]] virtual Result GetLatestVersion(std::string_view productName,
+    [[nodiscard]] virtual Result GetLatestVersion(const std::string& productName,
                                                   const std::optional<SearchAttributes>& attributes,
                                                   Connection& connection,
                                                   std::unique_ptr<VersionResponse>& response) const = 0;
@@ -42,20 +42,18 @@ class SFSClientInterface
     /**
      * @brief Gets the metadata for a specific version of the specified product
      */
-    [[nodiscard]] virtual Result GetSpecificVersion(std::string_view productName,
-                                                    std::string_view version,
-                                                    const std::optional<SearchAttributes>& attributes,
+    [[nodiscard]] virtual Result GetSpecificVersion(const std::string& productName,
+                                                    const std::string& version,
                                                     Connection& connection,
-                                                    std::unique_ptr<VersionResponse>& content) const = 0;
+                                                    std::unique_ptr<VersionResponse>& response) const = 0;
 
     /**
      * @brief Gets the files metadata for a specific version of the specified product
      */
-    [[nodiscard]] virtual Result GetDownloadInfo(std::string_view productName,
-                                                 std::string_view version,
-                                                 const std::optional<SearchAttributes>& attributes,
+    [[nodiscard]] virtual Result GetDownloadInfo(const std::string& productName,
+                                                 const std::string& version,
                                                  Connection& connection,
-                                                 std::unique_ptr<DownloadInfoResponse>& content) const = 0;
+                                                 std::unique_ptr<DownloadInfoResponse>& response) const = 0;
 
     /**
      * @brief Returns the ConnectionManager to be used by the SFSClient to create Connection objects

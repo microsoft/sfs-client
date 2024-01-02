@@ -30,7 +30,7 @@ try
 }
 SFS_CATCH_RETURN()
 
-Result SFSClient::GetLatestDownloadInfo([[maybe_unused]] std::string_view productName,
+Result SFSClient::GetLatestDownloadInfo([[maybe_unused]] const std::string& productName,
                                         [[maybe_unused]] Contents& responseContents) const noexcept
 try
 {
@@ -39,7 +39,7 @@ try
 }
 SFS_CATCH_RETURN()
 
-Result SFSClient::GetLatestDownloadInfo([[maybe_unused]] std::string_view productName,
+Result SFSClient::GetLatestDownloadInfo([[maybe_unused]] const std::string& productName,
                                         [[maybe_unused]] const SearchAttributes& attributes,
                                         [[maybe_unused]] Contents& responseContents) const noexcept
 try

@@ -11,7 +11,6 @@
 #include <memory>
 #include <optional>
 #include <string>
-#include <string_view>
 #include <vector>
 
 namespace SFS
@@ -52,18 +51,19 @@ class SFSClient
 
     /**
      * @brief Retrieve combined metadata & download URLs from the latest version of a specified product
-     * @param productName The name of the product to retrieve
+     * @param productName The name or GUID of the product to retrieve
      * @param responseContents A vector of Content that is populated with the result
      */
-    [[nodiscard]] Result GetLatestDownloadInfo(std::string_view productName, Contents& responseContents) const noexcept;
+    [[nodiscard]] Result GetLatestDownloadInfo(const std::string& productName,
+                                               Contents& responseContents) const noexcept;
 
     /**
      * @brief Retrieve combined metadata & download URLs from the latest version of a specified product
-     * @param productName The name of the product to retrieve
+     * @param productName The name or GUID of the product to retrieve
      * @param attributes Attributes to filter the search
      * @param responseContents A vector of Content that is populated with the result
      */
-    [[nodiscard]] Result GetLatestDownloadInfo(std::string_view productName,
+    [[nodiscard]] Result GetLatestDownloadInfo(const std::string& productName,
                                                const SearchAttributes& attributes,
                                                Contents& responseContents) const noexcept;
 

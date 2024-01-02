@@ -32,23 +32,13 @@ TEST("Testing class SFSClientImpl()")
     SECTION("Testing SFSClientImpl::GetSpecificVersion()")
     {
         std::unique_ptr<VersionResponse> response;
-        REQUIRE(sfsClient.GetSpecificVersion("productName", "version", std::nullopt, *connection, response) ==
-                Result::NotImpl);
-
-        const SearchAttributes attributes{{"attr1", "value"}};
-        REQUIRE(sfsClient.GetSpecificVersion("productName", "version", attributes, *connection, response) ==
-                Result::NotImpl);
+        REQUIRE(sfsClient.GetSpecificVersion("productName", "version", *connection, response) == Result::NotImpl);
     }
 
     SECTION("Testing SFSClientImpl::GetDownloadInfo()")
     {
         std::unique_ptr<DownloadInfoResponse> response;
-        REQUIRE(sfsClient.GetDownloadInfo("productName", "version", std::nullopt, *connection, response) ==
-                Result::NotImpl);
-
-        const SearchAttributes attributes{{"attr1", "value"}};
-        REQUIRE(sfsClient.GetDownloadInfo("productName", "version", attributes, *connection, response) ==
-                Result::NotImpl);
+        REQUIRE(sfsClient.GetDownloadInfo("productName", "version", *connection, response) == Result::NotImpl);
     }
 }
 
