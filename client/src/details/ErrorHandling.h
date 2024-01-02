@@ -35,27 +35,35 @@
         }                                                                                                              \
     } while ((void)0, 0)
 
+#define THROW_CODE_IF_LOG(code, condition, handler, ...)                                                               \
+    do                                                                                                                 \
+    {                                                                                                                  \
+        if (condition)                                                                                                 \
+        {                                                                                                              \
+            auto __result = SFS::Result(SFS::Result::code, ##__VA_ARGS__);                                             \
+            SFS::details::LogFailedResult(handler, __result, __FILE__, __LINE__);                                      \
+            throw SFS::details::SFSException(__result);                                                                \
+        }                                                                                                              \
+    } while ((void)0, 0)
+
 namespace SFS::details
 {
+class ReportingHandler;
+
 class SFSException : public std::exception
 {
   public:
     SFSException() = default;
-    SFSException(SFS::Result result) : m_result(std::move(result))
-    {
-    }
+    SFSException(SFS::Result result);
 
-    const SFS::Result& GetResult() const noexcept
-    {
-        return m_result;
-    }
+    SFSException(SFS::Result::Code code, std::string message = {});
 
-    const char* what() const noexcept override
-    {
-        return m_result.GetMessage().c_str();
-    }
+    const SFS::Result& GetResult() const noexcept;
+    const char* what() const noexcept override;
 
   private:
     SFS::Result m_result;
 };
+
+void LogFailedResult(const ReportingHandler& handler, const SFS::Result& result, const char* file, int line);
 } // namespace SFS::details
