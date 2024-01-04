@@ -35,8 +35,8 @@ class Result
      */
     operator bool() const noexcept;
 
-    bool operator==(Code resultCode) noexcept;
-    bool operator!=(Code resultCode) noexcept;
+    bool operator==(Code resultCode) const noexcept;
+    bool operator!=(Code resultCode) const noexcept;
 
   private:
     Code m_code;
