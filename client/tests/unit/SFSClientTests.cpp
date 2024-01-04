@@ -5,98 +5,140 @@
 #include "sfsclient/DeliveryOptimizationData.h"
 #include "sfsclient/SFSClient.h"
 
-#include <gtest/gtest.h>
+#include <catch2/catch_test_macros.hpp>
+
+#define TEST_SCENARIO(...) TEST_CASE("[SFSClientTests] Scenario: " __VA_ARGS__)
 
 using namespace SFS;
 
 namespace
 {
-void GetSFSClient(std::unique_ptr<SFSClient>& sfsClient)
-{
-    sfsClient.reset();
-    ASSERT_EQ(SFSClient::Make("testAccountId", sfsClient).GetCode(), Result::S_Ok);
-    ASSERT_NE(nullptr, sfsClient);
-}
-
 std::unique_ptr<SFSClient> GetSFSClient()
 {
     std::unique_ptr<SFSClient> sfsClient;
-    GetSFSClient(sfsClient);
+    REQUIRE(SFSClient::Make("testAccountId", sfsClient) == Result::S_Ok);
+    REQUIRE(sfsClient != nullptr);
     return sfsClient;
 }
 } // namespace
 
-TEST(SFSClientTests, Make)
+TEST_SCENARIO("Testing SFSClient::Make()")
 {
-    const std::string accountId{"testAccountId"};
-    const std::string instanceId{"testInstanceId"};
-    const std::string nameSpace{"testNameSpace"};
+    GIVEN("An uninitialized pointer")
+    {
+        const std::string accountId{"testAccountId"};
+        const std::string instanceId{"testInstanceId"};
+        const std::string nameSpace{"testNameSpace"};
 
-    // Testing each of the 3 Make methods
-    std::unique_ptr<SFSClient> sfsClient;
+        std::unique_ptr<SFSClient> sfsClient;
 
-    ASSERT_EQ(SFSClient::Make(accountId, sfsClient).GetCode(), Result::S_Ok);
-    ASSERT_NE(nullptr, sfsClient);
+        THEN("Make(accountId, out) works")
+        {
+            INFO("bla");
+            REQUIRE(SFSClient::Make(accountId, sfsClient) == Result::S_Ok);
+            REQUIRE(sfsClient != nullptr);
+        }
 
-    sfsClient.reset();
-    ASSERT_EQ(SFSClient::Make(accountId, instanceId, sfsClient).GetCode(), Result::S_Ok);
-    ASSERT_NE(nullptr, sfsClient);
+        THEN("Make(accountId, instanceId, out) works")
+        {
+            REQUIRE(SFSClient::Make(accountId, instanceId, sfsClient) == Result::S_Ok);
+            REQUIRE(sfsClient != nullptr);
+        }
 
-    sfsClient.reset();
-    ASSERT_EQ(SFSClient::Make(accountId, instanceId, nameSpace, sfsClient).GetCode(), Result::S_Ok);
-    ASSERT_NE(nullptr, sfsClient);
+        THEN("Make(accountId, instanceId, namespace out) works")
+        {
+            REQUIRE(SFSClient::Make(accountId, instanceId, nameSpace, sfsClient) == Result::S_Ok);
+            REQUIRE(sfsClient != nullptr);
+
+            WHEN("The pointer is reset")
+            {
+                sfsClient.reset();
+
+                THEN("We can call Make a second time")
+                {
+                    REQUIRE(SFSClient::Make(accountId, instanceId, nameSpace, sfsClient) == Result::S_Ok);
+                    REQUIRE(sfsClient != nullptr);
+                }
+            }
+
+            WHEN("The pointer is not reset")
+            {
+                THEN("We can also call Make a second time, as Make() resets it")
+                {
+                    REQUIRE(SFSClient::Make(accountId, instanceId, nameSpace, sfsClient) == Result::S_Ok);
+                    REQUIRE(sfsClient != nullptr);
+                }
+            }
+        }
+    }
 }
 
-TEST(SFSClientTests, GetLatestDownloadInfo)
+TEST_SCENARIO("Testing SFSClient::GetLatestDownloadInfo()")
 {
-    auto sfsClient = GetSFSClient();
+    GIVEN("An SFSClient")
+    {
+        auto sfsClient = GetSFSClient();
 
-    ASSERT_EQ(SFSClient::Make("testAccountId", sfsClient).GetCode(), Result::S_Ok);
-    ASSERT_NE(nullptr, sfsClient);
-
-    Contents contents;
-    ASSERT_EQ(sfsClient->GetLatestDownloadInfo("productName", contents).GetCode(), Result::E_NotImpl);
+        THEN("SFSClient::GetLatestDownloadInfo() is not implemented")
+        {
+            Contents contents;
+            REQUIRE(sfsClient->GetLatestDownloadInfo("productName", contents) == Result::E_NotImpl);
+        }
+    }
 }
 
-TEST(SFSClientTests, GetLatestDownloadInfoWithAttributes)
+TEST_SCENARIO("Testing SFSClient::GetLatestDownloadInfoWithAttributes()")
 {
-    auto sfsClient = GetSFSClient();
+    GIVEN("An SFSClient")
+    {
+        auto sfsClient = GetSFSClient();
 
-    ASSERT_EQ(SFSClient::Make("testAccountId", sfsClient).GetCode(), Result::S_Ok);
-    ASSERT_NE(nullptr, sfsClient);
+        THEN("SFSClient::GetLatestDownloadInfo() is not implemented")
+        {
+            const SearchAttributes attributes{{"attr1", "value"}};
 
-    const SearchAttributes attributes{{"attr1", "value"}};
-
-    Contents contents;
-    ASSERT_EQ(sfsClient->GetLatestDownloadInfo("productName", attributes, contents).GetCode(), Result::E_NotImpl);
+            Contents contents;
+            REQUIRE(sfsClient->GetLatestDownloadInfo("productName", attributes, contents) == Result::E_NotImpl);
+        }
+    }
 }
 
-TEST(SFSClientTests, GetDeliveryOptimizationData)
+TEST_SCENARIO("Testing SFSClient::GetDeliveryOptimizationData()")
 {
-    auto sfsClient = GetSFSClient();
+    GIVEN("An SFSClient")
+    {
+        auto sfsClient = GetSFSClient();
 
-    ASSERT_EQ(SFSClient::Make("testAccountId", sfsClient).GetCode(), Result::S_Ok);
-    ASSERT_NE(nullptr, sfsClient);
+        THEN("SFSClient::GetDeliveryOptimizationData() is not implemented")
+        {
+            const SearchAttributes attributes{{"attr1", "value"}};
 
-    Contents contents;
-    ASSERT_EQ(sfsClient->GetLatestDownloadInfo("productName", contents).GetCode(), Result::E_NotImpl);
+            Contents contents;
+            REQUIRE(sfsClient->GetLatestDownloadInfo("productName", attributes, contents) == Result::E_NotImpl);
 
-    std::unique_ptr<Content> content;
-    std::unique_ptr<DeliveryOptimizationData> data;
-    ASSERT_EQ(sfsClient->GetDeliveryOptimizationData(*content, data).GetCode(), Result::E_NotImpl);
+            std::unique_ptr<Content> content;
+            std::unique_ptr<DeliveryOptimizationData> data;
+            REQUIRE(sfsClient->GetDeliveryOptimizationData(*content, data) == Result::E_NotImpl);
+        }
+    }
 }
 
-TEST(SFSClientTests, GetApplicabilityDetails)
+TEST_SCENARIO("Testing SFSClient::GetApplicabilityDetails()")
 {
-    auto sfsClient = GetSFSClient();
+    GIVEN("An SFSClient")
+    {
+        auto sfsClient = GetSFSClient();
 
-    ASSERT_EQ(SFSClient::Make("testAccountId", sfsClient).GetCode(), Result::S_Ok);
-    ASSERT_NE(nullptr, sfsClient);
+        THEN("SFSClient::GetApplicabilityDetails() is not implemented")
+        {
+            const SearchAttributes attributes{{"attr1", "value"}};
 
-    Contents contents;
-    ASSERT_EQ(sfsClient->GetLatestDownloadInfo("productName", contents).GetCode(), Result::E_NotImpl);
+            Contents contents;
+            REQUIRE(sfsClient->GetLatestDownloadInfo("productName", attributes, contents) == Result::E_NotImpl);
 
-    std::unique_ptr<Content> content;
-    std::unique_ptr<ApplicabilityDetails> details;
-    ASSERT_EQ(sfsClient->GetApplicabilityDetails(*content, details).GetCode(), Result::E_NotImpl);
+            std::unique_ptr<Content> content;
+            std::unique_ptr<ApplicabilityDetails> details;
+            REQUIRE(sfsClient->GetApplicabilityDetails(*content, details) == Result::E_NotImpl);
+        }
+    }
 }

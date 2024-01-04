@@ -116,6 +116,12 @@ ctest --test-dir .\build\client
 To run specific tests, you can filter the chosen tests through the switch `-R` or `--tests-regex`.
 For more test selection switches, use `ctest --help`.
 
+The tests are built using the Catch2 framework. For a more verbose run you can run the executable directly.
+
+```
+.\build\tests\bin\<ReleaseConfiguration>\SFSClientTests
+```
+
 ## Contributing
 
 This project welcomes contributions and suggestions.  Most contributions require you to agree to a

@@ -3,11 +3,13 @@
 
 #include "sfsclient/DeliveryOptimizationData.h"
 
-#include <gtest/gtest.h>
+#include <catch2/catch_test_macros.hpp>
+
+#define TEST(...) TEST_CASE("[DeliveryOptimizationDataTests] " __VA_ARGS__)
 
 using namespace SFS;
 
-TEST(DeliveryOptimizationDataTests, Make)
+TEST("Testing DeliveryOptimizationData::Make()")
 {
     std::unique_ptr<DeliveryOptimizationData> data;
 
@@ -15,10 +17,10 @@ TEST(DeliveryOptimizationDataTests, Make)
     const std::string catalogId{"catalogId"};
     const DOProperties properties{{"key1", "value1"}, {"key2", "value2"}};
 
-    ASSERT_EQ(DeliveryOptimizationData::Make(description, catalogId, properties, data).GetCode(), Result::S_Ok);
-    ASSERT_NE(nullptr, data);
+    REQUIRE(DeliveryOptimizationData::Make(description, catalogId, properties, data) == Result::S_Ok);
+    REQUIRE(data != nullptr);
 
-    EXPECT_EQ(description, data->GetDescription());
-    EXPECT_EQ(catalogId, data->GetCatalogId());
-    EXPECT_EQ(properties, data->GetProperties());
+    CHECK(description == data->GetDescription());
+    CHECK(catalogId == data->GetCatalogId());
+    CHECK(properties == data->GetProperties());
 }

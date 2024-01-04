@@ -1,17 +1,17 @@
 {
   "$schema": "https://raw.githubusercontent.com/microsoft/vcpkg-tool/main/docs/vcpkg.schema.json",
   "dependencies": [
-    "curl",
-    "gtest"
+    "catch2",
+    "curl"
   ],
   "overrides": [
     {
-      "name": "curl",
-      "version": "8.4.0"
+      "name": "catch2",
+      "version": "3.4.0"
     },
     {
-      "name": "gtest",
-      "version": "1.14.0"
+      "name": "curl",
+      "version": "8.4.0"
     }
   ],
   "builtin-baseline": "f56238700757aa05975e41fa835739c632810f3f"

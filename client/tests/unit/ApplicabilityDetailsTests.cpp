@@ -3,11 +3,13 @@
 
 #include "sfsclient/ApplicabilityDetails.h"
 
-#include <gtest/gtest.h>
+#include <catch2/catch_test_macros.hpp>
+
+#define TEST(...) TEST_CASE("[ApplicabilityDetailsTests] " __VA_ARGS__)
 
 using namespace SFS;
 
-TEST(ApplicabilityDetailsTests, Make)
+TEST("Testing ApplicabilityDetails::Make()")
 {
     std::unique_ptr<ApplicabilityDetails> details;
 
@@ -15,12 +17,11 @@ TEST(ApplicabilityDetailsTests, Make)
     const std::vector<std::string> platformApplicabilityForPackage{"Windows.Desktop", "Windows.Server"};
     const std::string fileMoniker{"myApp"};
 
-    ASSERT_EQ(
-        ApplicabilityDetails::Make(architectures, platformApplicabilityForPackage, fileMoniker, details).GetCode(),
-        Result::S_Ok);
-    ASSERT_NE(nullptr, details);
+    REQUIRE(ApplicabilityDetails::Make(architectures, platformApplicabilityForPackage, fileMoniker, details) ==
+            Result::S_Ok);
+    REQUIRE(details != nullptr);
 
-    EXPECT_EQ(architectures, details->GetArchitectures());
-    EXPECT_EQ(platformApplicabilityForPackage, details->GetPlatformApplicabilityForPackage());
-    EXPECT_EQ(fileMoniker, details->GetFileMoniker());
+    CHECK(architectures == details->GetArchitectures());
+    CHECK(platformApplicabilityForPackage == details->GetPlatformApplicabilityForPackage());
+    CHECK(fileMoniker == details->GetFileMoniker());
 }

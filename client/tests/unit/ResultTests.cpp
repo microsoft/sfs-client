@@ -3,46 +3,56 @@
 
 #include "sfsclient/Result.h"
 
-#include <gtest/gtest.h>
+#include <catch2/catch_test_macros.hpp>
+
+#define TEST(...) TEST_CASE("[ResultTests] " __VA_ARGS__)
 
 using namespace SFS;
 
-TEST(ResultTests, ClassMethods)
+TEST("Testing Result() class methods")
 {
-    // Default constructor
-    Result resultOk(Result::Code::S_Ok);
-    EXPECT_EQ(resultOk.GetCode(), Result::Code::S_Ok);
-    EXPECT_TRUE(resultOk.GetMessage().empty());
-    EXPECT_TRUE(resultOk.IsSuccess());
-    EXPECT_FALSE(resultOk.IsFailure());
+    SECTION("Default constructor")
+    {
+        Result resultOk(Result::Code::S_Ok);
 
-    // Comparison operators
-    EXPECT_TRUE(resultOk == Result::Code::S_Ok);
-    EXPECT_TRUE(resultOk != Result::Code::E_NotSet);
+        REQUIRE(resultOk.GetCode() == Result::Code::S_Ok);
+        REQUIRE(resultOk.GetMessage().empty());
+        REQUIRE(resultOk.IsSuccess());
+        REQUIRE_FALSE(resultOk.IsFailure());
 
-    // bool operator
-    EXPECT_TRUE(resultOk);
+        INFO("Comparison operators");
+        REQUIRE(resultOk == Result::Code::S_Ok);
+        REQUIRE(resultOk == Result::S_Ok);
+        REQUIRE(resultOk != Result::Code::E_NotSet);
+        REQUIRE(resultOk != Result::E_NotSet);
+        REQUIRE_FALSE(resultOk == Result::E_NotSet);
 
-    // Constructor with message
-    Result resultUnexpected(Result::Code::E_Unexpected, "message");
-    EXPECT_EQ(resultUnexpected.GetCode(), Result::Code::E_Unexpected);
-    EXPECT_EQ(resultUnexpected.GetMessage(), "message");
-    EXPECT_FALSE(resultUnexpected.IsSuccess());
-    EXPECT_TRUE(resultUnexpected.IsFailure());
+        INFO("bool operator");
+        REQUIRE(resultOk);
+    }
 
-    // Comparison operators on constructor with message
-    EXPECT_TRUE(resultUnexpected == Result::Code::E_Unexpected);
-    EXPECT_TRUE(resultUnexpected != Result::Code::E_NotSet);
+    SECTION("Constructor with message")
+    {
+        Result resultUnexpected(Result::Code::E_Unexpected, "message");
+        REQUIRE(resultUnexpected.GetCode() == Result::Code::E_Unexpected);
+        REQUIRE(resultUnexpected.GetMessage() == "message");
+        REQUIRE_FALSE(resultUnexpected.IsSuccess());
+        REQUIRE(resultUnexpected.IsFailure());
 
-    // bool operator
-    EXPECT_FALSE(resultUnexpected);
+        INFO("Comparison operators on constructor with message");
+        REQUIRE(resultUnexpected == Result::Code::E_Unexpected);
+        REQUIRE(resultUnexpected != Result::Code::E_NotSet);
+
+        INFO("bool operator");
+        REQUIRE_FALSE(resultUnexpected);
+    }
 }
 
-TEST(ResultTests, ToString)
+TEST("Testing ToString(Result)")
 {
-    EXPECT_EQ(SFS::ToString(Result::Code::S_Ok), "S_Ok");
-    EXPECT_EQ(SFS::ToString(Result::Code::E_NotImpl), "E_NotImpl");
-    EXPECT_EQ(SFS::ToString(Result::Code::E_NotSet), "E_NotSet");
-    EXPECT_EQ(SFS::ToString(Result::Code::E_OutOfMemory), "E_OutOfMemory");
-    EXPECT_EQ(SFS::ToString(Result::Code::E_Unexpected), "E_Unexpected");
+    REQUIRE(SFS::ToString(Result::Code::S_Ok) == "S_Ok");
+    REQUIRE(SFS::ToString(Result::Code::E_NotImpl) == "E_NotImpl");
+    REQUIRE(SFS::ToString(Result::Code::E_NotSet) == "E_NotSet");
+    REQUIRE(SFS::ToString(Result::Code::E_OutOfMemory) == "E_OutOfMemory");
+    REQUIRE(SFS::ToString(Result::Code::E_Unexpected) == "E_Unexpected");
 }

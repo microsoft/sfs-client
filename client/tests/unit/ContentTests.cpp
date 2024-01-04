@@ -3,13 +3,14 @@
 
 #include "sfsclient/Content.h"
 
-#include <gtest/gtest.h>
+#include <catch2/catch_test_macros.hpp>
 
-#include <iostream>
+#define TEST(...) TEST_CASE("[ContentTests] " __VA_ARGS__)
+#define TEST_SCENARIO(...) TEST_CASE("[ContentTests] Scenario: " __VA_ARGS__)
 
 using namespace SFS;
 
-TEST(ContentIdTests, Make)
+TEST("Testing ContentId::Make()")
 {
     std::unique_ptr<ContentId> contentId;
 
@@ -17,15 +18,15 @@ TEST(ContentIdTests, Make)
     const std::string name{"myName"};
     const std::string version{"myVersion"};
 
-    ASSERT_EQ(ContentId::Make(nameSpace, name, version, contentId).GetCode(), Result::S_Ok);
-    ASSERT_NE(nullptr, contentId);
+    REQUIRE(ContentId::Make(nameSpace, name, version, contentId) == Result::S_Ok);
+    REQUIRE(contentId != nullptr);
 
-    EXPECT_EQ(nameSpace, contentId->GetNameSpace());
-    EXPECT_EQ(name, contentId->GetName());
-    EXPECT_EQ(version, contentId->GetVersion());
+    CHECK(nameSpace == contentId->GetNameSpace());
+    CHECK(name == contentId->GetName());
+    CHECK(version == contentId->GetVersion());
 }
 
-TEST(FileIdTests, Make)
+TEST("Testing FileId::Make()")
 {
     std::unique_ptr<File> file;
 
@@ -34,101 +35,107 @@ TEST(FileIdTests, Make)
     const uint64_t sizeInBytes{1234};
     const std::unordered_map<HashType, std::string> hashes{{HashType::Sha1, "mySha1"}, {HashType::Sha256, "mySha256"}};
 
-    ASSERT_EQ(File::Make(fileId, url, sizeInBytes, hashes, file).GetCode(), Result::S_Ok);
-    ASSERT_NE(nullptr, file);
+    REQUIRE(File::Make(fileId, url, sizeInBytes, hashes, file) == Result::S_Ok);
+    REQUIRE(file != nullptr);
 
-    EXPECT_EQ(fileId, file->GetFileId());
-    EXPECT_EQ(url, file->GetUrl());
-    EXPECT_EQ(sizeInBytes, file->GetSizeInBytes());
-    EXPECT_EQ(hashes, file->GetHashes());
+    CHECK(fileId == file->GetFileId());
+    CHECK(url == file->GetUrl());
+    CHECK(sizeInBytes == file->GetSizeInBytes());
+    CHECK(hashes == file->GetHashes());
 }
 
-TEST(ContentTests, Make)
+TEST_SCENARIO("Testing Content::Make()")
 {
-    // 1. Testing Make that copies arguments
-
-    const std::string contentNameSpace{"myNameSpace"};
-    const std::string contentName{"myName"};
-    const std::string contentVersion{"myVersion"};
-    const std::string correlationVector{"myCorrelationVector"};
-
-    std::unique_ptr<File> file1;
-    ASSERT_EQ(File::Make("fileId1", "url1", 1 /*sizeInBytes*/, {{HashType::Sha1, "sha1"}}, file1).GetCode(),
-              Result::S_Ok);
-
-    std::unique_ptr<File> file2;
-    ASSERT_EQ(File::Make("fileId2", "url2", 1 /*sizeInBytes*/, {{HashType::Sha256, "sha256"}}, file2).GetCode(),
-              Result::S_Ok);
-
-    std::vector<std::unique_ptr<File>> files;
-    files.push_back(std::move(file1));
-    files.push_back(std::move(file2));
-
-    // Getting raw pointers to check they don't match after copy but match after move
-    std::vector<File*> filePointers;
-    for (const auto& file : files)
+    GIVEN("Elements that make up a content")
     {
-        filePointers.push_back(file.get());
-    }
+        const std::string contentNameSpace{"myNameSpace"};
+        const std::string contentName{"myName"};
+        const std::string contentVersion{"myVersion"};
+        const std::string correlationVector{"myCorrelationVector"};
 
-    std::unique_ptr<Content> copiedContent;
-    ASSERT_EQ(
-        Content::Make(contentNameSpace, contentName, contentVersion, correlationVector, files, copiedContent).GetCode(),
-        Result::S_Ok);
-    ASSERT_NE(nullptr, copiedContent);
+        std::unique_ptr<File> file1;
+        REQUIRE(File::Make("fileId1", "url1", 1 /*sizeInBytes*/, {{HashType::Sha1, "sha1"}}, file1) == Result::S_Ok);
 
-    EXPECT_EQ(contentNameSpace, copiedContent->GetContentId().GetNameSpace());
-    EXPECT_EQ(contentName, copiedContent->GetContentId().GetName());
-    EXPECT_EQ(contentVersion, copiedContent->GetContentId().GetVersion());
-    EXPECT_EQ(correlationVector, copiedContent->GetCorrelationVector());
+        std::unique_ptr<File> file2;
+        REQUIRE(File::Make("fileId2", "url2", 1 /*sizeInBytes*/, {{HashType::Sha256, "sha256"}}, file2) ==
+                Result::S_Ok);
 
-    // Files were cloned, so the pointers are different, but the contents should be similar
-    ASSERT_EQ(files.size(), copiedContent->GetFiles().size());
-    ASSERT_EQ(filePointers.size(), copiedContent->GetFiles().size());
-    for (size_t i = 0; i < files.size(); ++i)
-    {
-        // Checking ptrs
-        EXPECT_NE(filePointers[i], copiedContent->GetFiles()[i].get());
-        EXPECT_NE(files[i], copiedContent->GetFiles()[i]);
+        std::vector<std::unique_ptr<File>> files;
+        files.push_back(std::move(file1));
+        files.push_back(std::move(file2));
 
-        // Checking contents
-        EXPECT_EQ(files[i]->GetFileId(), copiedContent->GetFiles()[i]->GetFileId());
-        EXPECT_EQ(files[i]->GetUrl(), copiedContent->GetFiles()[i]->GetUrl());
-        EXPECT_EQ(files[i]->GetSizeInBytes(), copiedContent->GetFiles()[i]->GetSizeInBytes());
-        EXPECT_EQ(files[i]->GetHashes(), copiedContent->GetFiles()[i]->GetHashes());
-    }
+        // Getting raw pointers to check they don't match after copy but match after move
+        std::vector<File*> filePointers;
+        for (const auto& file : files)
+        {
+            filePointers.push_back(file.get());
+        }
 
-    // 2. Testing Make that moves arguments
+        WHEN("A Content is created by copying the arguments")
+        {
+            std::unique_ptr<Content> copiedContent;
+            REQUIRE(
+                Content::Make(contentNameSpace, contentName, contentVersion, correlationVector, files, copiedContent) ==
+                Result::S_Ok);
+            REQUIRE(copiedContent != nullptr);
 
-    std::unique_ptr<Content> movedContent;
-    ASSERT_EQ(Content::Make(std::move(contentNameSpace),
-                            std::move(contentName),
-                            std::move(contentVersion),
-                            std::move(correlationVector),
-                            std::move(files),
-                            movedContent)
-                  .GetCode(),
-              Result::S_Ok);
-    ASSERT_NE(nullptr, movedContent);
+            THEN("The content elements are copies")
+            {
+                CHECK(contentNameSpace == copiedContent->GetContentId().GetNameSpace());
+                CHECK(contentName == copiedContent->GetContentId().GetName());
+                CHECK(contentVersion == copiedContent->GetContentId().GetVersion());
+                CHECK(correlationVector == copiedContent->GetCorrelationVector());
 
-    EXPECT_EQ(copiedContent->GetContentId().GetNameSpace(), movedContent->GetContentId().GetNameSpace());
-    EXPECT_EQ(copiedContent->GetContentId().GetName(), movedContent->GetContentId().GetName());
-    EXPECT_EQ(copiedContent->GetContentId().GetVersion(), movedContent->GetContentId().GetVersion());
-    EXPECT_EQ(copiedContent->GetCorrelationVector(), movedContent->GetCorrelationVector());
+                // Files were cloned, so the pointers are different, but the contents should be similar
+                REQUIRE(files.size() == copiedContent->GetFiles().size());
+                REQUIRE(filePointers.size() == copiedContent->GetFiles().size());
+                for (size_t i = 0; i < files.size(); ++i)
+                {
+                    // Checking ptrs
+                    REQUIRE(filePointers[i] != copiedContent->GetFiles()[i].get());
+                    REQUIRE(files[i] != copiedContent->GetFiles()[i]);
 
-    ASSERT_EQ(filePointers.size(), movedContent->GetFiles().size());
-    ASSERT_EQ(copiedContent->GetFiles().size(), movedContent->GetFiles().size());
-    for (size_t i = 0; i < filePointers.size(); ++i)
-    {
-        // Checking ptrs
-        EXPECT_NE(copiedContent->GetFiles()[i], movedContent->GetFiles()[i]);
-        EXPECT_EQ(filePointers[i], movedContent->GetFiles()[i].get());
+                    // Checking contents
+                    CHECK(files[i]->GetFileId() == copiedContent->GetFiles()[i]->GetFileId());
+                    CHECK(files[i]->GetUrl() == copiedContent->GetFiles()[i]->GetUrl());
+                    CHECK(files[i]->GetSizeInBytes() == copiedContent->GetFiles()[i]->GetSizeInBytes());
+                    CHECK(files[i]->GetHashes() == copiedContent->GetFiles()[i]->GetHashes());
+                }
+            }
 
-        // Checking contents
-        EXPECT_EQ(copiedContent->GetFiles()[i]->GetFileId(), movedContent->GetFiles()[i]->GetFileId());
-        EXPECT_EQ(copiedContent->GetFiles()[i]->GetFileId(), movedContent->GetFiles()[i]->GetFileId());
-        EXPECT_EQ(copiedContent->GetFiles()[i]->GetUrl(), movedContent->GetFiles()[i]->GetUrl());
-        EXPECT_EQ(copiedContent->GetFiles()[i]->GetSizeInBytes(), movedContent->GetFiles()[i]->GetSizeInBytes());
-        EXPECT_EQ(copiedContent->GetFiles()[i]->GetHashes(), movedContent->GetFiles()[i]->GetHashes());
+            AND_THEN("Using the Make that moves arguments really moves the arguments")
+            {
+                std::unique_ptr<Content> movedContent;
+                REQUIRE(Content::Make(std::move(contentNameSpace),
+                                      std::move(contentName),
+                                      std::move(contentVersion),
+                                      std::move(correlationVector),
+                                      std::move(files),
+                                      movedContent) == Result::S_Ok);
+                REQUIRE(movedContent != nullptr);
+
+                CHECK(copiedContent->GetContentId().GetNameSpace() == movedContent->GetContentId().GetNameSpace());
+                CHECK(copiedContent->GetContentId().GetName() == movedContent->GetContentId().GetName());
+                CHECK(copiedContent->GetContentId().GetVersion() == movedContent->GetContentId().GetVersion());
+                CHECK(copiedContent->GetCorrelationVector() == movedContent->GetCorrelationVector());
+
+                REQUIRE(filePointers.size() == movedContent->GetFiles().size());
+                REQUIRE(copiedContent->GetFiles().size() == movedContent->GetFiles().size());
+                for (size_t i = 0; i < filePointers.size(); ++i)
+                {
+                    // Checking ptrs
+                    REQUIRE(copiedContent->GetFiles()[i] != movedContent->GetFiles()[i]);
+                    REQUIRE(filePointers[i] == movedContent->GetFiles()[i].get());
+
+                    // Checking contents
+                    CHECK(copiedContent->GetFiles()[i]->GetFileId() == movedContent->GetFiles()[i]->GetFileId());
+                    CHECK(copiedContent->GetFiles()[i]->GetFileId() == movedContent->GetFiles()[i]->GetFileId());
+                    CHECK(copiedContent->GetFiles()[i]->GetUrl() == movedContent->GetFiles()[i]->GetUrl());
+                    CHECK(copiedContent->GetFiles()[i]->GetSizeInBytes() ==
+                          movedContent->GetFiles()[i]->GetSizeInBytes());
+                    CHECK(copiedContent->GetFiles()[i]->GetHashes() == movedContent->GetFiles()[i]->GetHashes());
+                }
+            }
+        }
     }
 }

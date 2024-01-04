@@ -4,47 +4,46 @@
 #include "details/Responses.h"
 #include "details/SFSClientImpl.h"
 
-#include <gtest/gtest.h>
+#include <catch2/catch_test_macros.hpp>
+
+#define TEST(...) TEST_CASE("[SFSClientImplTests] " __VA_ARGS__)
 
 using namespace SFS;
 using namespace SFS::details;
 
-TEST(SFSClientImplTests, GetLatestVersion)
+TEST("Testing class SFSClientImpl()")
 {
     SFSClientImpl sfsClient("testAccountId", "testInstanceId", "testNameSpace");
 
-    std::unique_ptr<VersionResponse> response;
-    ASSERT_EQ(sfsClient.GetLatestVersion("productName", std::nullopt, response).GetCode(), Result::E_NotImpl);
+    SECTION("Testing SFSClientImpl::GetLatestVersion()")
+    {
+        std::unique_ptr<VersionResponse> response;
+        REQUIRE(sfsClient.GetLatestVersion("productName", std::nullopt, response) == Result::E_NotImpl);
 
-    const SearchAttributes attributes{{"attr1", "value"}};
-    ASSERT_EQ(sfsClient.GetLatestVersion("productName", attributes, response).GetCode(), Result::E_NotImpl);
-}
+        const SearchAttributes attributes{{"attr1", "value"}};
+        REQUIRE(sfsClient.GetLatestVersion("productName", attributes, response) == Result::E_NotImpl);
+    }
 
-TEST(SFSClientImplTests, GetSpecificVersion)
-{
-    SFSClientImpl sfsClient("testAccountId", "testInstanceId", "testNameSpace");
+    SECTION("Testing SFSClientImpl::GetSpecificVersion()")
+    {
+        std::unique_ptr<VersionResponse> response;
+        REQUIRE(sfsClient.GetSpecificVersion("productName", "version", std::nullopt, response) == Result::E_NotImpl);
 
-    std::unique_ptr<VersionResponse> response;
-    ASSERT_EQ(sfsClient.GetSpecificVersion("productName", "version", std::nullopt, response).GetCode(),
-              Result::E_NotImpl);
+        const SearchAttributes attributes{{"attr1", "value"}};
+        REQUIRE(sfsClient.GetSpecificVersion("productName", "version", attributes, response) == Result::E_NotImpl);
+    }
 
-    const SearchAttributes attributes{{"attr1", "value"}};
-    ASSERT_EQ(sfsClient.GetSpecificVersion("productName", "version", attributes, response).GetCode(),
-              Result::E_NotImpl);
-}
+    SECTION("Testing SFSClientImpl::GetDownloadInfo()")
+    {
+        std::unique_ptr<DownloadInfoResponse> response;
+        REQUIRE(sfsClient.GetDownloadInfo("productName", "version", std::nullopt, response) == Result::E_NotImpl);
 
-TEST(SFSClientImplTests, GetDownloadInfo)
-{
-    SFSClientImpl sfsClient("testAccountId", "testInstanceId", "testNameSpace");
+        const SearchAttributes attributes{{"attr1", "value"}};
+        REQUIRE(sfsClient.GetDownloadInfo("productName", "version", attributes, response) == Result::E_NotImpl);
+    }
 
-    std::unique_ptr<DownloadInfoResponse> response;
-    ASSERT_EQ(sfsClient.GetDownloadInfo("productName", "version", std::nullopt, response).GetCode(), Result::E_NotImpl);
-
-    const SearchAttributes attributes{{"attr1", "value"}};
-    ASSERT_EQ(sfsClient.GetDownloadInfo("productName", "version", attributes, response).GetCode(), Result::E_NotImpl);
-}
-
-TEST(SFSClientImplTests, BuildUrl)
-{
-    // TODO
+    SECTION("Testing SFSClientImpl::BuildUrl()")
+    {
+        // TODO
+    }
 }
