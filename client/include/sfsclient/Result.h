@@ -38,6 +38,14 @@ class Result
     bool operator==(Code resultCode) const noexcept;
     bool operator!=(Code resultCode) const noexcept;
 
+    // Results should not be compared directly
+    bool operator==(Result) const = delete;
+    bool operator!=(Result) const = delete;
+    bool operator>(Result) const = delete;
+    bool operator>=(Result) const = delete;
+    bool operator<(Result) const = delete;
+    bool operator<=(Result) const = delete;
+
   private:
     Code m_code;
     std::string m_message;
