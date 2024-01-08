@@ -1,7 +1,7 @@
 // Copyright (c) Microsoft Corporation.
 // Licensed under the MIT License.
 
-#include "details/ErrorHandling.h"
+#include "ErrorHandling.h"
 #include "sfsclient/Result.h"
 
 #include <catch2/catch_test_macros.hpp>

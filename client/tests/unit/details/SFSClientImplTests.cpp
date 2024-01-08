@@ -1,8 +1,8 @@
 // Copyright (c) Microsoft Corporation.
 // Licensed under the MIT License.
 
-#include "details/Responses.h"
-#include "details/SFSClientImpl.h"
+#include "Responses.h"
+#include "SFSClientImpl.h"
 
 #include <catch2/catch_test_macros.hpp>
 

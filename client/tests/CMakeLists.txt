@@ -24,7 +24,7 @@ target_link_libraries(${SFS_CLIENT_TESTS} PRIVATE ${SFS_CLIENT_LIB_NAME})
 target_link_libraries(${SFS_CLIENT_TESTS} PRIVATE Catch2::Catch2WithMain)
 
 target_include_directories(${SFS_CLIENT_TESTS} PUBLIC ../include)
-target_include_directories(${SFS_CLIENT_TESTS} PUBLIC ../src)
+target_include_directories(${SFS_CLIENT_TESTS} PUBLIC ../src/details)
 
 catch_discover_tests(${SFS_CLIENT_TESTS})
 
