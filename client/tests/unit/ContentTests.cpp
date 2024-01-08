@@ -48,10 +48,10 @@ TEST_SCENARIO("Testing Content::Make()")
 {
     GIVEN("Elements that make up a content")
     {
-        const std::string contentNameSpace{"myNameSpace"};
-        const std::string contentName{"myName"};
-        const std::string contentVersion{"myVersion"};
-        const std::string correlationVector{"myCorrelationVector"};
+        std::string contentNameSpace{"myNameSpace"};
+        std::string contentName{"myName"};
+        std::string contentVersion{"myVersion"};
+        std::string correlationVector{"myCorrelationVector"};
 
         std::unique_ptr<File> file1;
         REQUIRE(File::Make("fileId1", "url1", 1 /*sizeInBytes*/, {{HashType::Sha1, "sha1"}}, file1) == Result::S_Ok);

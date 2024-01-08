@@ -24,7 +24,7 @@ std::unique_ptr<SFSClient> GetSFSClient()
 
 TEST_SCENARIO("Testing SFSClient::Make()")
 {
-    GIVEN("An uninitialized pointer")
+    GIVEN("An empty pointer")
     {
         const std::string accountId{"testAccountId"};
         const std::string instanceId{"testInstanceId"};
@@ -34,7 +34,6 @@ TEST_SCENARIO("Testing SFSClient::Make()")
 
         THEN("Make(accountId, out) works")
         {
-            INFO("bla");
             REQUIRE(SFSClient::Make(accountId, sfsClient) == Result::S_Ok);
             REQUIRE(sfsClient != nullptr);
         }
