@@ -53,3 +53,6 @@ class Result
 
 std::string_view ToString(Result::Code code) noexcept;
 } // namespace SFS
+
+std::ostream& operator<<(std::ostream& os, const SFS::Result& value);
+std::ostream& operator<<(std::ostream& os, const SFS::Result::Code& value);
