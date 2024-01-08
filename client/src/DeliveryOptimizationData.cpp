@@ -39,3 +39,14 @@ const DOProperties& DeliveryOptimizationData::GetProperties() const noexcept
 {
     return m_properties;
 }
+
+bool DeliveryOptimizationData::operator==(const DeliveryOptimizationData& other) const noexcept
+{
+    return m_description == other.m_description && m_catalogId == other.m_catalogId &&
+           m_properties == other.m_properties;
+}
+
+bool DeliveryOptimizationData::operator!=(const DeliveryOptimizationData& other) const noexcept
+{
+    return !(*this == other);
+}

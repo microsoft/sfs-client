@@ -40,3 +40,15 @@ const std::string& ApplicabilityDetails::GetFileMoniker() const noexcept
 {
     return m_fileMoniker;
 }
+
+bool ApplicabilityDetails::operator==(const ApplicabilityDetails& other) const noexcept
+{
+    return m_architectures == other.m_architectures &&
+           m_platformApplicabilityForPackage == other.m_platformApplicabilityForPackage &&
+           m_fileMoniker == other.m_fileMoniker;
+}
+
+bool ApplicabilityDetails::operator!=(const ApplicabilityDetails& other) const noexcept
+{
+    return !(*this == other);
+}

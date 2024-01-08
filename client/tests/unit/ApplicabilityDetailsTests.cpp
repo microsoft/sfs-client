@@ -24,4 +24,35 @@ TEST("Testing ApplicabilityDetails::Make()")
     CHECK(architectures == details->GetArchitectures());
     CHECK(platformApplicabilityForPackage == details->GetPlatformApplicabilityForPackage());
     CHECK(fileMoniker == details->GetFileMoniker());
+
+    SECTION("Testing ApplicabilityDetails equality operators")
+    {
+        auto CompareDetails = [&details](const std::vector<Architecture>& architectures,
+                                         const std::vector<std::string>& platformApplicabilityForPackage,
+                                         const std::string& fileMoniker,
+                                         bool isEqual) {
+            std::unique_ptr<ApplicabilityDetails> otherDetails;
+            REQUIRE(
+                ApplicabilityDetails::Make(architectures, platformApplicabilityForPackage, fileMoniker, otherDetails) ==
+                Result::S_Ok);
+            REQUIRE(otherDetails != nullptr);
+
+            if (isEqual)
+            {
+                REQUIRE(*details == *otherDetails);
+                REQUIRE_FALSE(*details != *otherDetails);
+            }
+            else
+            {
+                REQUIRE(*details != *otherDetails);
+                REQUIRE_FALSE(*details == *otherDetails);
+            }
+        };
+
+        CompareDetails(architectures, platformApplicabilityForPackage, fileMoniker, true /*isEqual*/);
+        CompareDetails({}, platformApplicabilityForPackage, fileMoniker, false /*isEqual*/);
+        CompareDetails(architectures, {}, fileMoniker, false /*isEqual*/);
+        CompareDetails(architectures, platformApplicabilityForPackage, "", false /*isEqual*/);
+        CompareDetails({}, {}, "", false /*isEqual*/);
+    }
 }

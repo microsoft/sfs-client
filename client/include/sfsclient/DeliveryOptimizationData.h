@@ -28,6 +28,9 @@ class DeliveryOptimizationData
     const std::string& GetCatalogId() const noexcept;
     const DOProperties& GetProperties() const noexcept;
 
+    bool operator==(const DeliveryOptimizationData& other) const noexcept;
+    bool operator!=(const DeliveryOptimizationData& other) const noexcept;
+
   private:
     DeliveryOptimizationData() = default;
 

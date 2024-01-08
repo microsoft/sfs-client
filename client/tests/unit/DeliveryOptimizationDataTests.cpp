@@ -23,4 +23,33 @@ TEST("Testing DeliveryOptimizationData::Make()")
     CHECK(description == data->GetDescription());
     CHECK(catalogId == data->GetCatalogId());
     CHECK(properties == data->GetProperties());
+
+    SECTION("Testing DeliveryOptimizationData equality operators")
+    {
+        auto CompareData = [&data](const std::string& description,
+                                   const std::string& catalogId,
+                                   const DOProperties& properties,
+                                   bool isEqual) {
+            std::unique_ptr<DeliveryOptimizationData> otherData;
+            REQUIRE(DeliveryOptimizationData::Make(description, catalogId, properties, otherData) == Result::S_Ok);
+            REQUIRE(otherData != nullptr);
+
+            if (isEqual)
+            {
+                REQUIRE(*data == *otherData);
+                REQUIRE_FALSE(*data != *otherData);
+            }
+            else
+            {
+                REQUIRE(*data != *otherData);
+                REQUIRE_FALSE(*data == *otherData);
+            }
+        };
+
+        CompareData(description, catalogId, properties, true /*isEqual*/);
+        CompareData("", catalogId, properties, false /*isEqual*/);
+        CompareData(description, "", properties, false /*isEqual*/);
+        CompareData(description, catalogId, {}, false /*isEqual*/);
+        CompareData("", "", {}, false /*isEqual*/);
+    }
 }

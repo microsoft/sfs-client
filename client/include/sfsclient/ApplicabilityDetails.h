@@ -32,6 +32,9 @@ class ApplicabilityDetails
     const std::vector<std::string>& GetPlatformApplicabilityForPackage() const noexcept;
     const std::string& GetFileMoniker() const noexcept;
 
+    bool operator==(const ApplicabilityDetails& other) const noexcept;
+    bool operator!=(const ApplicabilityDetails& other) const noexcept;
+
   private:
     ApplicabilityDetails() = default;
 
