@@ -5,6 +5,8 @@
 
 #include "details/ErrorHandling.h"
 
+#include <algorithm>
+
 using namespace SFS;
 
 Result ContentId::Make(std::string nameSpace,
@@ -39,6 +41,16 @@ const std::string& ContentId::GetName() const noexcept
 const std::string& ContentId::GetVersion() const noexcept
 {
     return m_version;
+}
+
+bool ContentId::operator==(const ContentId& other) const noexcept
+{
+    return m_nameSpace == other.m_nameSpace && m_name == other.m_name && m_version == other.m_version;
+}
+
+bool ContentId::operator!=(const ContentId& other) const noexcept
+{
+    return !(*this == other);
 }
 
 Result File::Make(std::string fileId,
@@ -85,6 +97,17 @@ uint64_t File::GetSizeInBytes() const noexcept
 const std::unordered_map<HashType, std::string>& File::GetHashes() const noexcept
 {
     return m_hashes;
+}
+
+bool File::operator==(const File& other) const noexcept
+{
+    return m_fileId == other.m_fileId && m_url == other.m_url && m_sizeInBytes == other.m_sizeInBytes &&
+           m_hashes == other.m_hashes;
+}
+
+bool File::operator!=(const File& other) const noexcept
+{
+    return !(*this == other);
 }
 
 Result Content::Make(std::string contentNameSpace,
@@ -145,4 +168,21 @@ const ContentId& Content::GetContentId() const noexcept
 const std::vector<std::unique_ptr<File>>& Content::GetFiles() const noexcept
 {
     return m_files;
+}
+
+bool Content::operator==(const Content& other) const noexcept
+{
+    return (m_contentId && other.m_contentId && *m_contentId == *other.m_contentId) &&
+           (std::equal(m_files.begin(),
+                       m_files.end(),
+                       other.m_files.begin(),
+                       other.m_files.end(),
+                       [](const std::unique_ptr<File>& lhs, const std::unique_ptr<File>& rhs) {
+                           return lhs && rhs && *lhs == *rhs;
+                       }));
+}
+
+bool Content::operator!=(const Content& other) const noexcept
+{
+    return !(*this == other);
 }

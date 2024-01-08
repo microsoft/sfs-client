@@ -24,9 +24,38 @@ TEST("Testing ContentId::Make()")
     CHECK(nameSpace == contentId->GetNameSpace());
     CHECK(name == contentId->GetName());
     CHECK(version == contentId->GetVersion());
+
+    SECTION("Testing ContentId equality operators")
+    {
+        auto CompareContentId = [&contentId](const std::string& nameSpace,
+                                             const std::string& name,
+                                             const std::string& version,
+                                             bool isEqual) {
+            std::unique_ptr<ContentId> otherContentId;
+            REQUIRE(ContentId::Make(nameSpace, name, version, otherContentId) == Result::S_Ok);
+            REQUIRE(otherContentId != nullptr);
+
+            if (isEqual)
+            {
+                REQUIRE(*contentId == *otherContentId);
+                REQUIRE_FALSE(*contentId != *otherContentId);
+            }
+            else
+            {
+                REQUIRE(*contentId != *otherContentId);
+                REQUIRE_FALSE(*contentId == *otherContentId);
+            }
+        };
+
+        CompareContentId(nameSpace, name, version, true /*isEqual*/);
+        CompareContentId("", name, version, false /*isEqual*/);
+        CompareContentId(nameSpace, "", version, false /*isEqual*/);
+        CompareContentId(nameSpace, name, "", false /*isEqual*/);
+        CompareContentId("", "", "", false /*isEqual*/);
+    }
 }
 
-TEST("Testing FileId::Make()")
+TEST("Testing File::Make()")
 {
     std::unique_ptr<File> file;
 
@@ -42,6 +71,37 @@ TEST("Testing FileId::Make()")
     CHECK(url == file->GetUrl());
     CHECK(sizeInBytes == file->GetSizeInBytes());
     CHECK(hashes == file->GetHashes());
+
+    SECTION("Testing File equality operators")
+    {
+        auto CompareFile = [&file](const std::string& fileId,
+                                   const std::string& url,
+                                   uint64_t sizeInBytes,
+                                   const std::unordered_map<HashType, std::string>& hashes,
+                                   bool isEqual) {
+            std::unique_ptr<File> otherFile;
+            REQUIRE(File::Make(fileId, url, sizeInBytes, hashes, otherFile) == Result::S_Ok);
+            REQUIRE(otherFile != nullptr);
+
+            if (isEqual)
+            {
+                REQUIRE(*file == *otherFile);
+                REQUIRE_FALSE(*file != *otherFile);
+            }
+            else
+            {
+                REQUIRE(*file != *otherFile);
+                REQUIRE_FALSE(*file == *otherFile);
+            }
+        };
+
+        CompareFile(fileId, url, sizeInBytes, hashes, true /*isEqual*/);
+        CompareFile("", url, sizeInBytes, hashes, false /*isEqual*/);
+        CompareFile(fileId, "", sizeInBytes, hashes, false /*isEqual*/);
+        CompareFile(fileId, url, 0, hashes, false /*isEqual*/);
+        CompareFile(fileId, url, sizeInBytes, {}, false /*isEqual*/);
+        CompareFile("", "", 0, {}, false /*isEqual*/);
+    }
 }
 
 TEST_SCENARIO("Testing Content::Make()")
@@ -92,10 +152,7 @@ TEST_SCENARIO("Testing Content::Make()")
                     REQUIRE(files[i] != copiedContent->GetFiles()[i]);
 
                     // Checking contents
-                    CHECK(files[i]->GetFileId() == copiedContent->GetFiles()[i]->GetFileId());
-                    CHECK(files[i]->GetUrl() == copiedContent->GetFiles()[i]->GetUrl());
-                    CHECK(files[i]->GetSizeInBytes() == copiedContent->GetFiles()[i]->GetSizeInBytes());
-                    CHECK(files[i]->GetHashes() == copiedContent->GetFiles()[i]->GetHashes());
+                    CHECK(*files[i] == *copiedContent->GetFiles()[i]);
                 }
             }
 
@@ -106,27 +163,70 @@ TEST_SCENARIO("Testing Content::Make()")
                         Result::S_Ok);
                 REQUIRE(movedContent != nullptr);
 
-                CHECK(copiedContent->GetContentId().GetNameSpace() == movedContent->GetContentId().GetNameSpace());
-                CHECK(copiedContent->GetContentId().GetName() == movedContent->GetContentId().GetName());
-                CHECK(copiedContent->GetContentId().GetVersion() == movedContent->GetContentId().GetVersion());
+                // Checking contents
+                CHECK(*copiedContent == *movedContent);
 
+                // Checking underlying pointers are the same since they were moved
                 REQUIRE(filePointers.size() == movedContent->GetFiles().size());
                 REQUIRE(copiedContent->GetFiles().size() == movedContent->GetFiles().size());
                 for (size_t i = 0; i < filePointers.size(); ++i)
                 {
-                    // Checking ptrs
                     REQUIRE(copiedContent->GetFiles()[i] != movedContent->GetFiles()[i]);
                     REQUIRE(filePointers[i] == movedContent->GetFiles()[i].get());
-
-                    // Checking contents
-                    CHECK(copiedContent->GetFiles()[i]->GetFileId() == movedContent->GetFiles()[i]->GetFileId());
-                    CHECK(copiedContent->GetFiles()[i]->GetFileId() == movedContent->GetFiles()[i]->GetFileId());
-                    CHECK(copiedContent->GetFiles()[i]->GetUrl() == movedContent->GetFiles()[i]->GetUrl());
-                    CHECK(copiedContent->GetFiles()[i]->GetSizeInBytes() ==
-                          movedContent->GetFiles()[i]->GetSizeInBytes());
-                    CHECK(copiedContent->GetFiles()[i]->GetHashes() == movedContent->GetFiles()[i]->GetHashes());
                 }
             }
         }
     }
+}
+
+TEST("Testing Content equality operators")
+{
+    const std::string contentNameSpace{"myNameSpace"};
+    const std::string contentName{"myName"};
+    const std::string contentVersion{"myVersion"};
+    const std::string correlationVector{"myCorrelationVector"};
+
+    std::unique_ptr<File> file;
+    REQUIRE(File::Make("fileId", "url", 1 /*sizeInBytes*/, {{HashType::Sha1, "sha1"}}, file) == Result::S_Ok);
+
+    std::unique_ptr<File> clonedFile;
+    REQUIRE(file->Clone(clonedFile) == Result::S_Ok);
+
+    std::vector<std::unique_ptr<File>> files;
+    files.push_back(std::move(file));
+
+    std::vector<std::unique_ptr<File>> clonedFiles;
+    clonedFiles.push_back(std::move(clonedFile));
+
+    std::unique_ptr<Content> content;
+    REQUIRE(Content::Make(contentNameSpace, contentName, contentVersion, files, content) == Result::S_Ok);
+
+    auto CompareContent = [&content](const std::string& contentNameSpace,
+                                     const std::string& contentName,
+                                     const std::string& contentVersion,
+                                     const std::vector<std::unique_ptr<File>>& files,
+                                     bool isEqual) {
+        std::unique_ptr<Content> otherContent;
+        REQUIRE(Content::Make(contentNameSpace, contentName, contentVersion, files, otherContent) == Result::S_Ok);
+        REQUIRE(otherContent != nullptr);
+
+        if (isEqual)
+        {
+            REQUIRE(*content == *otherContent);
+            REQUIRE_FALSE(*content != *otherContent);
+        }
+        else
+        {
+            REQUIRE(*content != *otherContent);
+            REQUIRE_FALSE(*content == *otherContent);
+        }
+    };
+
+    CompareContent(contentNameSpace, contentName, contentVersion, files, true /*isEqual*/);
+    CompareContent(contentNameSpace, contentName, contentVersion, clonedFiles, true /*isEqual*/);
+    CompareContent("", contentName, contentVersion, files, false /*isEqual*/);
+    CompareContent(contentNameSpace, "", contentVersion, files, false /*isEqual*/);
+    CompareContent(contentNameSpace, contentName, "", files, false /*isEqual*/);
+    CompareContent(contentNameSpace, contentName, contentVersion, {}, false /*isEqual*/);
+    CompareContent("", "", "", {}, false /*isEqual*/);
 }
