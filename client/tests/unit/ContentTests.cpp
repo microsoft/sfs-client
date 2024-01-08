@@ -48,10 +48,10 @@ TEST_SCENARIO("Testing Content::Make()")
 {
     GIVEN("Elements that make up a content")
     {
-        std::string contentNameSpace{"myNameSpace"};
-        std::string contentName{"myName"};
-        std::string contentVersion{"myVersion"};
-        std::string correlationVector{"myCorrelationVector"};
+        const std::string contentNameSpace{"myNameSpace"};
+        const std::string contentName{"myName"};
+        const std::string contentVersion{"myVersion"};
+        const std::string correlationVector{"myCorrelationVector"};
 
         std::unique_ptr<File> file1;
         REQUIRE(File::Make("fileId1", "url1", 1 /*sizeInBytes*/, {{HashType::Sha1, "sha1"}}, file1) == Result::S_Ok);
@@ -71,7 +71,7 @@ TEST_SCENARIO("Testing Content::Make()")
             filePointers.push_back(file.get());
         }
 
-        WHEN("A Content is created by copying the arguments")
+        WHEN("A Content is created by copying the parameters")
         {
             std::unique_ptr<Content> copiedContent;
             REQUIRE(
@@ -103,13 +103,13 @@ TEST_SCENARIO("Testing Content::Make()")
                 }
             }
 
-            AND_THEN("Using the Make that moves arguments really moves the arguments")
+            AND_THEN("Using the Make() that moves the file parameter really moves the parameter")
             {
                 std::unique_ptr<Content> movedContent;
-                REQUIRE(Content::Make(std::move(contentNameSpace),
-                                      std::move(contentName),
-                                      std::move(contentVersion),
-                                      std::move(correlationVector),
+                REQUIRE(Content::Make(contentNameSpace,
+                                      contentName,
+                                      contentVersion,
+                                      correlationVector,
                                       std::move(files),
                                       movedContent) == Result::S_Ok);
                 REQUIRE(movedContent != nullptr);
