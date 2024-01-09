@@ -64,7 +64,7 @@ int ParseArguments(const std::vector<std::string_view>& args, Settings& settings
     settings = {};
     settings.displayHelp = args.size() == 1;
 
-    for (int i = 1; i < args.size(); ++i)
+    for (size_t i = 1; i < args.size(); ++i)
     {
         if (args[i].compare("-h") == 0 || args[i].compare("--help") == 0)
         {
