@@ -46,12 +46,12 @@ Result::operator bool() const noexcept
     return IsSuccess();
 }
 
-bool Result::operator==(Code resultCode) noexcept
+bool Result::operator==(Code resultCode) const noexcept
 {
     return GetCode() == resultCode;
 }
 
-bool Result::operator!=(Code resultCode) noexcept
+bool Result::operator!=(Code resultCode) const noexcept
 {
     return GetCode() != resultCode;
 }

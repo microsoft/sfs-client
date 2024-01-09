@@ -35,8 +35,16 @@ class Result
      */
     operator bool() const noexcept;
 
-    bool operator==(Code resultCode) noexcept;
-    bool operator!=(Code resultCode) noexcept;
+    bool operator==(Code resultCode) const noexcept;
+    bool operator!=(Code resultCode) const noexcept;
+
+    // Results should not be compared directly
+    bool operator==(Result) const = delete;
+    bool operator!=(Result) const = delete;
+    bool operator>(Result) const = delete;
+    bool operator>=(Result) const = delete;
+    bool operator<(Result) const = delete;
+    bool operator<=(Result) const = delete;
 
   private:
     Code m_code;
