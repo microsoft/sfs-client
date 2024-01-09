@@ -139,7 +139,6 @@ void DisplayResults(const Contents& responseContents)
         std::cout << R"(    "NameSpace": ")" << content->GetContentId().GetNameSpace() << R"(",)" << std::endl;
         std::cout << R"(    "Name": ")" << content->GetContentId().GetName() << R"(",)" << std::endl;
         std::cout << R"(    "Version": ")" << content->GetContentId().GetVersion() << R"(",)" << std::endl;
-        std::cout << R"(    "CorrelationVector": ")" << content->GetCorrelationVector() << R"(",)" << std::endl;
 
         if (content->GetFiles().size() == 0)
         {

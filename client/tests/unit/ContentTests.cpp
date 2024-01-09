@@ -51,7 +51,6 @@ TEST_SCENARIO("Testing Content::Make()")
         const std::string contentNameSpace{"myNameSpace"};
         const std::string contentName{"myName"};
         const std::string contentVersion{"myVersion"};
-        const std::string correlationVector{"myCorrelationVector"};
 
         std::unique_ptr<File> file1;
         REQUIRE(File::Make("fileId1", "url1", 1 /*sizeInBytes*/, {{HashType::Sha1, "sha1"}}, file1) == Result::S_Ok);
@@ -74,9 +73,7 @@ TEST_SCENARIO("Testing Content::Make()")
         WHEN("A Content is created by copying the parameters")
         {
             std::unique_ptr<Content> copiedContent;
-            REQUIRE(
-                Content::Make(contentNameSpace, contentName, contentVersion, correlationVector, files, copiedContent) ==
-                Result::S_Ok);
+            REQUIRE(Content::Make(contentNameSpace, contentName, contentVersion, files, copiedContent) == Result::S_Ok);
             REQUIRE(copiedContent != nullptr);
 
             THEN("The content elements are copies")
@@ -84,7 +81,6 @@ TEST_SCENARIO("Testing Content::Make()")
                 CHECK(contentNameSpace == copiedContent->GetContentId().GetNameSpace());
                 CHECK(contentName == copiedContent->GetContentId().GetName());
                 CHECK(contentVersion == copiedContent->GetContentId().GetVersion());
-                CHECK(correlationVector == copiedContent->GetCorrelationVector());
 
                 // Files were cloned, so the pointers are different, but the contents should be similar
                 REQUIRE(files.size() == copiedContent->GetFiles().size());
@@ -106,18 +102,13 @@ TEST_SCENARIO("Testing Content::Make()")
             AND_THEN("Using the Make() that moves the file parameter really moves the parameter")
             {
                 std::unique_ptr<Content> movedContent;
-                REQUIRE(Content::Make(contentNameSpace,
-                                      contentName,
-                                      contentVersion,
-                                      correlationVector,
-                                      std::move(files),
-                                      movedContent) == Result::S_Ok);
+                REQUIRE(Content::Make(contentNameSpace, contentName, contentVersion, std::move(files), movedContent) ==
+                        Result::S_Ok);
                 REQUIRE(movedContent != nullptr);
 
                 CHECK(copiedContent->GetContentId().GetNameSpace() == movedContent->GetContentId().GetNameSpace());
                 CHECK(copiedContent->GetContentId().GetName() == movedContent->GetContentId().GetName());
                 CHECK(copiedContent->GetContentId().GetVersion() == movedContent->GetContentId().GetVersion());
-                CHECK(copiedContent->GetCorrelationVector() == movedContent->GetCorrelationVector());
 
                 REQUIRE(filePointers.size() == movedContent->GetFiles().size());
                 REQUIRE(copiedContent->GetFiles().size() == movedContent->GetFiles().size());

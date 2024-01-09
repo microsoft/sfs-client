@@ -81,7 +81,6 @@ class Content
     [[nodiscard]] static Result Make(std::string contentNameSpace,
                                      std::string contentName,
                                      std::string contentVersion,
-                                     std::string correlationVector,
                                      const std::vector<std::unique_ptr<File>>& files,
                                      std::unique_ptr<Content>& out) noexcept;
 
@@ -91,7 +90,6 @@ class Content
     [[nodiscard]] static Result Make(std::string contentNameSpace,
                                      std::string contentName,
                                      std::string contentVersion,
-                                     std::string correlationVector,
                                      std::vector<std::unique_ptr<File>>&& files,
                                      std::unique_ptr<Content>& out) noexcept;
 
@@ -99,7 +97,6 @@ class Content
     Content& operator=(const Content&) = delete;
 
     const ContentId& GetContentId() const noexcept;
-    const std::string& GetCorrelationVector() const noexcept;
 
     const std::vector<std::unique_ptr<File>>& GetFiles() const noexcept;
 
@@ -107,8 +104,6 @@ class Content
     Content() = default;
 
     std::unique_ptr<ContentId> m_contentId;
-    std::string m_correlationVector;
-
     std::vector<std::unique_ptr<File>> m_files;
 };
 } // namespace SFS
