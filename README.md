@@ -16,10 +16,16 @@ Follow the [API](API.md) document for tips on how to use the API.
 #### Setup script
 
 There are a few dependencies required to work on this project.
-To set them up, use the Setup script:
+To set them up, use the Setup script.
 
+Windows:
 ```powershell
 .\scripts\Setup.ps1
+```
+
+Linux:
+```bash
+source ./scripts/Setup.sh
 ```
 
 The script can be run multiple times as it does not replace what has been installed, and updates dependencies.
@@ -47,20 +53,20 @@ cmake-format -h
 
 Use -i to edit a file inplace:
 ```
-clang-format -i .\interface.cpp
-cmake-format -i .\CMakeLists.txt
+clang-format -i ./interface.cpp
+cmake-format -i ./CMakeLists.txt
 ```
 
 Wildcards are accepted in clang-format:
 ```
-clang-format -i .\*.h
+clang-format -i ./*.h
 ```
 
 ## Building
 
 To build, use the `build` command. It simplifies the CMake build commands and re-generates CMake configurations if needed.
 
-If you face problems with compilation, try cleaning the build folder with `build -Clean`.
+If you face problems with compilation, try cleaning the build folder with `build -Clean` on Windows and `build --clean` on Linux.
 
 ## VSCode
 
@@ -114,16 +120,22 @@ To run the tests, you can use the `test` command. It will run all tests directly
 If you want to customize the test run, you can make use of the `ctest` tool.
 
 ```
-ctest --test-dir .\build\client
+ctest --test-dir ./build/client
 ```
 
 To run specific tests, you can filter the chosen tests through the switch `-R` or `--tests-regex`.
 For more test selection switches, use `ctest --help`.
 
-The tests are built using the Catch2 framework. For a more verbose run you can run the executable directly.
+The tests are built using the Catch2 framework. For a more verbose run you can run the executable directly, with -s.
 
+Windows:
 ```
-.\build\tests\bin\<ReleaseConfiguration>\SFSClientTests
+.\build\tests\bin\<ReleaseConfiguration>\SFSClientTests.exe -s
+```
+
+Linux:
+```
+./build/tests/bin/SFSClientTests -s
 ```
 
 ## Contributing
