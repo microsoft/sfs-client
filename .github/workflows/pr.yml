@@ -1,0 +1,40 @@
+name: PR Build
+
+env:
+  # Set up vcpkg to read from the GitHub cache (https://learn.microsoft.com/en-us/vcpkg/consume/binary-caching-github-actions-cache)
+  VCPKG_BINARY_SOURCES: 'clear;x-gha,readwrite'
+
+on:
+  pull_request:
+    branches: [ "main" ]
+
+jobs:
+  build-windows:
+    runs-on: 'windows-latest'
+
+    steps:
+      - uses: actions/checkout@v3
+
+      - name: Set up required environment variables for vcpkg cache
+        uses: actions/github-script@v6
+        with:
+          script: |
+            core.exportVariable('ACTIONS_CACHE_URL', process.env.ACTIONS_CACHE_URL || '');
+            core.exportVariable('ACTIONS_RUNTIME_TOKEN', process.env.ACTIONS_RUNTIME_TOKEN || '');
+
+      - name: Install Winget
+        uses: ./.github/workflows/install-winget
+
+      - name: Setup
+        shell: pwsh
+        run: .\scripts\Setup.ps1 -NoBuildTools
+
+      - name: Build
+        shell: pwsh
+        run: .\scripts\Build.ps1
+
+      - name: Test
+        shell: pwsh
+        run: .\scripts\Test.ps1
+
+  # TODO: implement build-ubuntu job

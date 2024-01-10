@@ -1,0 +1,52 @@
+name: Install WinGet
+
+description: Installs WinGet from sources, caching the installation files if possible
+
+inputs:
+  winget-installation-cache:
+    description: 'Where the installation files will be cached'
+    required: false
+    default: 'winget-installation-cache'
+
+runs:
+  using: "composite"
+
+  steps:
+    - name: Cache winget installation
+      id: cache-winget-installation
+      uses: actions/cache@v3.3.2
+      with:
+        path: winget-installation-cache
+        key: winget-installation
+
+    # Winget is not available in the windows-latest image as it is Windows Server 2022 and winget is not yet available officially for it.
+    # We can still install it in "experimental" mode manually though.
+    - name: Install winget
+      shell: pwsh
+      run: |
+        New-Item -ItemType Directory ${{ inputs.winget-installation-cache }} -Force | Out-Null
+        Set-Location ${{ inputs.winget-installation-cache }}
+        $ProgressPreference = "silentlyContinue"
+        $WingetInstaller = "Microsoft.DesktopAppInstaller_8wekyb3d8bbwe.msixbundle"
+        if (!(Test-Path $WingetInstaller))
+        {
+          Write-Host "Downloading Winget"
+          Invoke-WebRequest -Uri https://aka.ms/getwinget -OutFile $WingetInstaller
+        }
+        $VCLibsInstaller = "Microsoft.VCLibs.x64.14.00.Desktop.appx"
+        if (!(Test-Path $VCLibsInstaller))
+        {
+          Write-Host "Downloading Winget dependency VCLibs"
+          Invoke-WebRequest -Uri https://aka.ms/Microsoft.VCLibs.x64.14.00.Desktop.appx -OutFile $VCLibsInstaller
+        }
+        $XamlInstaller = "Microsoft.UI.Xaml.2.7.x64.appxx"
+        if (!(Test-Path $XamlInstaller))
+        {
+          Write-Host "Downloading Winget dependency Xaml"
+          Invoke-WebRequest -Uri https://github.com/microsoft/microsoft-ui-xaml/releases/download/v2.7.3/Microsoft.UI.Xaml.2.7.x64.appx -OutFile $XamlInstaller
+        }
+
+        Import-Module -Name Appx -UseWindowsPowershell | Out-Null
+        Add-AppxPackage $VCLibsInstaller
+        Add-AppxPackage $XamlInstaller
+        Add-AppxPackage $WingetInstaller
