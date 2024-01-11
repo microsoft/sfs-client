@@ -11,12 +11,10 @@ using namespace SFS;
 
 namespace
 {
-std::unique_ptr<DeliveryOptimizationData> GetData(const std::string& description,
-                                                  const std::string& catalogId,
-                                                  const DOProperties& properties)
+std::unique_ptr<DeliveryOptimizationData> GetData(const std::string& catalogId, const DOProperties& properties)
 {
     std::unique_ptr<DeliveryOptimizationData> data;
-    REQUIRE(DeliveryOptimizationData::Make(description, catalogId, properties, data) == Result::S_Ok);
+    REQUIRE(DeliveryOptimizationData::Make(catalogId, properties, data) == Result::S_Ok);
     REQUIRE(data != nullptr);
     return data;
 };
@@ -24,13 +22,11 @@ std::unique_ptr<DeliveryOptimizationData> GetData(const std::string& description
 
 TEST("Testing DeliveryOptimizationData::Make()")
 {
-    const std::string description{"description"};
     const std::string catalogId{"catalogId"};
     const DOProperties properties{{"key1", "value1"}, {"key2", "value2"}};
 
-    const std::unique_ptr<DeliveryOptimizationData> data = GetData(description, catalogId, properties);
+    const std::unique_ptr<DeliveryOptimizationData> data = GetData(catalogId, properties);
 
-    CHECK(description == data->GetDescription());
     CHECK(catalogId == data->GetCatalogId());
     CHECK(properties == data->GetProperties());
 
@@ -38,7 +34,7 @@ TEST("Testing DeliveryOptimizationData::Make()")
     {
         SECTION("Equal")
         {
-            auto sameData = GetData(description, catalogId, properties);
+            auto sameData = GetData(catalogId, properties);
             REQUIRE(*data == *sameData);
             REQUIRE_FALSE(*data != *sameData);
         }
@@ -50,10 +46,9 @@ TEST("Testing DeliveryOptimizationData::Make()")
                 REQUIRE_FALSE(*data == *otherData);
             };
 
-            CompareDataNotEqual(GetData("", catalogId, properties));
-            CompareDataNotEqual(GetData(description, "", properties));
-            CompareDataNotEqual(GetData(description, catalogId, {}));
-            CompareDataNotEqual(GetData("", "", {}));
+            CompareDataNotEqual(GetData("", properties));
+            CompareDataNotEqual(GetData(catalogId, {}));
+            CompareDataNotEqual(GetData("", {}));
         }
     }
 }

@@ -16,16 +16,21 @@ using DOProperties = std::unordered_map<std::string, std::string>;
 class DeliveryOptimizationData
 {
   public:
-    [[nodiscard]] static Result Make(std::string description,
-                                     std::string catalogId,
+    [[nodiscard]] static Result Make(std::string catalogId,
                                      DOProperties properties,
                                      std::unique_ptr<DeliveryOptimizationData>& out) noexcept;
 
     DeliveryOptimizationData(const DeliveryOptimizationData&) = delete;
     DeliveryOptimizationData& operator=(const DeliveryOptimizationData&) = delete;
 
-    const std::string& GetDescription() const noexcept;
+    /**
+     * @return File identifier for DO client
+     */
     const std::string& GetCatalogId() const noexcept;
+
+    /**
+     * @return Optional property bag of opaque key value pairs to be passed to DO client if present
+     */
     const DOProperties& GetProperties() const noexcept;
 
     bool operator==(const DeliveryOptimizationData& other) const noexcept;
@@ -34,7 +39,6 @@ class DeliveryOptimizationData
   private:
     DeliveryOptimizationData() = default;
 
-    std::string m_description;
     std::string m_catalogId;
     DOProperties m_properties;
 };

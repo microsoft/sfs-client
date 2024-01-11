@@ -26,8 +26,19 @@ class ContentId
     ContentId(const ContentId&) = delete;
     ContentId& operator=(const ContentId&) = delete;
 
+    /**
+     * @return Content namespace
+     */
     const std::string& GetNameSpace() const noexcept;
+
+    /**
+     * @return Content name
+     */
     const std::string& GetName() const noexcept;
+
+    /**
+     * @return 4-part integer version. Each part can range from 0-65535
+     */
     const std::string& GetVersion() const noexcept;
 
     bool operator==(const ContentId& other) const noexcept;
@@ -61,9 +72,24 @@ class File
     File(const File&) = delete;
     File& operator=(const File&) = delete;
 
+    /**
+     * @return Unique file identifier within a content version
+     */
     const std::string& GetFileId() const noexcept;
+
+    /**
+     * @return Download URL
+     */
     const std::string& GetUrl() const noexcept;
+
+    /**
+     * @return File size in number of bytes
+     */
     uint64_t GetSizeInBytes() const noexcept;
+
+    /**
+     * @return Dictionary of algorithm type to base64 encoded file hash string
+     */
     const std::unordered_map<HashType, std::string>& GetHashes() const noexcept;
 
     bool operator==(const File& other) const noexcept;
@@ -102,6 +128,9 @@ class Content
     Content(const Content&) = delete;
     Content& operator=(const Content&) = delete;
 
+    /**
+     * @return Unique content identifier
+     */
     const ContentId& GetContentId() const noexcept;
 
     const std::vector<std::unique_ptr<File>>& GetFiles() const noexcept;
