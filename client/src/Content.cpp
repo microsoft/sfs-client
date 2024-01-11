@@ -171,15 +171,20 @@ const std::vector<std::unique_ptr<File>>& Content::GetFiles() const noexcept
 }
 
 bool Content::operator==(const Content& other) const noexcept
+try
 {
     return (m_contentId && other.m_contentId && *m_contentId == *other.m_contentId) &&
-           (std::equal(m_files.begin(),
-                       m_files.end(),
-                       other.m_files.begin(),
-                       other.m_files.end(),
-                       [](const std::unique_ptr<File>& lhs, const std::unique_ptr<File>& rhs) {
-                           return lhs && rhs && *lhs == *rhs;
-                       }));
+           (std::is_permutation(m_files.begin(),
+                                m_files.end(),
+                                other.m_files.begin(),
+                                other.m_files.end(),
+                                [](const std::unique_ptr<File>& lhs, const std::unique_ptr<File>& rhs) {
+                                    return lhs && rhs && *lhs == *rhs;
+                                }));
+}
+catch (...)
+{
+    return false;
 }
 
 bool Content::operator!=(const Content& other) const noexcept
