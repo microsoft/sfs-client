@@ -9,16 +9,26 @@
 
 using namespace SFS;
 
-TEST("Testing DeliveryOptimizationData::Make()")
+namespace
+{
+std::unique_ptr<DeliveryOptimizationData> GetData(const std::string& description,
+                                                  const std::string& catalogId,
+                                                  const DOProperties& properties)
 {
     std::unique_ptr<DeliveryOptimizationData> data;
+    REQUIRE(DeliveryOptimizationData::Make(description, catalogId, properties, data) == Result::S_Ok);
+    REQUIRE(data != nullptr);
+    return data;
+};
+} // namespace
 
+TEST("Testing DeliveryOptimizationData::Make()")
+{
     const std::string description{"description"};
     const std::string catalogId{"catalogId"};
     const DOProperties properties{{"key1", "value1"}, {"key2", "value2"}};
 
-    REQUIRE(DeliveryOptimizationData::Make(description, catalogId, properties, data) == Result::S_Ok);
-    REQUIRE(data != nullptr);
+    const std::unique_ptr<DeliveryOptimizationData> data = GetData(description, catalogId, properties);
 
     CHECK(description == data->GetDescription());
     CHECK(catalogId == data->GetCatalogId());
@@ -26,30 +36,24 @@ TEST("Testing DeliveryOptimizationData::Make()")
 
     SECTION("Testing DeliveryOptimizationData equality operators")
     {
-        auto CompareData = [&data](const std::string& description,
-                                   const std::string& catalogId,
-                                   const DOProperties& properties,
-                                   bool isEqual) {
-            std::unique_ptr<DeliveryOptimizationData> otherData;
-            REQUIRE(DeliveryOptimizationData::Make(description, catalogId, properties, otherData) == Result::S_Ok);
-            REQUIRE(otherData != nullptr);
+        SECTION("Equal")
+        {
+            auto sameData = GetData(description, catalogId, properties);
+            REQUIRE(*data == *sameData);
+            REQUIRE_FALSE(*data != *sameData);
+        }
 
-            if (isEqual)
-            {
-                REQUIRE(*data == *otherData);
-                REQUIRE_FALSE(*data != *otherData);
-            }
-            else
-            {
+        SECTION("Not equal")
+        {
+            auto CompareDataNotEqual = [&data](const std::unique_ptr<DeliveryOptimizationData>& otherData) {
                 REQUIRE(*data != *otherData);
                 REQUIRE_FALSE(*data == *otherData);
-            }
-        };
+            };
 
-        CompareData(description, catalogId, properties, true /*isEqual*/);
-        CompareData("", catalogId, properties, false /*isEqual*/);
-        CompareData(description, "", properties, false /*isEqual*/);
-        CompareData(description, catalogId, {}, false /*isEqual*/);
-        CompareData("", "", {}, false /*isEqual*/);
+            CompareDataNotEqual(GetData("", catalogId, properties));
+            CompareDataNotEqual(GetData(description, "", properties));
+            CompareDataNotEqual(GetData(description, catalogId, {}));
+            CompareDataNotEqual(GetData("", "", {}));
+        }
     }
 }

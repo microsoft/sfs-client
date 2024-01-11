@@ -10,16 +10,48 @@
 
 using namespace SFS;
 
-TEST("Testing ContentId::Make()")
+namespace
+{
+std::unique_ptr<ContentId> GetContentId(const std::string& nameSpace,
+                                        const std::string& name,
+                                        const std::string& version)
 {
     std::unique_ptr<ContentId> contentId;
+    REQUIRE(ContentId::Make(nameSpace, name, version, contentId) == Result::S_Ok);
+    REQUIRE(contentId != nullptr);
+    return contentId;
+};
 
+std::unique_ptr<File> GetFile(const std::string& fileId,
+                              const std::string& url,
+                              uint64_t sizeInBytes,
+                              const std::unordered_map<HashType, std::string>& hashes)
+{
+    std::unique_ptr<File> file;
+    REQUIRE(File::Make(fileId, url, sizeInBytes, hashes, file) == Result::S_Ok);
+    REQUIRE(file != nullptr);
+    return file;
+};
+
+std::unique_ptr<Content> GetContent(const std::string& contentNameSpace,
+                                    const std::string& contentName,
+                                    const std::string& contentVersion,
+                                    const std::vector<std::unique_ptr<File>>& files)
+{
+    std::unique_ptr<Content> content;
+    REQUIRE(Content::Make(contentNameSpace, contentName, contentVersion, files, content) == Result::S_Ok);
+    REQUIRE(content != nullptr);
+    return content;
+};
+} // namespace
+
+TEST("Testing ContentId::Make()")
+{
     const std::string nameSpace{"myNameSpace"};
     const std::string name{"myName"};
     const std::string version{"myVersion"};
 
-    REQUIRE(ContentId::Make(nameSpace, name, version, contentId) == Result::S_Ok);
-    REQUIRE(contentId != nullptr);
+    const std::unique_ptr<ContentId> contentId = GetContentId(nameSpace, name, version);
 
     CHECK(nameSpace == contentId->GetNameSpace());
     CHECK(name == contentId->GetName());
@@ -27,45 +59,36 @@ TEST("Testing ContentId::Make()")
 
     SECTION("Testing ContentId equality operators")
     {
-        auto CompareContentId = [&contentId](const std::string& nameSpace,
-                                             const std::string& name,
-                                             const std::string& version,
-                                             bool isEqual) {
-            std::unique_ptr<ContentId> otherContentId;
-            REQUIRE(ContentId::Make(nameSpace, name, version, otherContentId) == Result::S_Ok);
-            REQUIRE(otherContentId != nullptr);
+        SECTION("Equal")
+        {
+            auto sameContentId = GetContentId(nameSpace, name, version);
+            REQUIRE(*contentId == *sameContentId);
+            REQUIRE_FALSE(*contentId != *sameContentId);
+        }
 
-            if (isEqual)
-            {
-                REQUIRE(*contentId == *otherContentId);
-                REQUIRE_FALSE(*contentId != *otherContentId);
-            }
-            else
-            {
+        SECTION("Not equal")
+        {
+            auto CompareContentIdNotEqual = [&contentId](const std::unique_ptr<ContentId>& otherContentId) {
                 REQUIRE(*contentId != *otherContentId);
                 REQUIRE_FALSE(*contentId == *otherContentId);
-            }
-        };
+            };
 
-        CompareContentId(nameSpace, name, version, true /*isEqual*/);
-        CompareContentId("", name, version, false /*isEqual*/);
-        CompareContentId(nameSpace, "", version, false /*isEqual*/);
-        CompareContentId(nameSpace, name, "", false /*isEqual*/);
-        CompareContentId("", "", "", false /*isEqual*/);
+            CompareContentIdNotEqual(GetContentId("", name, version));
+            CompareContentIdNotEqual(GetContentId(nameSpace, "", version));
+            CompareContentIdNotEqual(GetContentId(nameSpace, name, ""));
+            CompareContentIdNotEqual(GetContentId("", "", ""));
+        }
     }
 }
 
 TEST("Testing File::Make()")
 {
-    std::unique_ptr<File> file;
-
     const std::string fileId{"myFileId"};
     const std::string url{"myUrl"};
     const uint64_t sizeInBytes{1234};
     const std::unordered_map<HashType, std::string> hashes{{HashType::Sha1, "mySha1"}, {HashType::Sha256, "mySha256"}};
 
-    REQUIRE(File::Make(fileId, url, sizeInBytes, hashes, file) == Result::S_Ok);
-    REQUIRE(file != nullptr);
+    const std::unique_ptr<File> file = GetFile(fileId, url, sizeInBytes, hashes);
 
     CHECK(fileId == file->GetFileId());
     CHECK(url == file->GetUrl());
@@ -74,33 +97,26 @@ TEST("Testing File::Make()")
 
     SECTION("Testing File equality operators")
     {
-        auto CompareFile = [&file](const std::string& fileId,
-                                   const std::string& url,
-                                   uint64_t sizeInBytes,
-                                   const std::unordered_map<HashType, std::string>& hashes,
-                                   bool isEqual) {
-            std::unique_ptr<File> otherFile;
-            REQUIRE(File::Make(fileId, url, sizeInBytes, hashes, otherFile) == Result::S_Ok);
-            REQUIRE(otherFile != nullptr);
+        SECTION("Equal")
+        {
+            auto sameFile = GetFile(fileId, url, sizeInBytes, hashes);
+            REQUIRE(*file == *sameFile);
+            REQUIRE_FALSE(*file != *sameFile);
+        }
 
-            if (isEqual)
-            {
-                REQUIRE(*file == *otherFile);
-                REQUIRE_FALSE(*file != *otherFile);
-            }
-            else
-            {
+        SECTION("Not equal")
+        {
+            auto CompareFileNotEqual = [&file](const std::unique_ptr<File>& otherFile) {
                 REQUIRE(*file != *otherFile);
                 REQUIRE_FALSE(*file == *otherFile);
-            }
-        };
+            };
 
-        CompareFile(fileId, url, sizeInBytes, hashes, true /*isEqual*/);
-        CompareFile("", url, sizeInBytes, hashes, false /*isEqual*/);
-        CompareFile(fileId, "", sizeInBytes, hashes, false /*isEqual*/);
-        CompareFile(fileId, url, 0, hashes, false /*isEqual*/);
-        CompareFile(fileId, url, sizeInBytes, {}, false /*isEqual*/);
-        CompareFile("", "", 0, {}, false /*isEqual*/);
+            CompareFileNotEqual(GetFile("", url, sizeInBytes, hashes));
+            CompareFileNotEqual(GetFile(fileId, "", sizeInBytes, hashes));
+            CompareFileNotEqual(GetFile(fileId, url, 0, hashes));
+            CompareFileNotEqual(GetFile(fileId, url, sizeInBytes, {}));
+            CompareFileNotEqual(GetFile("", "", 0, {}));
+        }
     }
 }
 
@@ -112,12 +128,8 @@ TEST_SCENARIO("Testing Content::Make()")
         const std::string contentName{"myName"};
         const std::string contentVersion{"myVersion"};
 
-        std::unique_ptr<File> file1;
-        REQUIRE(File::Make("fileId1", "url1", 1 /*sizeInBytes*/, {{HashType::Sha1, "sha1"}}, file1) == Result::S_Ok);
-
-        std::unique_ptr<File> file2;
-        REQUIRE(File::Make("fileId2", "url2", 1 /*sizeInBytes*/, {{HashType::Sha256, "sha256"}}, file2) ==
-                Result::S_Ok);
+        std::unique_ptr<File> file1 = GetFile("fileId1", "url1", 1 /*sizeInBytes*/, {{HashType::Sha1, "sha1"}});
+        std::unique_ptr<File> file2 = GetFile("fileId2", "url2", 1 /*sizeInBytes*/, {{HashType::Sha256, "sha256"}});
 
         std::vector<std::unique_ptr<File>> files;
         files.push_back(std::move(file1));
@@ -186,8 +198,7 @@ TEST("Testing Content equality operators")
     const std::string contentVersion{"myVersion"};
     const std::string correlationVector{"myCorrelationVector"};
 
-    std::unique_ptr<File> file;
-    REQUIRE(File::Make("fileId", "url", 1 /*sizeInBytes*/, {{HashType::Sha1, "sha1"}}, file) == Result::S_Ok);
+    std::unique_ptr<File> file = GetFile("fileId", "url", 1 /*sizeInBytes*/, {{HashType::Sha1, "sha1"}});
 
     std::unique_ptr<File> clonedFile;
     REQUIRE(file->Clone(clonedFile) == Result::S_Ok);
@@ -198,35 +209,30 @@ TEST("Testing Content equality operators")
     std::vector<std::unique_ptr<File>> clonedFiles;
     clonedFiles.push_back(std::move(clonedFile));
 
-    std::unique_ptr<Content> content;
-    REQUIRE(Content::Make(contentNameSpace, contentName, contentVersion, files, content) == Result::S_Ok);
+    const std::unique_ptr<Content> content = GetContent(contentNameSpace, contentName, contentVersion, files);
 
-    auto CompareContent = [&content](const std::string& contentNameSpace,
-                                     const std::string& contentName,
-                                     const std::string& contentVersion,
-                                     const std::vector<std::unique_ptr<File>>& files,
-                                     bool isEqual) {
-        std::unique_ptr<Content> otherContent;
-        REQUIRE(Content::Make(contentNameSpace, contentName, contentVersion, files, otherContent) == Result::S_Ok);
-        REQUIRE(otherContent != nullptr);
+    SECTION("Equal")
+    {
+        auto CompareContentEqual = [&content](const std::unique_ptr<Content>& sameContent) {
+            REQUIRE(*content == *sameContent);
+            REQUIRE_FALSE(*content != *sameContent);
+        };
 
-        if (isEqual)
-        {
-            REQUIRE(*content == *otherContent);
-            REQUIRE_FALSE(*content != *otherContent);
-        }
-        else
-        {
+        CompareContentEqual(GetContent(contentNameSpace, contentName, contentVersion, files));
+        CompareContentEqual(GetContent(contentNameSpace, contentName, contentVersion, clonedFiles));
+    }
+
+    SECTION("Not equal")
+    {
+        auto CompareContentNotEqual = [&content](const std::unique_ptr<Content>& otherContent) {
             REQUIRE(*content != *otherContent);
             REQUIRE_FALSE(*content == *otherContent);
-        }
-    };
+        };
 
-    CompareContent(contentNameSpace, contentName, contentVersion, files, true /*isEqual*/);
-    CompareContent(contentNameSpace, contentName, contentVersion, clonedFiles, true /*isEqual*/);
-    CompareContent("", contentName, contentVersion, files, false /*isEqual*/);
-    CompareContent(contentNameSpace, "", contentVersion, files, false /*isEqual*/);
-    CompareContent(contentNameSpace, contentName, "", files, false /*isEqual*/);
-    CompareContent(contentNameSpace, contentName, contentVersion, {}, false /*isEqual*/);
-    CompareContent("", "", "", {}, false /*isEqual*/);
+        CompareContentNotEqual(GetContent("", contentName, contentVersion, files));
+        CompareContentNotEqual(GetContent(contentNameSpace, "", contentVersion, files));
+        CompareContentNotEqual(GetContent(contentNameSpace, contentName, "", files));
+        CompareContentNotEqual(GetContent(contentNameSpace, contentName, contentVersion, {}));
+        CompareContentNotEqual(GetContent("", "", "", {}));
+    }
 }
