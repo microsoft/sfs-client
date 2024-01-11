@@ -113,7 +113,7 @@ function Set-GitHooks {
 function Set-Aliases {
     Write-Host -ForegroundColor Cyan "`nSetting aliases"
 
-    $PythonScriptsDir = python -c 'import os,sysconfig;print(sysconfig.get_path("scripts",f"{os.name}_user"))'
+    $PythonScriptsDir = python -c "import os,sysconfig;print(sysconfig.get_path('scripts',f'{os.name}_user'))"
 
     $Aliases = [ordered]@{
         "build"        = "$GitRoot\scripts\Build.ps1"
