@@ -61,9 +61,15 @@ TEST("Testing ContentId::Make()")
     {
         SECTION("Equal")
         {
-            auto sameContentId = GetContentId(nameSpace, name, version);
-            REQUIRE(*contentId == *sameContentId);
-            REQUIRE_FALSE(*contentId != *sameContentId);
+            auto CompareContentIdEqual = [&contentId](const std::unique_ptr<ContentId>& sameContentId) {
+                REQUIRE(*contentId == *sameContentId);
+                REQUIRE_FALSE(*contentId != *sameContentId);
+            };
+
+            CompareContentIdEqual(GetContentId(nameSpace, name, version));
+            CompareContentIdEqual(GetContentId("MYNAMESPACE", name, version));
+            CompareContentIdEqual(GetContentId(nameSpace, "MYNAME", version));
+            CompareContentIdEqual(GetContentId(nameSpace, name, "MYVERSION"));
         }
 
         SECTION("Not equal")
@@ -99,9 +105,14 @@ TEST("Testing File::Make()")
     {
         SECTION("Equal")
         {
-            auto sameFile = GetFile(fileId, url, sizeInBytes, hashes);
-            REQUIRE(*file == *sameFile);
-            REQUIRE_FALSE(*file != *sameFile);
+            auto CompareFileEqual = [&file](const std::unique_ptr<File>& sameFile) {
+                REQUIRE(*file == *sameFile);
+                REQUIRE_FALSE(*file != *sameFile);
+            };
+
+            CompareFileEqual(GetFile(fileId, url, sizeInBytes, hashes));
+            CompareFileEqual(GetFile("MYFILEID", url, sizeInBytes, hashes));
+            CompareFileEqual(GetFile(fileId, "MYURL", sizeInBytes, hashes));
         }
 
         SECTION("Not equal")
@@ -196,7 +207,6 @@ TEST("Testing Content equality operators")
     const std::string contentNameSpace{"myNameSpace"};
     const std::string contentName{"myName"};
     const std::string contentVersion{"myVersion"};
-    const std::string correlationVector{"myCorrelationVector"};
 
     std::unique_ptr<File> file = GetFile("fileId", "url", 1 /*sizeInBytes*/, {{HashType::Sha1, "sha1"}});
 
@@ -220,6 +230,9 @@ TEST("Testing Content equality operators")
 
         CompareContentEqual(GetContent(contentNameSpace, contentName, contentVersion, files));
         CompareContentEqual(GetContent(contentNameSpace, contentName, contentVersion, clonedFiles));
+        CompareContentEqual(GetContent("MYNAMESPACE", contentName, contentVersion, files));
+        CompareContentEqual(GetContent(contentNameSpace, "MYNAME", contentVersion, files));
+        CompareContentEqual(GetContent(contentNameSpace, contentName, "MYVERSION", files));
     }
 
     SECTION("Not equal")

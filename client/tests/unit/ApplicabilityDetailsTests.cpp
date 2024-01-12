@@ -40,9 +40,13 @@ TEST("Testing ApplicabilityDetails::Make()")
     {
         SECTION("Equal")
         {
-            auto sameDetails = GetDetails(architectures, platformApplicabilityForPackage, fileMoniker);
-            REQUIRE(*details == *sameDetails);
-            REQUIRE_FALSE(*details != *sameDetails);
+            auto CompareDetailsEqual = [&details](const std::unique_ptr<ApplicabilityDetails>& sameDetails) {
+                REQUIRE(*details == *sameDetails);
+                REQUIRE_FALSE(*details != *sameDetails);
+            };
+
+            CompareDetailsEqual(GetDetails(architectures, platformApplicabilityForPackage, fileMoniker));
+            CompareDetailsEqual(GetDetails(architectures, platformApplicabilityForPackage, "MYAPP"));
         }
 
         SECTION("Not equal")

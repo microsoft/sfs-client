@@ -4,8 +4,10 @@
 #include "ApplicabilityDetails.h"
 
 #include "details/ErrorHandling.h"
+#include "details/Util.h"
 
 using namespace SFS;
+using namespace SFS::details::util;
 
 Result ApplicabilityDetails::Make(std::vector<Architecture> architectures,
                                   std::vector<std::string> platformApplicabilityForPackage,
@@ -45,7 +47,7 @@ bool ApplicabilityDetails::operator==(const ApplicabilityDetails& other) const n
 {
     return m_architectures == other.m_architectures &&
            m_platformApplicabilityForPackage == other.m_platformApplicabilityForPackage &&
-           m_fileMoniker == other.m_fileMoniker;
+           AreEqualI(m_fileMoniker, other.m_fileMoniker);
 }
 
 bool ApplicabilityDetails::operator!=(const ApplicabilityDetails& other) const noexcept

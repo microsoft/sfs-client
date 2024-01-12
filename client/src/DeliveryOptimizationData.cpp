@@ -4,8 +4,10 @@
 #include "DeliveryOptimizationData.h"
 
 #include "details/ErrorHandling.h"
+#include "details/Util.h"
 
 using namespace SFS;
+using namespace SFS::details::util;
 
 Result DeliveryOptimizationData::Make(std::string catalogId,
                                       DOProperties properties,
@@ -35,7 +37,7 @@ const DOProperties& DeliveryOptimizationData::GetProperties() const noexcept
 
 bool DeliveryOptimizationData::operator==(const DeliveryOptimizationData& other) const noexcept
 {
-    return m_catalogId == other.m_catalogId && m_properties == other.m_properties;
+    return AreEqualI(m_catalogId, other.m_catalogId) && m_properties == other.m_properties;
 }
 
 bool DeliveryOptimizationData::operator!=(const DeliveryOptimizationData& other) const noexcept

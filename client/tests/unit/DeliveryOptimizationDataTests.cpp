@@ -34,9 +34,13 @@ TEST("Testing DeliveryOptimizationData::Make()")
     {
         SECTION("Equal")
         {
-            auto sameData = GetData(catalogId, properties);
-            REQUIRE(*data == *sameData);
-            REQUIRE_FALSE(*data != *sameData);
+            auto CompareDataEqual = [&data](const std::unique_ptr<DeliveryOptimizationData>& sameData) {
+                REQUIRE(*data == *sameData);
+                REQUIRE_FALSE(*data != *sameData);
+            };
+
+            CompareDataEqual(GetData(catalogId, properties));
+            CompareDataEqual(GetData("CATALOGID", properties));
         }
 
         SECTION("Not equal")

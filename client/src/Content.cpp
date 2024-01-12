@@ -4,10 +4,12 @@
 #include "Content.h"
 
 #include "details/ErrorHandling.h"
+#include "details/Util.h"
 
 #include <algorithm>
 
 using namespace SFS;
+using namespace SFS::details::util;
 
 Result ContentId::Make(std::string nameSpace,
                        std::string name,
@@ -45,7 +47,8 @@ const std::string& ContentId::GetVersion() const noexcept
 
 bool ContentId::operator==(const ContentId& other) const noexcept
 {
-    return m_nameSpace == other.m_nameSpace && m_name == other.m_name && m_version == other.m_version;
+    return AreEqualI(m_nameSpace, other.m_nameSpace) && AreEqualI(m_name, other.m_name) &&
+           AreEqualI(m_version, other.m_version);
 }
 
 bool ContentId::operator!=(const ContentId& other) const noexcept
@@ -101,8 +104,8 @@ const std::unordered_map<HashType, std::string>& File::GetHashes() const noexcep
 
 bool File::operator==(const File& other) const noexcept
 {
-    return m_fileId == other.m_fileId && m_url == other.m_url && m_sizeInBytes == other.m_sizeInBytes &&
-           m_hashes == other.m_hashes;
+    return AreEqualI(m_fileId, other.m_fileId) && AreEqualI(m_url, other.m_url) &&
+           m_sizeInBytes == other.m_sizeInBytes && m_hashes == other.m_hashes;
 }
 
 bool File::operator!=(const File& other) const noexcept
