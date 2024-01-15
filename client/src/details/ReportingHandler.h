@@ -5,8 +5,11 @@
 
 #include "Logging.h"
 
+#include <condition_variable>
 #include <mutex>
+#include <queue>
 #include <stdio.h>
+#include <thread>
 
 #define MAX_LOG_MESSAGE_SIZE 1024
 
@@ -28,11 +31,13 @@ namespace SFS::details
  * @brief This class enables thread-safe access to the externally set logging callback function.
  * @details Each SFSClient instance will have one ReportingHandler instance, and access to the logging callback function
  * is controlled by a mutex that makes sure that only one thread can access the logging callback function at a time.
+ * The logging itself happens in a separate thread to ensure it does not block the main API's operations.
  */
 class ReportingHandler
 {
   public:
-    ReportingHandler() = default;
+    ReportingHandler();
+    ~ReportingHandler();
 
     ReportingHandler(const ReportingHandler&) = delete;
     ReportingHandler& operator=(const ReportingHandler&) = delete;
@@ -56,13 +61,22 @@ class ReportingHandler
                          const char* function) const;
 
   private:
-    void CallLoggingCallback(LogSeverity severity,
-                             const char* message,
-                             const char* file,
-                             int line,
-                             const char* function) const;
+    void QueueLogData(LogSeverity severity,
+                      const char* message,
+                      const char* file,
+                      int line,
+                      const char* function) const;
+
+    void ProcessLogging();
 
     LoggingCallbackFn m_loggingCallbackFn;
     mutable std::mutex m_loggingCallbackFnMutex;
+
+    mutable std::queue<LogData> m_logDataQueue;
+
+    std::thread m_loggingThread;
+    bool m_threadShutdown{false};
+    mutable std::mutex m_threadMutex;
+    mutable std::condition_variable m_threadCondition;
 };
 } // namespace SFS::details

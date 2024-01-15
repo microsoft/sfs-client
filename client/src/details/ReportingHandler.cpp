@@ -8,9 +8,27 @@
 using namespace SFS;
 using namespace SFS::details;
 
+ReportingHandler::ReportingHandler()
+{
+    m_loggingThread = std::thread(&ReportingHandler::ProcessLogging, this);
+}
+
+ReportingHandler::~ReportingHandler()
+{
+    {
+        std::lock_guard<std::mutex> guard(m_threadMutex);
+        m_threadShutdown = true;
+    }
+    m_threadCondition.notify_one();
+    if (m_loggingThread.joinable())
+    {
+        m_loggingThread.join();
+    }
+}
+
 void ReportingHandler::SetLoggingCallback(LoggingCallbackFn&& callback)
 {
-    std::lock_guard<std::mutex> lock(m_loggingCallbackFnMutex);
+    std::lock_guard<std::mutex> guard(m_loggingCallbackFnMutex);
     m_loggingCallbackFn = callback;
 }
 
@@ -20,18 +38,63 @@ void ReportingHandler::LogWithSeverity(LogSeverity severity,
                                        int line,
                                        const char* function) const
 {
-    CallLoggingCallback(severity, message, file, line, function);
+    QueueLogData(severity, message, file, line, function);
 }
 
-void ReportingHandler::CallLoggingCallback(LogSeverity severity,
-                                           const char* message,
-                                           const char* file,
-                                           int line,
-                                           const char* function) const
+void ReportingHandler::QueueLogData(LogSeverity severity,
+                                    const char* message,
+                                    const char* file,
+                                    int line,
+                                    const char* function) const
 {
-    std::lock_guard<std::mutex> lock(m_loggingCallbackFnMutex);
-    if (m_loggingCallbackFn)
+    std::lock_guard<std::mutex> guard(m_threadMutex);
+    try
     {
-        m_loggingCallbackFn(LogData{severity, message, file, line, function, std::chrono::system_clock::now()});
+        m_logDataQueue.push({severity, message, file, line, function, std::chrono::system_clock::now()});
+        m_threadCondition.notify_one();
+    }
+    catch (...)
+    {
+        // Ignore exceptions, lose callback message
+    }
+}
+
+void ReportingHandler::ProcessLogging()
+{
+    while (true)
+    {
+        {
+            // Wait for a signal
+            std::unique_lock<std::mutex> lock(m_threadMutex);
+            m_threadCondition.wait(lock, [this]() { return !m_logDataQueue.empty() || m_threadShutdown; });
+        }
+
+        // Shutdown if requested
+        if (m_threadShutdown)
+        {
+            break;
+        }
+
+        // Get next log data
+        LogData logData;
+        {
+            std::lock_guard<std::mutex> guard(m_threadMutex);
+            if (m_logDataQueue.empty())
+            {
+                continue;
+            }
+
+            logData = m_logDataQueue.front();
+            m_logDataQueue.pop();
+        }
+
+        // Call logging callback
+        {
+            std::lock_guard<std::mutex> guard(m_loggingCallbackFnMutex);
+            if (m_loggingCallbackFn)
+            {
+                m_loggingCallbackFn(logData);
+            }
+        }
     }
 }

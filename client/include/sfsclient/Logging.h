@@ -19,10 +19,10 @@ enum LogSeverity
 struct LogData
 {
     LogSeverity severity;
-    const char* message;
-    const char* file;
+    std::string message;
+    std::string file;
     int line;
-    const char* function;
+    std::string function;
     std::chrono::time_point<std::chrono::system_clock> time;
 };
 
