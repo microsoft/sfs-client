@@ -26,9 +26,23 @@ class ContentId
     ContentId(const ContentId&) = delete;
     ContentId& operator=(const ContentId&) = delete;
 
+    /**
+     * @return Content namespace
+     */
     const std::string& GetNameSpace() const noexcept;
+
+    /**
+     * @return Content name
+     */
     const std::string& GetName() const noexcept;
+
+    /**
+     * @return 4-part integer version. Each part can range from 0-65535
+     */
     const std::string& GetVersion() const noexcept;
+
+    bool operator==(const ContentId& other) const noexcept;
+    bool operator!=(const ContentId& other) const noexcept;
 
   private:
     ContentId() = default;
@@ -58,10 +72,28 @@ class File
     File(const File&) = delete;
     File& operator=(const File&) = delete;
 
+    /**
+     * @return Unique file identifier within a content version
+     */
     const std::string& GetFileId() const noexcept;
+
+    /**
+     * @return Download URL
+     */
     const std::string& GetUrl() const noexcept;
+
+    /**
+     * @return File size in number of bytes
+     */
     uint64_t GetSizeInBytes() const noexcept;
+
+    /**
+     * @return Dictionary of algorithm type to base64 encoded file hash string
+     */
     const std::unordered_map<HashType, std::string>& GetHashes() const noexcept;
+
+    bool operator==(const File& other) const noexcept;
+    bool operator!=(const File& other) const noexcept;
 
   private:
     File() = default;
@@ -81,7 +113,6 @@ class Content
     [[nodiscard]] static Result Make(std::string contentNameSpace,
                                      std::string contentName,
                                      std::string contentVersion,
-                                     std::string correlationVector,
                                      const std::vector<std::unique_ptr<File>>& files,
                                      std::unique_ptr<Content>& out) noexcept;
 
@@ -91,24 +122,26 @@ class Content
     [[nodiscard]] static Result Make(std::string contentNameSpace,
                                      std::string contentName,
                                      std::string contentVersion,
-                                     std::string correlationVector,
                                      std::vector<std::unique_ptr<File>>&& files,
                                      std::unique_ptr<Content>& out) noexcept;
 
     Content(const Content&) = delete;
     Content& operator=(const Content&) = delete;
 
+    /**
+     * @return Unique content identifier
+     */
     const ContentId& GetContentId() const noexcept;
-    const std::string& GetCorrelationVector() const noexcept;
 
     const std::vector<std::unique_ptr<File>>& GetFiles() const noexcept;
+
+    bool operator==(const Content& other) const noexcept;
+    bool operator!=(const Content& other) const noexcept;
 
   private:
     Content() = default;
 
     std::unique_ptr<ContentId> m_contentId;
-    std::string m_correlationVector;
-
     std::vector<std::unique_ptr<File>> m_files;
 };
 } // namespace SFS

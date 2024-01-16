@@ -9,19 +9,57 @@
 
 using namespace SFS;
 
-TEST("Testing ApplicabilityDetails::Make()")
+namespace
+{
+std::unique_ptr<ApplicabilityDetails> GetDetails(const std::vector<Architecture>& architectures,
+                                                 const std::vector<std::string>& platformApplicabilityForPackage,
+                                                 const std::string& fileMoniker)
 {
     std::unique_ptr<ApplicabilityDetails> details;
+    REQUIRE(ApplicabilityDetails::Make(architectures, platformApplicabilityForPackage, fileMoniker, details) ==
+            Result::S_Ok);
+    REQUIRE(details != nullptr);
+    return details;
+};
+} // namespace
 
+TEST("Testing ApplicabilityDetails::Make()")
+{
     const std::vector<Architecture> architectures{Architecture::x86, Architecture::amd64};
     const std::vector<std::string> platformApplicabilityForPackage{"Windows.Desktop", "Windows.Server"};
     const std::string fileMoniker{"myApp"};
 
-    REQUIRE(ApplicabilityDetails::Make(architectures, platformApplicabilityForPackage, fileMoniker, details) ==
-            Result::S_Ok);
-    REQUIRE(details != nullptr);
+    const std::unique_ptr<ApplicabilityDetails> details =
+        GetDetails(architectures, platformApplicabilityForPackage, fileMoniker);
 
     CHECK(architectures == details->GetArchitectures());
     CHECK(platformApplicabilityForPackage == details->GetPlatformApplicabilityForPackage());
     CHECK(fileMoniker == details->GetFileMoniker());
+
+    SECTION("Testing ApplicabilityDetails equality operators")
+    {
+        SECTION("Equal")
+        {
+            auto CompareDetailsEqual = [&details](const std::unique_ptr<ApplicabilityDetails>& sameDetails) {
+                REQUIRE(*details == *sameDetails);
+                REQUIRE_FALSE(*details != *sameDetails);
+            };
+
+            CompareDetailsEqual(GetDetails(architectures, platformApplicabilityForPackage, fileMoniker));
+            CompareDetailsEqual(GetDetails(architectures, platformApplicabilityForPackage, "MYAPP"));
+        }
+
+        SECTION("Not equal")
+        {
+            auto CompareDetailsNotEqual = [&details](const std::unique_ptr<ApplicabilityDetails>& otherDetails) {
+                REQUIRE(*details != *otherDetails);
+                REQUIRE_FALSE(*details == *otherDetails);
+            };
+
+            CompareDetailsNotEqual(GetDetails({}, platformApplicabilityForPackage, fileMoniker));
+            CompareDetailsNotEqual(GetDetails(architectures, {}, fileMoniker));
+            CompareDetailsNotEqual(GetDetails(architectures, platformApplicabilityForPackage, ""));
+            CompareDetailsNotEqual(GetDetails({}, {}, ""));
+        }
+    }
 }

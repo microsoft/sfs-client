@@ -13,7 +13,8 @@ target_sources(
             src/DeliveryOptimizationData.cpp
             src/Result.cpp
             src/SFSClient.cpp
-            src/details/SFSClientImpl.cpp)
+            src/details/SFSClientImpl.cpp
+            src/details/Util.cpp)
 
 target_include_directories(${PROJECT_NAME} PUBLIC include/sfsclient)
 

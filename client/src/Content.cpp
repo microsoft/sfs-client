@@ -4,8 +4,12 @@
 #include "Content.h"
 
 #include "details/ErrorHandling.h"
+#include "details/Util.h"
+
+#include <algorithm>
 
 using namespace SFS;
+using namespace SFS::details::util;
 
 Result ContentId::Make(std::string nameSpace,
                        std::string name,
@@ -39,6 +43,17 @@ const std::string& ContentId::GetName() const noexcept
 const std::string& ContentId::GetVersion() const noexcept
 {
     return m_version;
+}
+
+bool ContentId::operator==(const ContentId& other) const noexcept
+{
+    return AreEqualI(m_nameSpace, other.m_nameSpace) && AreEqualI(m_name, other.m_name) &&
+           AreEqualI(m_version, other.m_version);
+}
+
+bool ContentId::operator!=(const ContentId& other) const noexcept
+{
+    return !(*this == other);
 }
 
 Result File::Make(std::string fileId,
@@ -87,10 +102,20 @@ const std::unordered_map<HashType, std::string>& File::GetHashes() const noexcep
     return m_hashes;
 }
 
+bool File::operator==(const File& other) const noexcept
+{
+    return AreEqualI(m_fileId, other.m_fileId) && AreEqualI(m_url, other.m_url) &&
+           m_sizeInBytes == other.m_sizeInBytes && m_hashes == other.m_hashes;
+}
+
+bool File::operator!=(const File& other) const noexcept
+{
+    return !(*this == other);
+}
+
 Result Content::Make(std::string contentNameSpace,
                      std::string contentName,
                      std::string contentVersion,
-                     std::string correlationVector,
                      const std::vector<std::unique_ptr<File>>& files,
                      std::unique_ptr<Content>& out) noexcept
 try
@@ -102,7 +127,6 @@ try
                                      std::move(contentName),
                                      std::move(contentVersion),
                                      tmp->m_contentId));
-    tmp->m_correlationVector = std::move(correlationVector);
 
     for (const auto& file : files)
     {
@@ -120,7 +144,6 @@ SFS_CATCH_RETURN()
 Result Content::Make(std::string contentNameSpace,
                      std::string contentName,
                      std::string contentVersion,
-                     std::string correlationVector,
                      std::vector<std::unique_ptr<File>>&& files,
                      std::unique_ptr<Content>& out) noexcept
 try
@@ -132,7 +155,6 @@ try
                                      std::move(contentName),
                                      std::move(contentVersion),
                                      tmp->m_contentId));
-    tmp->m_correlationVector = std::move(correlationVector);
     tmp->m_files = std::move(files);
 
     out = std::move(tmp);
@@ -146,12 +168,29 @@ const ContentId& Content::GetContentId() const noexcept
     return *m_contentId;
 }
 
-const std::string& Content::GetCorrelationVector() const noexcept
-{
-    return m_correlationVector;
-}
-
 const std::vector<std::unique_ptr<File>>& Content::GetFiles() const noexcept
 {
     return m_files;
+}
+
+bool Content::operator==(const Content& other) const noexcept
+try
+{
+    return (m_contentId && other.m_contentId && *m_contentId == *other.m_contentId) &&
+           (std::is_permutation(m_files.begin(),
+                                m_files.end(),
+                                other.m_files.begin(),
+                                other.m_files.end(),
+                                [](const std::unique_ptr<File>& lhs, const std::unique_ptr<File>& rhs) {
+                                    return lhs && rhs && *lhs == *rhs;
+                                }));
+}
+catch (...)
+{
+    return false;
+}
+
+bool Content::operator!=(const Content& other) const noexcept
+{
+    return !(*this == other);
 }
