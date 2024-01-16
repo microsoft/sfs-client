@@ -5,6 +5,7 @@
 
 #include "Content.h"
 #include "Logging.h"
+#include "ReportingHandler.h"
 #include "Result.h"
 
 #include <memory>
@@ -55,5 +56,13 @@ class SFSClientInterface
      * @brief Set a logging callback function that is called when the SFSClient logs a message.
      */
     virtual void SetLoggingCallback(LoggingCallbackFn&& callback) = 0;
+
+    const ReportingHandler& GetReportingHandler() const
+    {
+        return m_handler;
+    }
+
+  protected:
+    ReportingHandler m_handler;
 };
 } // namespace SFS::details

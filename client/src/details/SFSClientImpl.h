@@ -7,7 +7,6 @@
 
 #include "Content.h"
 #include "Logging.h"
-#include "ReportingHandler.h"
 #include "Result.h"
 
 #include <memory>
@@ -71,7 +70,5 @@ class SFSClientImpl : public SFSClientInterface
     std::string m_accountId;
     std::string m_instanceId;
     std::string m_nameSpace;
-
-    ReportingHandler m_reportingHandler;
 };
 } // namespace SFS::details

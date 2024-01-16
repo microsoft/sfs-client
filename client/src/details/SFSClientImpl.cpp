@@ -20,7 +20,7 @@ Result SFSClientImpl::GetLatestVersion([[maybe_unused]] std::string_view product
                                        [[maybe_unused]] const std::optional<SearchAttributes>& attributes,
                                        [[maybe_unused]] std::unique_ptr<VersionResponse>& response) const
 {
-    LOG_INFO(m_reportingHandler, "GetLatestVersion not implemented");
+    LOG_INFO(m_handler, "GetLatestVersion not implemented");
     return Result::E_NotImpl;
 }
 
@@ -42,5 +42,5 @@ Result SFSClientImpl::GetDownloadInfo([[maybe_unused]] std::string_view productN
 
 void SFSClientImpl::SetLoggingCallback(LoggingCallbackFn&& callback)
 {
-    m_reportingHandler.SetLoggingCallback(std::move(callback));
+    m_handler.SetLoggingCallback(std::move(callback));
 }
