@@ -39,13 +39,14 @@ void ReportingHandler::QueueLogData(LogSeverity severity,
                                     unsigned line,
                                     const char* function) const
 {
+    std::lock_guard<std::mutex> guard(m_threadMutex);
+
     // Don't queue anymore if we are shutting down
     if (m_threadShutdown)
     {
         return;
     }
 
-    std::lock_guard<std::mutex> guard(m_threadMutex);
     try
     {
         m_logDataQueue.push({severity, message, file, line, function, std::chrono::system_clock::now()});
@@ -67,7 +68,7 @@ void ReportingHandler::ProcessLogging()
             m_threadCondition.wait(lock, [this]() { return !m_logDataQueue.empty() || m_threadShutdown; });
         }
 
-        FlushLogs();
+        FlushLastLog();
 
         // Shutdown if requested
         {
@@ -78,41 +79,37 @@ void ReportingHandler::ProcessLogging()
             }
         }
     }
+
+    // Flush remaining logs if needed, now there should be no more additions to the queue
+    while (!m_logDataQueue.empty())
+    {
+        FlushLastLog();
+    }
 }
 
-void ReportingHandler::FlushLogs()
+void ReportingHandler::FlushLastLog()
 {
-    bool hasMoreLogData = false;
-    do
+    // Get last log data
+    LogData logData;
     {
-        // Get next log data
-        LogData logData;
+        std::lock_guard<std::mutex> guard(m_threadMutex);
+        if (m_logDataQueue.empty())
         {
-            std::lock_guard<std::mutex> guard(m_threadMutex);
-            if (m_logDataQueue.empty())
-            {
-                return;
-            }
-
-            logData = m_logDataQueue.front();
-            m_logDataQueue.pop();
+            return;
         }
 
-        // Call logging callback
-        {
-            std::lock_guard<std::mutex> guard(m_loggingCallbackFnMutex);
-            if (m_loggingCallbackFn)
-            {
-                m_loggingCallbackFn(logData);
-            }
-        }
+        logData = m_logDataQueue.front();
+        m_logDataQueue.pop();
+    }
 
-        // Check if there is more log data
+    // Call logging callback
+    {
+        std::lock_guard<std::mutex> guard(m_loggingCallbackFnMutex);
+        if (m_loggingCallbackFn)
         {
-            std::lock_guard<std::mutex> guard(m_threadMutex);
-            hasMoreLogData = !m_logDataQueue.empty();
+            m_loggingCallbackFn(logData);
         }
-    } while (hasMoreLogData);
+    }
 }
 
 void ReportingHandler::StopLoggingThread()

@@ -68,7 +68,7 @@ class ReportingHandler
                       const char* function) const;
 
     void ProcessLogging();
-    void FlushLogs();
+    void FlushLastLog();
 
     void StopLoggingThread();
 
