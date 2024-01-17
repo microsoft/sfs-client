@@ -47,6 +47,12 @@ void ReportingHandler::QueueLogData(LogSeverity severity,
                                     int line,
                                     const char* function) const
 {
+    // Don't queue anymore if we are shutting down
+    if (m_threadShutdown)
+    {
+        return;
+    }
+
     std::lock_guard<std::mutex> guard(m_threadMutex);
     try
     {
@@ -69,32 +75,43 @@ void ReportingHandler::ProcessLogging()
             m_threadCondition.wait(lock, [this]() { return !m_logDataQueue.empty() || m_threadShutdown; });
         }
 
+        // Flush existing logs
+        bool hasMoreLogData = false;
+        do
+        {
+            // Get next log data
+            LogData logData;
+            {
+                std::lock_guard<std::mutex> guard(m_threadMutex);
+                if (m_logDataQueue.empty())
+                {
+                    continue;
+                }
+
+                logData = m_logDataQueue.front();
+                m_logDataQueue.pop();
+            }
+
+            // Call logging callback
+            {
+                std::lock_guard<std::mutex> guard(m_loggingCallbackFnMutex);
+                if (m_loggingCallbackFn)
+                {
+                    m_loggingCallbackFn(logData);
+                }
+            }
+
+            // Check if there is more log data
+            {
+                std::lock_guard<std::mutex> guard(m_threadMutex);
+                hasMoreLogData = !m_logDataQueue.empty();
+            }
+        } while (hasMoreLogData);
+
         // Shutdown if requested
         if (m_threadShutdown)
         {
             break;
-        }
-
-        // Get next log data
-        LogData logData;
-        {
-            std::lock_guard<std::mutex> guard(m_threadMutex);
-            if (m_logDataQueue.empty())
-            {
-                continue;
-            }
-
-            logData = m_logDataQueue.front();
-            m_logDataQueue.pop();
-        }
-
-        // Call logging callback
-        {
-            std::lock_guard<std::mutex> guard(m_loggingCallbackFnMutex);
-            if (m_loggingCallbackFn)
-            {
-                m_loggingCallbackFn(logData);
-            }
         }
     }
 }
