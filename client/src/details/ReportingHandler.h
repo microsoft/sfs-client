@@ -57,17 +57,20 @@ class ReportingHandler
     void LogWithSeverity(LogSeverity severity,
                          const char* message,
                          const char* file,
-                         int line,
+                         unsigned line,
                          const char* function) const;
 
   private:
     void QueueLogData(LogSeverity severity,
                       const char* message,
                       const char* file,
-                      int line,
+                      unsigned line,
                       const char* function) const;
 
     void ProcessLogging();
+    void FlushLogs();
+
+    void StopLoggingThread();
 
     LoggingCallbackFn m_loggingCallbackFn;
     mutable std::mutex m_loggingCallbackFnMutex;

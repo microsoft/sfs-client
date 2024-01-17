@@ -5,7 +5,9 @@ cmake_minimum_required(VERSION 3.19)
 
 set(CMAKE_TOOLCHAIN_FILE "vcpkg/scripts/buildsystems/vcpkg.cmake")
 
-if(WIN32)
+# By default using x64 static custom triplet for Windows. Can be overridden by
+# setting VCPKG_TARGET_TRIPLET
+if(WIN32 AND NOT DEFINED VCPKG_TARGET_TRIPLET)
     set(VCPKG_TARGET_TRIPLET "x64-windows-static-custom")
 endif()
 
@@ -30,7 +32,10 @@ else()
         -Werror)
 endif()
 
-set(CMAKE_MSVC_RUNTIME_LIBRARY "MultiThreaded$<$<CONFIG:Debug>:Debug>")
+# For MSVC, use a multi-threaded statically-linked runtime library
+if(MSVC)
+    set(CMAKE_MSVC_RUNTIME_LIBRARY "MultiThreaded$<$<CONFIG:Debug>:Debug>")
+endif()
 
 add_subdirectory(client)
 add_subdirectory(tool)

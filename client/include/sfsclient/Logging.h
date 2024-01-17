@@ -9,7 +9,7 @@
 
 namespace SFS
 {
-enum LogSeverity
+enum class LogSeverity
 {
     Info,
     Warning,
@@ -21,7 +21,7 @@ struct LogData
     LogSeverity severity;
     std::string message;
     std::string file;
-    int line;
+    unsigned line;
     std::string function;
     std::chrono::time_point<std::chrono::system_clock> time;
 };
