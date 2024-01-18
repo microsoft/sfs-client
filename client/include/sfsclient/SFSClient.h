@@ -124,7 +124,9 @@ class SFSClient
      * @brief Set a logging callback function that is called when the SFSClient logs a message.
      * @details This function returns logging information from the SFSClient through a LogData struct. The caller
      * is responsible for logging this into their logging system, if desired.
-     * To unset, pass a nullptr.
+     * The logging itself is processed in a separate thread to ensure it does not block the main API's operations.
+     * @param callback A logging callback function that is called when the SFSClient logs a message. To unset, pass a
+     * nullptr
      */
     [[nodiscard]] Result SetLoggingCallback(LoggingCallbackFn callback) noexcept;
 
