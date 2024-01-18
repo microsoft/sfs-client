@@ -5,6 +5,10 @@
 This repository holds the Simple File Solution (SFS) Client, a C++ library that simplifies the interface with the SFS service.
 Read below to get started on developing and using the library.
 
+## Usage
+
+Follow the [API](API.md) document for tips on how to use the API.
+
 ## Getting Started
 
 ### Prerequisites
