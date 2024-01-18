@@ -6,49 +6,30 @@
 #include <catch2/catch_test_macros.hpp>
 
 #include <chrono>
-#include <condition_variable>
 #include <mutex>
 #include <optional>
+#include <thread>
 
 #define TEST(...) TEST_CASE("[ReportingHandlerTests] " __VA_ARGS__)
 
 using namespace SFS;
 using namespace SFS::details;
 
-namespace
-{
-void WaitForCall(std::mutex& mutex, bool& called, std::condition_variable& cv)
-{
-    std::unique_lock<std::mutex> lock(mutex);
-    cv.wait_for(lock, std::chrono::seconds(1), [&called]() { return called; });
-    REQUIRE(called);
-    called = false;
-}
-} // namespace
-
 TEST("Testing SetLoggingCallback()")
 {
     ReportingHandler handler;
 
-    std::mutex mutex;
-    std::condition_variable cv;
     bool called = false;
-    auto handling = [&](const LogData&) {
-        std::lock_guard<std::mutex> guard(mutex);
-        called = true;
-        cv.notify_one();
-    };
+    auto handling = [&](const LogData&) { called = true; };
 
     handler.SetLoggingCallback(handling);
     REQUIRE_FALSE(called);
 
     LOG_INFO(handler, "Test");
-    WaitForCall(mutex, called, cv);
 
     called = false;
     handler.SetLoggingCallback(nullptr);
 
-    // No way to check if the callback was called or not, but it should not crash
     LOG_INFO(handler, "Test");
     REQUIRE_FALSE(called);
 }
@@ -58,37 +39,23 @@ TEST("Testing Severities")
     ReportingHandler handler;
 
     std::optional<LogSeverity> severity;
-    std::mutex mutex;
-    std::condition_variable cv;
-    bool called = false;
-    auto handling = [&](const LogData& data) {
-        std::lock_guard<std::mutex> guard(mutex);
-        called = true;
-        severity = data.severity;
-        cv.notify_one();
-    };
+    auto handling = [&](const LogData& data) { severity = data.severity; };
 
     handler.SetLoggingCallback(handling);
 
     REQUIRE(!severity.has_value());
 
     LOG_INFO(handler, "Test");
-    WaitForCall(mutex, called, cv);
-
     REQUIRE(severity.has_value());
     REQUIRE(*severity == LogSeverity::Info);
     severity.reset();
 
     LOG_WARNING(handler, "Test");
-    WaitForCall(mutex, called, cv);
-
     REQUIRE(severity.has_value());
     REQUIRE(*severity == LogSeverity::Warning);
     severity.reset();
 
     LOG_ERROR(handler, "Test");
-    WaitForCall(mutex, called, cv);
-
     REQUIRE(severity.has_value());
     REQUIRE(*severity == LogSeverity::Error);
 
@@ -102,32 +69,22 @@ TEST("Testing file/line/function")
     std::string file;
     int line = 0;
     std::string function;
-    std::mutex mutex;
-    std::condition_variable cv;
-    bool called = false;
     auto handling = [&](const LogData& data) {
-        std::lock_guard<std::mutex> guard(mutex);
-        called = true;
         file = std::string(data.file);
         line = data.line;
         function = std::string(data.function);
-        cv.notify_one();
     };
 
     handler.SetLoggingCallback(handling);
 
     LOG_INFO(handler, "Test");
-    WaitForCall(mutex, called, cv);
-
     CHECK(file.find("ReportingHandlerTests.cpp") != std::string::npos);
-    CHECK(line == (__LINE__ - 4));
+    CHECK(line == (__LINE__ - 2));
     CHECK(function == "CATCH2_INTERNAL_TEST_4");
 
     LOG_WARNING(handler, "Test");
-    WaitForCall(mutex, called, cv);
-
     CHECK(file.find("ReportingHandlerTests.cpp") != std::string::npos);
-    CHECK(line == (__LINE__ - 4));
+    CHECK(line == (__LINE__ - 2));
     CHECK(function == "CATCH2_INTERNAL_TEST_4");
 }
 
@@ -136,95 +93,87 @@ TEST("Testing LogFormatting")
     ReportingHandler handler;
 
     std::string message;
-    std::mutex mutex;
-    std::condition_variable cv;
-    bool called = false;
-    auto handling = [&](const LogData& data) {
-        std::lock_guard<std::mutex> guard(mutex);
-        called = true;
-        message = data.message;
-        cv.notify_one();
-    };
+    auto handling = [&](const LogData& data) { message = data.message; };
 
     handler.SetLoggingCallback(handling);
 
     REQUIRE(message.empty());
 
     LOG_INFO(handler, "Test %s", "Test");
-    WaitForCall(mutex, called, cv);
-
     REQUIRE(message == "Test Test");
 
     LOG_WARNING(handler, "Test %s %s", "Test1", "Test2");
-    WaitForCall(mutex, called, cv);
-
     REQUIRE(message == "Test Test1 Test2");
 
     LOG_ERROR(handler, "Test %s %s %s", "Test1", "Test2", "Test3");
-    WaitForCall(mutex, called, cv);
-
     REQUIRE(message == "Test Test1 Test2 Test3");
 
     LOG_INFO(handler, "Test %d %d", 1, true);
-    WaitForCall(mutex, called, cv);
-
     REQUIRE(message == "Test 1 1");
 
     LOG_INFO(handler, "Test %d %s", 2, false ? "true" : "false");
-    WaitForCall(mutex, called, cv);
-
     REQUIRE(message == "Test 2 false");
 
     handler.SetLoggingCallback(nullptr);
 }
 
-TEST("Testing that SetLoggingCallback(nullptr) flushes existing messages with a counter")
+TEST("Testing setting another logging callback waits for an existing call to finish")
 {
     ReportingHandler handler;
 
-    unsigned counter = 0;
-    auto handling = [&](const LogData&) { ++counter; };
+    // Set a callback that will be blocked by a mutex
+    std::mutex mutex;
+    bool called = false;
+    std::chrono::time_point<std::chrono::system_clock> time1;
+    bool startedCall = false;
+    auto handling = [&](const LogData& logData) {
+        startedCall = true;
+        std::lock_guard<std::mutex> guard(mutex);
+        called = true;
+        time1 = logData.time;
+    };
+
     handler.SetLoggingCallback(handling);
 
-    unsigned maxCounter = 10000;
-    for (unsigned i = 0; i < maxCounter; ++i)
+    // Make sure the callback is blocked
+    std::unique_lock<std::mutex> lock(mutex);
+
+    // Spawn a thread that will be blocked by the callback
+    std::thread t([&]() { LOG_INFO(handler, "Test"); });
+
+    LoggingCallbackFn anotherHandling;
+    SECTION("Setting another callback")
     {
-        LOG_INFO(handler, "Test %d", i);
+        anotherHandling = [&](const LogData&) {};
+    }
+    SECTION("Setting a nullptr callback")
+    {
+        anotherHandling = nullptr;
     }
 
-    unsigned counterBefore = counter;
-    handler.SetLoggingCallback(nullptr);
-
-    SECTION("Testing that all messages are flushed properly by waiting for the counter to reach maxCounter")
-    {
-        while (counter != maxCounter)
+    // Spawn a second thread that tries to set another callback
+    std::chrono::time_point<std::chrono::system_clock> time2;
+    std::thread t2([&]() {
+        // Make sure the callback has started and is now blocked
+        while (!startedCall)
         {
             std::this_thread::sleep_for(std::chrono::milliseconds(1));
         }
 
-        INFO("Counter before: " << counterBefore << ", counter after: " << counter);
-        CHECK(counterBefore < counter);
-        REQUIRE(counter == maxCounter);
-    }
+        // Now setting another callback should be blocked until we unlock the mutex
+        handler.SetLoggingCallback(std::move(anotherHandling));
+        INFO("The first callback should have been called at this point");
+        REQUIRE(called);
+        time2 = std::chrono::system_clock::now();
+    });
 
-    SECTION("Testing that setting a new callback handler has to wait until all messages are flushed")
-    {
-        auto newHandling = [&](const LogData&) {};
-        handler.SetLoggingCallback(newHandling);
+    // Unlocking the mutex will allow the threads to continue
+    lock.unlock();
+    t.join();
+    t2.join();
 
-        INFO("Counter before: " << counterBefore << ", counter after SetLoggingCallback returns: " << counter);
-        CHECK(counterBefore < counter);
-        REQUIRE(counter == maxCounter);
-    }
-
-    SECTION("Testing that unsetting the callback handler another time has to wait until all messages are flushed")
-    {
-        handler.SetLoggingCallback(nullptr);
-
-        INFO("Counter before: " << counterBefore << ", counter after SetLoggingCallback(nullptr) returns: " << counter);
-        CHECK(counterBefore < counter);
-        REQUIRE(counter == maxCounter);
-    }
+    INFO("The first callback should have been called before the second callback was set");
+    REQUIRE(time1 < time2);
 }
 
 TEST("Testing ToString(LogSeverity)")
