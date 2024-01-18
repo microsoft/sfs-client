@@ -126,7 +126,7 @@ class SFSClient
      * is responsible for logging this into their logging system, if desired.
      * The logging itself is processed in a separate thread to ensure it does not block the main API's operations.
      * @param callback A logging callback function that is called when the SFSClient logs a message. To unset, pass a
-     * nullptr
+     * nullptr. All unflushed logs will flush before the callback is unset.
      */
     [[nodiscard]] Result SetLoggingCallback(LoggingCallbackFn callback) noexcept;
 

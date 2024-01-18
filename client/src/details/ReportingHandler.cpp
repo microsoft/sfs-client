@@ -10,7 +10,6 @@ using namespace SFS::details;
 
 ReportingHandler::ReportingHandler()
 {
-    m_loggingThread = std::thread(&ReportingHandler::ProcessLogging, this);
 }
 
 ReportingHandler::~ReportingHandler()
@@ -20,8 +19,23 @@ ReportingHandler::~ReportingHandler()
 
 void ReportingHandler::SetLoggingCallback(LoggingCallbackFn&& callback)
 {
+    // Wait if we are shutting down so we don't set a new callback while another is being destroyed
+    {
+        std::lock_guard<std::mutex> shuttingDownGuard(m_threadShuttingDownMutex);
+    }
+
+    // If unsetting, first flush all logs with the existing callback and stop the logging thread
+    if (!callback)
+    {
+        StopLoggingThread();
+    }
+
     std::lock_guard<std::mutex> guard(m_loggingCallbackFnMutex);
     m_loggingCallbackFn = callback;
+    if (m_loggingCallbackFn)
+    {
+        StartLoggingThread();
+    }
 }
 
 void ReportingHandler::LogWithSeverity(LogSeverity severity,
@@ -39,6 +53,15 @@ void ReportingHandler::QueueLogData(LogSeverity severity,
                                     unsigned line,
                                     const char* function) const
 {
+    // Don't queue if there is no callback set
+    {
+        std::lock_guard<std::mutex> guard(m_loggingCallbackFnMutex);
+        if (!m_loggingCallbackFn)
+        {
+            return;
+        }
+    }
+
     std::lock_guard<std::mutex> guard(m_threadMutex);
 
     // Don't queue anymore if we are shutting down
@@ -60,7 +83,8 @@ void ReportingHandler::QueueLogData(LogSeverity severity,
 
 void ReportingHandler::ProcessLogging()
 {
-    while (true)
+    bool running = true;
+    while (running)
     {
         {
             // Wait for a signal
@@ -73,10 +97,7 @@ void ReportingHandler::ProcessLogging()
         // Shutdown if requested
         {
             std::lock_guard<std::mutex> guard(m_threadMutex);
-            if (m_threadShutdown)
-            {
-                break;
-            }
+            running = !m_threadShutdown;
         }
     }
 
@@ -112,15 +133,25 @@ void ReportingHandler::FlushLastLog()
     }
 }
 
+void ReportingHandler::StartLoggingThread()
+{
+    if (!m_loggingThread.joinable())
+    {
+        m_threadShutdown = false;
+        m_loggingThread = std::thread(&ReportingHandler::ProcessLogging, this);
+    }
+}
+
 void ReportingHandler::StopLoggingThread()
 {
-    {
-        std::lock_guard<std::mutex> guard(m_threadMutex);
-        m_threadShutdown = true;
-    }
-    m_threadCondition.notify_one();
+    std::lock_guard<std::mutex> shuttingDownGuard(m_threadShuttingDownMutex);
     if (m_loggingThread.joinable())
     {
+        {
+            std::lock_guard<std::mutex> guard(m_threadMutex);
+            m_threadShutdown = true;
+        }
+        m_threadCondition.notify_one();
         m_loggingThread.join();
     }
 }

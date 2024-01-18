@@ -70,6 +70,7 @@ class ReportingHandler
     void ProcessLogging();
     void FlushLastLog();
 
+    void StartLoggingThread();
     void StopLoggingThread();
 
     LoggingCallbackFn m_loggingCallbackFn;
@@ -81,5 +82,6 @@ class ReportingHandler
     bool m_threadShutdown{false};
     mutable std::mutex m_threadMutex;
     mutable std::condition_variable m_threadCondition;
+    std::mutex m_threadShuttingDownMutex;
 };
 } // namespace SFS::details

@@ -34,7 +34,7 @@ TEST("Testing SetLoggingCallback()")
     std::condition_variable cv;
     bool called = false;
     auto handling = [&](const LogData&) {
-        std::unique_lock<std::mutex> lock(mutex);
+        std::lock_guard<std::mutex> guard(mutex);
         called = true;
         cv.notify_one();
     };
@@ -62,7 +62,7 @@ TEST("Testing Severities")
     std::condition_variable cv;
     bool called = false;
     auto handling = [&](const LogData& data) {
-        std::unique_lock<std::mutex> lock(mutex);
+        std::lock_guard<std::mutex> guard(mutex);
         called = true;
         severity = data.severity;
         cv.notify_one();
@@ -106,7 +106,7 @@ TEST("Testing file/line/function")
     std::condition_variable cv;
     bool called = false;
     auto handling = [&](const LogData& data) {
-        std::unique_lock<std::mutex> lock(mutex);
+        std::lock_guard<std::mutex> guard(mutex);
         called = true;
         file = std::string(data.file);
         line = data.line;
@@ -140,7 +140,7 @@ TEST("Testing LogFormatting")
     std::condition_variable cv;
     bool called = false;
     auto handling = [&](const LogData& data) {
-        std::unique_lock<std::mutex> lock(mutex);
+        std::lock_guard<std::mutex> guard(mutex);
         called = true;
         message = data.message;
         cv.notify_one();
@@ -176,6 +176,55 @@ TEST("Testing LogFormatting")
     REQUIRE(message == "Test 2 false");
 
     handler.SetLoggingCallback(nullptr);
+}
+
+TEST("Testing that SetLoggingCallback(nullptr) flushes existing messages with a counter")
+{
+    ReportingHandler handler;
+
+    unsigned counter = 0;
+    auto handling = [&](const LogData&) { ++counter; };
+    handler.SetLoggingCallback(handling);
+
+    unsigned maxCounter = 10000;
+    for (unsigned i = 0; i < maxCounter; ++i)
+    {
+        LOG_INFO(handler, "Test %d", i);
+    }
+
+    unsigned counterBefore = counter;
+    handler.SetLoggingCallback(nullptr);
+
+    SECTION("Testing that all messages are flushed properly by waiting for the counter to reach maxCounter")
+    {
+        while (counter != maxCounter)
+        {
+            std::this_thread::sleep_for(std::chrono::milliseconds(1));
+        }
+
+        INFO("Counter before: " << counterBefore << ", counter after: " << counter);
+        CHECK(counterBefore < counter);
+        REQUIRE(counter == maxCounter);
+    }
+
+    SECTION("Testing that setting a new callback handler has to wait until all messages are flushed")
+    {
+        auto newHandling = [&](const LogData&) {};
+        handler.SetLoggingCallback(newHandling);
+
+        INFO("Counter before: " << counterBefore << ", counter after SetLoggingCallback returns: " << counter);
+        CHECK(counterBefore < counter);
+        REQUIRE(counter == maxCounter);
+    }
+
+    SECTION("Testing that unsetting the callback handler another time has to wait until all messages are flushed")
+    {
+        handler.SetLoggingCallback(nullptr);
+
+        INFO("Counter before: " << counterBefore << ", counter after SetLoggingCallback(nullptr) returns: " << counter);
+        CHECK(counterBefore < counter);
+        REQUIRE(counter == maxCounter);
+    }
 }
 
 TEST("Testing ToString(LogSeverity)")
