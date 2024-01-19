@@ -34,7 +34,7 @@ class SFSClientImpl : public SFSClientInterface
     [[nodiscard]] Result GetLatestVersion(const std::string& productName,
                                           const SearchAttributes& attributes,
                                           Connection& connection,
-                                          std::unique_ptr<VersionResponse>& response) const override;
+                                          std::unique_ptr<ContentId>& contentId) const override;
 
     /**
      * @brief Gets the metadata for a specific version of the specified product
@@ -42,7 +42,7 @@ class SFSClientImpl : public SFSClientInterface
     [[nodiscard]] Result GetSpecificVersion(const std::string& productName,
                                             const std::string& version,
                                             Connection& connection,
-                                            std::unique_ptr<VersionResponse>& response) const override;
+                                            std::unique_ptr<ContentId>& contentId) const override;
 
     /**
      * @brief Gets the files metadata for a specific version of the specified product

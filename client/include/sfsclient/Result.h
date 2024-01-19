@@ -28,7 +28,8 @@ class Result
         NotImpl = 0x80000009,
         NotSet = 0x8000000A,
         OutOfMemory = 0x8000000B,
-        Unexpected = 0x8000000C,
+        ServiceInvalidResponse = 0x8000000C,
+        Unexpected = 0x8000000D,
     };
 
     Result(Code code) noexcept;

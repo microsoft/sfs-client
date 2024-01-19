@@ -16,7 +16,6 @@ namespace SFS::details
 class Connection;
 class ConnectionManager;
 class DownloadInfoResponse;
-class VersionResponse;
 
 class SFSClientInterface
 {
@@ -36,7 +35,7 @@ class SFSClientInterface
     [[nodiscard]] virtual Result GetLatestVersion(const std::string& productName,
                                                   const SearchAttributes& attributes,
                                                   Connection& connection,
-                                                  std::unique_ptr<VersionResponse>& response) const = 0;
+                                                  std::unique_ptr<ContentId>& contentId) const = 0;
 
     /**
      * @brief Gets the metadata for a specific version of the specified product
@@ -44,7 +43,7 @@ class SFSClientInterface
     [[nodiscard]] virtual Result GetSpecificVersion(const std::string& productName,
                                                     const std::string& version,
                                                     Connection& connection,
-                                                    std::unique_ptr<VersionResponse>& response) const = 0;
+                                                    std::unique_ptr<ContentId>& contentId) const = 0;
 
     /**
      * @brief Gets the files metadata for a specific version of the specified product
