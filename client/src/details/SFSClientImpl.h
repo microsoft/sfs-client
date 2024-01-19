@@ -6,6 +6,7 @@
 #include "SFSClientInterface.h"
 
 #include "Content.h"
+#include "Logging.h"
 #include "Result.h"
 
 #include <memory>
@@ -50,6 +51,11 @@ class SFSClientImpl : public SFSClientInterface
                                          std::string_view version,
                                          const std::optional<SearchAttributes>& attributes,
                                          std::unique_ptr<DownloadInfoResponse>& content) const override;
+
+    /**
+     * @brief Set a logging callback function that is called when the SFSClient logs a message.
+     */
+    void SetLoggingCallback(LoggingCallbackFn&& callback);
 
     //
     // Misc methods
