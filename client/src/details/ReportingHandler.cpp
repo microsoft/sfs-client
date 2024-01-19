@@ -10,8 +10,8 @@ using namespace SFS::details;
 
 void ReportingHandler::SetLoggingCallback(LoggingCallbackFn&& callback)
 {
-    std::lock_guard<std::mutex> guard(m_loggingCallbackFnMutex);
-    m_loggingCallbackFn = callback;
+    std::lock_guard guard(m_loggingCallbackFnMutex);
+    m_loggingCallbackFn = std::move(callback);
 }
 
 void ReportingHandler::LogWithSeverity(LogSeverity severity,
@@ -29,7 +29,7 @@ void ReportingHandler::CallLoggingCallback(LogSeverity severity,
                                            unsigned line,
                                            const char* function) const
 {
-    std::lock_guard<std::mutex> guard(m_loggingCallbackFnMutex);
+    std::lock_guard guard(m_loggingCallbackFnMutex);
     if (m_loggingCallbackFn)
     {
         m_loggingCallbackFn({severity, message, file, line, function, std::chrono::system_clock::now()});

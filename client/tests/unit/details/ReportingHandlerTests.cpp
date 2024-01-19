@@ -128,7 +128,7 @@ TEST("Testing setting another logging callback waits for an existing call to fin
     bool startedCall = false;
     auto handling = [&](const LogData& logData) {
         startedCall = true;
-        std::lock_guard<std::mutex> guard(mutex);
+        std::lock_guard guard(mutex);
         called = true;
         time1 = logData.time;
     };
@@ -136,7 +136,7 @@ TEST("Testing setting another logging callback waits for an existing call to fin
     handler.SetLoggingCallback(handling);
 
     // Make sure the callback is blocked
-    std::unique_lock<std::mutex> lock(mutex);
+    std::unique_lock lock(mutex);
 
     // Spawn a thread that will be blocked by the callback
     std::thread t([&]() { LOG_INFO(handler, "Test"); });

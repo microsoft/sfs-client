@@ -59,10 +59,10 @@ class SFSClientInterface
 
     const ReportingHandler& GetReportingHandler() const
     {
-        return m_handler;
+        return m_reportingHandler;
     }
 
   protected:
-    ReportingHandler m_handler;
+    ReportingHandler m_reportingHandler;
 };
 } // namespace SFS::details
