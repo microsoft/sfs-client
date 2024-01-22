@@ -3,6 +3,8 @@
 
 #include "Result.h"
 
+#include <ostream>
+
 using namespace SFS;
 
 Result::Result(Code code) noexcept : m_code(code)
@@ -72,4 +74,16 @@ std::string_view SFS::ToString(Result::Code code) noexcept
         return "E_Unexpected";
     }
     return "";
+}
+
+std::ostream& operator<<(std::ostream& os, const Result& result)
+{
+    os << ToString(result.GetCode());
+    return os;
+}
+
+std::ostream& operator<<(std::ostream& os, const Result::Code& code)
+{
+    os << ToString(code);
+    return os;
 }
