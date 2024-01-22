@@ -41,11 +41,16 @@ TEST("Testing class SFSClientImpl()")
         const SearchAttributes attributes{{"attr1", "value"}};
         REQUIRE(sfsClient.GetDownloadInfo("productName", "version", attributes, response) == Result::E_NotImpl);
     }
+}
 
-    SECTION("Testing SFSClientImpl::BuildUrl()")
-    {
-        // TODO
-    }
+TEST("Testing SFSClientImpl::SetCustomBaseUrl()")
+{
+    SFSClientImpl sfsClient("testAccountId", "testInstanceId", "testNameSpace");
+
+    REQUIRE(sfsClient.GetBaseUrl() == "https://testAccountId.api.cdp.microsoft.com");
+
+    sfsClient.SetCustomBaseUrl("customUrl");
+    REQUIRE(sfsClient.GetBaseUrl() == "customUrl");
 }
 
 TEST("Testing SFSClientImpl::SetLoggingCallback()")

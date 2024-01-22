@@ -52,23 +52,32 @@ class SFSClientImpl : public SFSClientInterface
                                          const std::optional<SearchAttributes>& attributes,
                                          std::unique_ptr<DownloadInfoResponse>& content) const override;
 
+    //
+    // Configuration methods
+    //
+
+    /**
+     * @brief Allows one to override the base URL used to make calls to the SFS service
+     * @details Not exposed to the user. Used for testing purposes only
+     * @param customBaseUrl The custom base URL to use
+     */
+    void SetCustomBaseUrl(std::string customBaseUrl);
+
+    /**
+     * @return The URL for the SFS service based on the parameters passed to the constructor
+     */
+    std::string GetBaseUrl() const;
+
     /**
      * @brief Set a logging callback function that is called when the SFSClient logs a message.
      */
     void SetLoggingCallback(LoggingCallbackFn&& callback);
 
-    //
-    // Misc methods
-    //
-
-    /**
-     * @return The URL for the SFS service based on the parameters passed to the constructor
-     */
-    std::string BuildUrl() const;
-
   private:
     std::string m_accountId;
     std::string m_instanceId;
     std::string m_nameSpace;
+
+    std::optional<std::string> m_customBaseUrl;
 };
 } // namespace SFS::details
