@@ -9,24 +9,32 @@
 # Use this on non-Windows platforms in a bash session.
 #
 # Example:
-# $ ./scripts/Build.sh
+# $ ./scripts/build.sh
 #
 
-RED="\033[1;31m"
-YELLOW="\033[1;33m"
-NC="\033[0m" # No color
+# Ensures script stops on errors
+set -e
 
-error() { echo -e "${RED}$*${NC}" >&2; }
-warn() { echo -e "${YELLOW}$*${NC}"; }
+if [[ "${BASH_SOURCE[0]}" != "${0}" ]]; then
+    error "Script is being sourced, it should be executed instead."
+    return 1
+fi
+
+COLOR_RED="\033[1;31m"
+COLOR_YELLOW="\033[1;33m"
+NO_COLOR="\033[0m"
+
+error() { echo -e "${COLOR_RED}$*${NO_COLOR}" >&2; exit 1; }
+warn() { echo -e "${COLOR_YELLOW}$*${NO_COLOR}"; }
 
 clean=false
 
-usage() { echo "Usage: $0 [--clean]" 1>&2; exit 1; }
+usage() { echo "Usage: $0 [-c|--clean]" 1>&2; exit 1; }
 
 if ! opts=$(getopt \
   --longoptions "clean" \
   --name "$(basename "$0")" \
-  --options "" \
+  --options "c" \
   -- "$@"
 ); then
     usage
@@ -36,7 +44,7 @@ eval set "--$opts"
 
 while [ $# -gt 0 ]; do
     case "$1" in
-        --clean)
+        -c|--clean)
             clean=true
             shift 1
             ;;
@@ -51,7 +59,7 @@ git_root=$(git -C "$script_dir" rev-parse --show-toplevel)
 
 vcpkg_dir="$git_root/vcpkg"
 if [ ! -d "$vcpkg_dir" ]; then
-    error "vcpkg not found at $git_root\vcpkg. Run the Setup.ps1 script first."
+    error "vcpkg not found at $git_root/vcpkg. Source the setup.sh script first."
 fi
 
 build_folder="$git_root/build"

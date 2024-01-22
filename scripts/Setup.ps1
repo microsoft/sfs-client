@@ -3,7 +3,7 @@
 
 <#
 .SYNOPSIS
-Setups dependencies required to build and work with the SFS Client.
+Sets up dependencies required to build and work with the SFS Client.
 
 .DESCRIPTION
 This script will install all of the dependencies required to build and work with the SFS Client.

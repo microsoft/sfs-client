@@ -9,7 +9,7 @@
 # Use this on non-Windows platforms in a bash session.
 #
 # Example:
-# $ ./scripts/Test.sh
+# $ ./scripts/test.sh
 #
 
 script_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")" > /dev/null 2>&1 && pwd)"

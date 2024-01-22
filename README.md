@@ -25,7 +25,7 @@ Windows:
 
 Linux:
 ```bash
-source ./scripts/Setup.sh
+source ./scripts/setup.sh
 ```
 
 The script can be run multiple times as it does not replace what has been installed, and updates dependencies.

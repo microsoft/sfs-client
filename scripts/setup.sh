@@ -3,24 +3,23 @@
 # Copyright (c) Microsoft Corporation.
 # Licensed under the MIT License.
 
-# Synopsis: Setups dependencies required to build and work with the SFS Client.
+# Synopsis: Sets up dependencies required to build and work with the SFS Client.
 #
 # Description: This script will install all of the dependencies required to build and work with the SFS Client.
 # Use this on non-Windows platforms in a bash session. It must be sourced.
 #
 # Example:
-# $ source ./scripts/Setup.sh
+# $ source ./scripts/setup.sh
 #
 
-RED="\033[1;31m"
-CYAN="\033[1;36m"
-NC="\033[0m" # No color
+COLOR_RED="\033[1;31m"
+COLOR_CYAN="\033[1;36m"
+NO_COLOR="\033[0m"
 
-header() { echo -e "${CYAN}$*${NC}"; }
-error() { echo -e "${RED}$*${NC}" >&2; }
+header() { echo -e "${COLOR_CYAN}$*${NO_COLOR}"; }
+error() { echo -e "${COLOR_RED}$*${NO_COLOR}" >&2; }
 
-if [[ "${BASH_SOURCE[0]}" == "${0}" ]]
-then
+if [[ "${BASH_SOURCE[0]}" == "${0}" ]]; then
     error "Script is being run directly, it should be sourced instead."
     exit 1
 fi
@@ -35,15 +34,21 @@ install_with_apt() {
 
     if ! sudo apt-get -qq install "$program_to_install"; then
         error "Failed to install $program_to_install"
-        exit 1
+        return 1
     fi
+    return 0
 }
 
 install_python() {
     header "Installing latest Python if it's not installed"
 
-    install_with_apt "python3"
-    install_with_apt "python3-pip"
+    if ! install_with_apt "python3"; then
+        return
+    fi
+    if ! install_with_apt "python3-pip"; then
+        return
+    fi
+    return 0
 }
 
 install_pip_dependencies() {
@@ -51,15 +56,29 @@ install_pip_dependencies() {
 
     # Upgrade pip and install requirements. Filter out output for dependencies that are already installed
     python3 -m pip install --upgrade pip | grep -v -e "already satisfied" -e "Defaulting to user installation"
+    ret="${PIPESTATUS[0]}"
+    if [ "$ret" -ne 0 ]; then
+        return "$ret"
+    fi
 
     pip_reqs="$script_dir/pip.requirements.txt"
+
     pip install -r "$pip_reqs" | grep -v -e "already satisfied" -e "Defaulting to user installation"
+    ret="${PIPESTATUS[0]}"
+    if [ "$ret" -ne 0 ]; then
+        return "$ret"
+    fi
+
+    return 0
 }
 
 install_cmake() {
     header "\nInstalling cmake if it's not installed"
 
-    install_with_apt "cmake"
+    if ! install_with_apt "cmake"; then
+        return
+    fi
+    return 0
 }
 
 install_vcpkg() {
@@ -73,9 +92,12 @@ install_vcpkg() {
         echo "Cloning vcpkg repo"
         git clone https://github.com/microsoft/vcpkg "$vcpkg_dir"
         # Needed for the bootstrap and for other vcpkg packages
-        sudo apt-get -qq install curl zip unzip tar pkg-config
+        if ! sudo apt-get -qq install curl zip unzip tar pkg-config; then
+            return
+        fi
         "$vcpkg_dir/bootstrap-vcpkg.sh"
     fi
+    return 0
 }
 
 set_git_hooks() {
@@ -100,10 +122,10 @@ set_aliases() {
 
     python_scripts_dir=$(python3 -c 'import os,sysconfig;print(sysconfig.get_path("scripts",f"{os.name}_user"))')
 
-    declare -A aliases=( ["build"]="$git_root/scripts/Build.sh"
+    declare -A aliases=( ["build"]="$git_root/scripts/build.sh"
         ["clang-format"]="$python_scripts_dir/clang-format"
         ["cmake-format"]="$python_scripts_dir/cmake-format"
-        ["test"]="$git_root/scripts/Test.sh"
+        ["test"]="$git_root/scripts/test.sh"
         ["vcpkg"]="$git_root/vcpkg/vcpkg")
 
     for alias in "${!aliases[@]}"; do
@@ -131,9 +153,21 @@ set_aliases() {
     done
 }
 
-install_python
-install_pip_dependencies
-install_cmake
-install_vcpkg
+if ! install_python; then
+    return
+fi
+
+if ! install_pip_dependencies; then
+    return
+fi
+
+if ! install_cmake; then
+    return
+fi
+
+if ! install_vcpkg; then
+    return
+fi
+
 set_git_hooks
 set_aliases
