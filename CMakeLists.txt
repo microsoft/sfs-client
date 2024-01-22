@@ -21,9 +21,21 @@ set(CMAKE_CXX_STANDARD_REQUIRED True)
 
 # Setting warning level and warnings as errors
 if(MSVC)
-    # C4062: Checks all enum values are handled in switch statements without a
-    # default label
-    add_compile_options(/W4 /WX /we4062)
+    # Enable some MSVC warnings that are off by default:
+    #
+    # * 4062: all enums are handled in switch statements without a default label
+    # * 4287: 'operator': unsigned/negative constant mismatch
+    # * 4296: 'operator': expression is always true (or false)
+    # * 4388: signed/unsigned mismatch
+    # * 4800: implicit conversion to bool; possible information loss
+    add_compile_options(
+        /W4
+        /WX
+        /we4062
+        /we4287
+        /we4296
+        /we4388
+        /we4800)
 else()
     add_compile_options(
         -Wall
