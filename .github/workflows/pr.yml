@@ -37,4 +37,24 @@ jobs:
         shell: pwsh
         run: .\scripts\Test.ps1 -OutputOnFailure
 
-  # TODO: implement build-ubuntu job
+  build-ubuntu:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v3
+
+      - name: Set up required environment variables for vcpkg cache
+        uses: actions/github-script@v6
+        with:
+          script: |
+            core.exportVariable('ACTIONS_CACHE_URL', process.env.ACTIONS_CACHE_URL || '');
+            core.exportVariable('ACTIONS_RUNTIME_TOKEN', process.env.ACTIONS_RUNTIME_TOKEN || '');
+
+      - name: Setup
+        run: source ./scripts/setup.sh
+
+      - name: Build
+        run: ./scripts/build.sh
+
+      - name: Test
+        run: ./scripts/test.sh
