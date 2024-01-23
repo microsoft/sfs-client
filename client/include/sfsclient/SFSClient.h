@@ -8,6 +8,7 @@
 #include "Result.h"
 
 #include <memory>
+#include <optional>
 #include <string>
 #include <string_view>
 #include <vector>
@@ -24,6 +25,27 @@ namespace details
 class SFSClientInterface;
 }
 
+struct Options
+{
+    /// @brief The account ID of the SFS service is used to identify the caller
+    std::string accountId;
+
+    /// @brief The instance ID of the SFS service
+    std::optional<std::string> instanceId;
+
+    /// @brief The namespace of the SFS service
+    std::optional<std::string> nameSpace;
+
+    /**
+     * @brief A logging callback function that is called when the SFSClient logs a message
+     * @details This function returns logging information from the SFSClient. The caller is responsible for incoporating
+     * the received data into their logging system. The callback will be called in the same thread as the
+     * main flow, so make sure the callback does not block for too long so it doesn't delay operations. The
+     * LogData does not exist after the callback returns, so caller has to copy it if the data will be stored.
+     */
+    std::optional<LoggingCallbackFn> logCallbackFn;
+};
+
 class SFSClient
 {
   public:
@@ -39,39 +61,9 @@ class SFSClient
      * https://{accountId}.api.cdp.microsoft.com/api/v1/contents/{instanceId}/namespaces/{nameSpace}
      * The instanceId and nameSpace are optional and will default to a default value if not provided.
      *
-     * @param accountId The account ID of the SFS service is used to identify the caller
+     * @param options Set of Options that configure the SFSClient
      */
-    [[nodiscard]] static Result Make(std::string accountId, std::unique_ptr<SFSClient>& out) noexcept;
-
-    /**
-     * @brief Make a new SFSClient object
-     * @details An SFSClient object is used to make calls to the SFS service. The SFSClient object is initialized with
-     * a few parameters that are used to build the URL for the SFS service. The URL is built as follows:
-     * https://{accountId}.api.cdp.microsoft.com/api/v1/contents/{instanceId}/namespaces/{nameSpace}
-     * The instanceId and nameSpace are optional and will default to a default value if not provided.
-     *
-     * @param accountId The account ID of the SFS service is used to identify the caller
-     * @param instanceId The instance ID of the SFS service
-     */
-    [[nodiscard]] static Result Make(std::string accountId,
-                                     std::string instanceId,
-                                     std::unique_ptr<SFSClient>& out) noexcept;
-
-    /**
-     * @brief Make a new SFSClient object
-     * @details An SFSClient object is used to make calls to the SFS service. The SFSClient object is initialized with
-     * a few parameters that are used to build the URL for the SFS service. The URL is built as follows:
-     * https://{accountId}.api.cdp.microsoft.com/api/v1/contents/{instanceId}/namespaces/{nameSpace}
-     * The instanceId and nameSpace are optional and will default to a default value if not provided.
-     *
-     * @param accountId The account ID of the SFS service is used to identify the caller
-     * @param instanceId The instance ID of the SFS service
-     * @param nameSpace The namespace of the SFS service
-     */
-    [[nodiscard]] static Result Make(std::string accountId,
-                                     std::string instanceId,
-                                     std::string nameSpace,
-                                     std::unique_ptr<SFSClient>& out) noexcept;
+    [[nodiscard]] static Result Make(Options options, std::unique_ptr<SFSClient>& out) noexcept;
 
     //
     // API to retrieve download information from the SFS Service
@@ -117,21 +109,6 @@ class SFSClient
      */
     [[nodiscard]] Result GetApplicabilityDetails(const Content& content,
                                                  std::unique_ptr<ApplicabilityDetails>& details) const noexcept;
-
-    /// Configuration methods
-
-    /**
-     * @brief Set a logging callback function that is called when the SFSClient logs a message.
-     * @details This function returns logging information from the SFSClient through a LogData struct. The caller
-     * is responsible for logging this into their logging system, if desired.
-     * The callback will be called in the same thread as the main calls, so make sure the callback does not block for
-     * too long or introduces a delay in the main calls.
-     * The LogData does not exist after the callback returns, so if the caller wants to keep the data, they need to
-     * copy it.
-     * @param callback A logging callback function that is called when the SFSClient logs a message. To unset, pass a
-     * nullptr.
-     */
-    [[nodiscard]] Result SetLoggingCallback(LoggingCallbackFn callback) noexcept;
 
   private:
     /**

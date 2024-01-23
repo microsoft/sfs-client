@@ -14,27 +14,21 @@ using namespace SFS::details;
 SFSClient::SFSClient() noexcept = default;
 SFSClient::~SFSClient() noexcept = default;
 
-Result SFSClient::Make(std::string accountId, std::unique_ptr<SFSClient>& out) noexcept
-{
-    return Make(std::move(accountId), {}, {}, out);
-}
-
-Result SFSClient::Make(std::string accountId, std::string instanceId, std::unique_ptr<SFSClient>& out) noexcept
-{
-    return Make(std::move(accountId), std::move(instanceId), {}, out);
-}
-
-Result SFSClient::Make(std::string accountId,
-                       std::string instanceId,
-                       std::string nameSpace,
-                       std::unique_ptr<SFSClient>& out) noexcept
+Result SFSClient::Make(Options options, std::unique_ptr<SFSClient>& out) noexcept
 try
 {
+    // TODO: should we error out when accountId is empty?
+
     out.reset();
     std::unique_ptr<SFSClient> tmp(new SFSClient());
-    tmp->m_impl = std::make_unique<SFSClientImpl<CurlConnectionManager>>(std::move(accountId),
-                                                                         std::move(instanceId),
-                                                                         std::move(nameSpace));
+    tmp->m_impl = std::make_unique<details::SFSClientImpl<CurlConnectionManager>>(
+        std::move(options.accountId),
+        options.instanceId ? std::move(*options.instanceId) : std::string(),
+        options.nameSpace ? std::move(*options.nameSpace) : std::string());
+    if (options.logCallbackFn)
+    {
+        tmp->m_impl->SetLoggingCallback(std::move(*options.logCallbackFn));
+    }
     out = std::move(tmp);
     return Result::S_Ok;
 }
@@ -76,13 +70,5 @@ try
 {
     // return m_impl->GetApplicabilityDetails(...);
     return Result::E_NotImpl;
-}
-SFS_CATCH_RETURN()
-
-Result SFSClient::SetLoggingCallback(LoggingCallbackFn callback) noexcept
-try
-{
-    m_impl->SetLoggingCallback(std::move(callback));
-    return Result::S_Ok;
 }
 SFS_CATCH_RETURN()

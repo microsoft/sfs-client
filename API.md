@@ -1,7 +1,6 @@
 ## Logging Callback
 
-To retrieve logging information from the API, use the `SFSClient::SetLoggingCallback()` before obtaining product information.
-Ideally, set the callback right after creating an `SFSClient` instance.
+To retrieve logging information from the API, set a logging callback in `Options::logCallbackFn` when constructing an SFSClient instance with `SFSClient::Make()`.
 
 The logging callback function has the signature:
 
@@ -22,6 +21,7 @@ void LoggingCallback(const SFS::LogData& logData)
 Notes:
 - The callback itself is processed in the main thread. Do not use a blocking callback. If heavy processing has to be done, consider capturing the data and processing another thread.
 - The LogData contents only exist within the callback call. If the processing will be done later, you should copy the data elsewhere.
+- The callback should not do any re-entrant calls (e.g. call `SFSClient` methods).
 
 ## Class instances
 

@@ -237,19 +237,12 @@ int main(int argc, char* argv[])
               << ", instanceId: " << settings.instanceId << ", nameSpace: " << settings.nameSpace << std::endl
               << std::endl;
     std::unique_ptr<SFSClient> sfsClient;
-    auto result = SFSClient::Make(settings.accountId, settings.instanceId, settings.nameSpace, sfsClient);
+    auto result = SFSClient::Make({settings.accountId, settings.instanceId, settings.nameSpace, LoggingCallback}, sfsClient);
     if (!result)
     {
         std::cout << "Failed to initialize SFSClient.";
         LogResult(result);
         return result.GetCode();
-    }
-
-    // Enable logging
-    if (!sfsClient->SetLoggingCallback(LoggingCallback))
-    {
-        std::cout << "Failed to set logging callback." << std::endl;
-        return 1;
     }
 
     // Perform operations using SFSClient

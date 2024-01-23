@@ -17,58 +17,149 @@ namespace
 std::unique_ptr<SFSClient> GetSFSClient()
 {
     std::unique_ptr<SFSClient> sfsClient;
-    REQUIRE(SFSClient::Make("testAccountId", sfsClient) == Result::S_Ok);
+    REQUIRE(SFSClient::Make({"testAccountId"}, sfsClient) == Result::S_Ok);
     REQUIRE(sfsClient != nullptr);
     return sfsClient;
 }
+
+void TestLoggingCallback(const LogData&)
+{
+}
+
+struct TestLoggingCallbackStruct
+{
+    static void TestLoggingCallback(const LogData&)
+    {
+    }
+};
 } // namespace
 
-TEST_SCENARIO("Testing SFSClient::Make()")
+static void StaticTestLoggingCallback(const LogData&)
 {
-    GIVEN("An empty pointer")
+}
+
+TEST("Testing SFSClient::Make()")
+{
+    const std::string accountId{"testAccountId"};
+    const std::string instanceId{"testInstanceId"};
+    const std::string nameSpace{"testNameSpace"};
+
+    std::unique_ptr<SFSClient> sfsClient;
+
+    SECTION("Make({accountId}, out)")
     {
-        const std::string accountId{"testAccountId"};
-        const std::string instanceId{"testInstanceId"};
-        const std::string nameSpace{"testNameSpace"};
+        REQUIRE(SFSClient::Make({accountId}, sfsClient) == Result::S_Ok);
+        REQUIRE(sfsClient != nullptr);
 
-        std::unique_ptr<SFSClient> sfsClient;
+        Options options{accountId};
+        REQUIRE(SFSClient::Make(options, sfsClient) == Result::S_Ok);
+        REQUIRE(sfsClient != nullptr);
+    }
 
-        THEN("Make(accountId, out) works")
+    SECTION("Make(accountId, instanceId, out)")
+    {
+        REQUIRE(SFSClient::Make({accountId, instanceId}, sfsClient) == Result::S_Ok);
+        REQUIRE(sfsClient != nullptr);
+
+        Options options{accountId, instanceId};
+        REQUIRE(SFSClient::Make(options, sfsClient) == Result::S_Ok);
+        REQUIRE(sfsClient != nullptr);
+    }
+
+    SECTION("Make(accountId, instanceId, namespace, out)")
+    {
+        REQUIRE(SFSClient::Make({accountId, instanceId, nameSpace}, sfsClient) == Result::S_Ok);
+        REQUIRE(sfsClient != nullptr);
+
+        SECTION("Call make when the pointer is reset")
         {
-            REQUIRE(SFSClient::Make(accountId, sfsClient) == Result::S_Ok);
+            sfsClient.reset();
+            REQUIRE(SFSClient::Make({accountId, instanceId, nameSpace}, sfsClient) == Result::S_Ok);
             REQUIRE(sfsClient != nullptr);
         }
 
-        THEN("Make(accountId, instanceId, out) works")
+        SECTION("Call make if the pointer is not reset, as Make() resets it")
         {
-            REQUIRE(SFSClient::Make(accountId, instanceId, sfsClient) == Result::S_Ok);
+            REQUIRE(SFSClient::Make({accountId, instanceId, nameSpace}, sfsClient) == Result::S_Ok);
             REQUIRE(sfsClient != nullptr);
         }
 
-        THEN("Make(accountId, instanceId, namespace out) works")
+        SECTION("We can also use a separate Options object")
         {
-            REQUIRE(SFSClient::Make(accountId, instanceId, nameSpace, sfsClient) == Result::S_Ok);
+            Options options{accountId, instanceId, nameSpace};
+            REQUIRE(SFSClient::Make(options, sfsClient) == Result::S_Ok);
             REQUIRE(sfsClient != nullptr);
+        }
 
-            WHEN("The pointer is reset")
-            {
-                sfsClient.reset();
+        SECTION("We can also move a separate Options object")
+        {
+            Options options{accountId, instanceId, nameSpace};
+            REQUIRE(SFSClient::Make(std::move(options), sfsClient) == Result::S_Ok);
+            REQUIRE(sfsClient != nullptr);
+        }
+    }
 
-                THEN("We can call Make a second time")
-                {
-                    REQUIRE(SFSClient::Make(accountId, instanceId, nameSpace, sfsClient) == Result::S_Ok);
-                    REQUIRE(sfsClient != nullptr);
-                }
-            }
+    SECTION("Make(accountId, std::nullopt, nameSpace, out)")
+    {
+        REQUIRE(SFSClient::Make({accountId, std::nullopt, nameSpace}, sfsClient) == Result::S_Ok);
+        REQUIRE(sfsClient != nullptr);
 
-            WHEN("The pointer is not reset")
-            {
-                THEN("We can also call Make a second time, as Make() resets it")
-                {
-                    REQUIRE(SFSClient::Make(accountId, instanceId, nameSpace, sfsClient) == Result::S_Ok);
-                    REQUIRE(sfsClient != nullptr);
-                }
-            }
+        Options options;
+        options.accountId = accountId;
+        options.nameSpace = nameSpace;
+        REQUIRE(SFSClient::Make(options, sfsClient) == Result::S_Ok);
+        REQUIRE(sfsClient != nullptr);
+    }
+
+    SECTION("Make(accountId, instanceId, namespace, logCallbackFn, out) works")
+    {
+        SECTION("Using a lambda with {} initialization")
+        {
+            REQUIRE(SFSClient::Make({accountId, instanceId, nameSpace, [](const LogData&) {}}, sfsClient) ==
+                    Result::S_Ok);
+            REQUIRE(sfsClient != nullptr);
+        }
+
+        SECTION("Using a lambda with an Options object")
+        {
+            Options options{accountId, instanceId, nameSpace, [](const LogData&) {}};
+            REQUIRE(SFSClient::Make(options, sfsClient) == Result::S_Ok);
+            REQUIRE(sfsClient != nullptr);
+        }
+
+        SECTION("Using a nullptr with an Options object")
+        {
+            Options options{accountId, instanceId, nameSpace, nullptr};
+            REQUIRE(SFSClient::Make(options, sfsClient) == Result::S_Ok);
+            REQUIRE(sfsClient != nullptr);
+        }
+
+        SECTION("Using a valid empty-namespace function within an Options object")
+        {
+            Options options{accountId, instanceId, nameSpace, TestLoggingCallback};
+            REQUIRE(SFSClient::Make(options, sfsClient) == Result::S_Ok);
+            REQUIRE(sfsClient != nullptr);
+        }
+
+        SECTION("Using a valid static function within an Options object")
+        {
+            Options options{accountId, instanceId, nameSpace, StaticTestLoggingCallback};
+            REQUIRE(SFSClient::Make(options, sfsClient) == Result::S_Ok);
+            REQUIRE(sfsClient != nullptr);
+        }
+
+        SECTION("Using a valid static member method within an Options object")
+        {
+            Options options{accountId, instanceId, nameSpace, &TestLoggingCallbackStruct::TestLoggingCallback};
+            REQUIRE(SFSClient::Make(options, sfsClient) == Result::S_Ok);
+            REQUIRE(sfsClient != nullptr);
+        }
+
+        SECTION("Can also move a lambda")
+        {
+            Options options{accountId, instanceId, nameSpace, [](const LogData&) {}};
+            REQUIRE(SFSClient::Make(std::move(options), sfsClient) == Result::S_Ok);
+            REQUIRE(sfsClient != nullptr);
         }
     }
 }
@@ -141,12 +232,4 @@ TEST_SCENARIO("Testing SFSClient::GetApplicabilityDetails()")
             REQUIRE(sfsClient->GetApplicabilityDetails(*content, details) == Result::E_NotImpl);
         }
     }
-}
-
-TEST("Testing SFSClient::SetLoggingCallback()")
-{
-    auto sfsClient = GetSFSClient();
-
-    REQUIRE(sfsClient->SetLoggingCallback([](const LogData&) {}) == Result::S_Ok);
-    REQUIRE(sfsClient->SetLoggingCallback(nullptr) == Result::S_Ok);
 }
