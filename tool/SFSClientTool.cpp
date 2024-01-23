@@ -10,9 +10,6 @@
 #include <time.h>
 #include <vector>
 
-// Avoid warnings on gmtime being unsafe, gmtime is the portable version of gmtime_s
-#pragma warning(disable : 4996)
-
 using namespace SFS;
 
 namespace
@@ -200,7 +197,13 @@ std::string TimestampToString(std::chrono::time_point<std::chrono::system_clock>
     auto timer = system_clock::to_time_t(time);
 
     std::stringstream timeStream;
-    timeStream << std::put_time(std::gmtime(&timer), "%F %X"); // yyyy-mm-dd HH:MM:SS
+    struct tm gmTime;
+#ifdef _WIN32
+    gmtime_s(&gmTime, &timer); // gmtime_s is the safe version of gmtime, not available on Linux
+#else
+    gmTime = (*std::gmtime(&timer));
+#endif
+    timeStream << std::put_time(&gmTime, "%F %X"); // yyyy-mm-dd HH:MM:SS
     timeStream << '.' << std::setfill('0') << std::setw(3) << ms.count();
 
     return timeStream.str();
