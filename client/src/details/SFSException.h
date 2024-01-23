@@ -14,9 +14,10 @@ class SFSException : public std::exception
 {
   public:
     SFSException() = default;
-    SFSException(SFS::Result result);
+    explicit SFSException(SFS::Result result);
 
-    SFSException(SFS::Result::Code code, std::string message = {});
+    explicit SFSException(SFS::Result::Code code);
+    SFSException(SFS::Result::Code code, std::string message);
 
     const SFS::Result& GetResult() const noexcept;
     const char* what() const noexcept override;

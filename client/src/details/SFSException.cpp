@@ -9,6 +9,10 @@ SFSException::SFSException(SFS::Result result) : m_result(std::move(result))
 {
 }
 
+SFSException::SFSException(SFS::Result::Code code) : m_result(Result(code))
+{
+}
+
 SFSException::SFSException(SFS::Result::Code code, std::string message) : m_result(Result(code, std::move(message)))
 {
 }
