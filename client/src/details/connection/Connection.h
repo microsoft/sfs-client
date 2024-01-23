@@ -22,14 +22,4 @@ class Connection
   protected:
     const ReportingHandler& m_handler;
 };
-
-class CurlConnection : public Connection
-{
-  public:
-    CurlConnection(const ReportingHandler& handler);
-    ~CurlConnection() override;
-
-  private:
-    // TODO: curl handle
-};
 } // namespace SFS::details

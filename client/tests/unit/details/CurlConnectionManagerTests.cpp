@@ -3,7 +3,8 @@
 
 #include "ReportingHandler.h"
 #include "connection/Connection.h"
-#include "connection/ConnectionManager.h"
+#include "connection/CurlConnection.h"
+#include "connection/CurlConnectionManager.h"
 
 #include <catch2/catch_test_macros.hpp>
 #include <curl/curl.h>
@@ -11,7 +12,7 @@
 using namespace SFS;
 using namespace SFS::details;
 
-#define TEST(...) TEST_CASE("[ConnectionManagerTests] " __VA_ARGS__)
+#define TEST(...) TEST_CASE("[CurlConnectionManagerTests] " __VA_ARGS__)
 
 TEST("Testing expected values in curl_version_info_data")
 {

@@ -5,6 +5,7 @@
 #include "SFSClientImpl.h"
 #include "connection/Connection.h"
 #include "connection/ConnectionManager.h"
+#include "connection/CurlConnectionManager.h"
 #include "connection/mock/MockConnectionManager.h"
 
 #include <catch2/catch_test_macros.hpp>

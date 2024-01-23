@@ -5,9 +5,10 @@
 
 #include "details/ErrorHandling.h"
 #include "details/SFSClientImpl.h"
-#include "details/connection/ConnectionManager.h"
+#include "details/connection/CurlConnectionManager.h"
 
 using namespace SFS;
+using namespace SFS::details;
 
 // Defining the constructor and destructor here allows us to use a unique_ptr to SFSClientImpl in the header file
 SFSClient::SFSClient() noexcept = default;
@@ -31,9 +32,9 @@ try
 {
     out.reset();
     std::unique_ptr<SFSClient> tmp(new SFSClient());
-    tmp->m_impl = std::make_unique<details::SFSClientImpl<details::CurlConnectionManager>>(std::move(accountId),
-                                                                                           std::move(instanceId),
-                                                                                           std::move(nameSpace));
+    tmp->m_impl = std::make_unique<SFSClientImpl<CurlConnectionManager>>(std::move(accountId),
+                                                                         std::move(instanceId),
+                                                                         std::move(nameSpace));
     out = std::move(tmp);
     return Result::S_Ok;
 }

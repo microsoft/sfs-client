@@ -4,8 +4,7 @@
 #pragma once
 
 #include "Result.h"
-
-#include <exception>
+#include "SFSException.h"
 
 #define SFS_CATCH_RETURN()                                                                                             \
     catch (const std::bad_alloc&)                                                                                      \
@@ -49,21 +48,6 @@
 namespace SFS::details
 {
 class ReportingHandler;
-
-class SFSException : public std::exception
-{
-  public:
-    SFSException() = default;
-    SFSException(SFS::Result result);
-
-    SFSException(SFS::Result::Code code, std::string message = {});
-
-    const SFS::Result& GetResult() const noexcept;
-    const char* what() const noexcept override;
-
-  private:
-    SFS::Result m_result;
-};
 
 void LogFailedResult(const ReportingHandler& handler, const SFS::Result& result, const char* file, int line);
 } // namespace SFS::details

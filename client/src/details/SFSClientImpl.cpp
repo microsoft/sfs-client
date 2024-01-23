@@ -8,6 +8,7 @@
 #include "Responses.h"
 #include "connection/Connection.h"
 #include "connection/ConnectionManager.h"
+#include "connection/CurlConnectionManager.h"
 #include "connection/mock/MockConnectionManager.h"
 
 using namespace SFS;
