@@ -3,6 +3,7 @@
 
 #pragma once
 
+#include "ClientConfig.h"
 #include "Content.h"
 #include "Logging.h"
 #include "Result.h"
@@ -25,27 +26,6 @@ namespace details
 class SFSClientInterface;
 }
 
-struct ClientStartupConfig
-{
-    /// @brief The account ID of the SFS service is used to identify the caller (required)
-    std::string accountId;
-
-    /// @brief The instance ID of the SFS service
-    std::optional<std::string> instanceId;
-
-    /// @brief The namespace of the SFS service
-    std::optional<std::string> nameSpace;
-
-    /**
-     * @brief A logging callback function that is called when the SFSClient logs a message
-     * @details This function returns logging information from the SFSClient. The caller is responsible for incoporating
-     * the received data into their logging system. The callback will be called in the same thread as the
-     * main flow, so make sure the callback does not block for too long so it doesn't delay operations. The
-     * LogData does not exist after the callback returns, so caller has to copy it if the data will be stored.
-     */
-    std::optional<LoggingCallbackFn> logCallbackFn;
-};
-
 class SFSClient
 {
   public:
@@ -64,7 +44,7 @@ class SFSClient
      *
      * @param config Describes a set of startup configurations for the SFSClient
      */
-    [[nodiscard]] static Result Make(ClientStartupConfig config, std::unique_ptr<SFSClient>& out) noexcept;
+    [[nodiscard]] static Result Make(ClientConfig config, std::unique_ptr<SFSClient>& out) noexcept;
 
     //
     // API to retrieve download information from the SFS Service

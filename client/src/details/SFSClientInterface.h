@@ -67,15 +67,6 @@ class SFSClientInterface
         return m_reportingHandler;
     }
 
-    //
-    // Configuration methods
-    //
-
-    /**
-     * @brief Set a logging callback function that is called when the SFSClient logs a message.
-     */
-    virtual void SetLoggingCallback(LoggingCallbackFn&& callback) = 0;
-
   protected:
     ReportingHandler m_reportingHandler;
 };
