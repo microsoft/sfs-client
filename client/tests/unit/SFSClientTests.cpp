@@ -165,6 +165,28 @@ TEST("Testing SFSClient::Make()")
             REQUIRE(sfsClient != nullptr);
         }
     }
+
+    SECTION("AccountId cannot be empty")
+    {
+        REQUIRE(SFSClient::Make({}, sfsClient) == Result::E_InvalidArg);
+        REQUIRE(sfsClient == nullptr);
+
+        ClientStartupConfig config;
+        REQUIRE(SFSClient::Make(config, sfsClient) == Result::E_InvalidArg);
+        REQUIRE(sfsClient == nullptr);
+
+        config = {};
+        REQUIRE(SFSClient::Make(config, sfsClient) == Result::E_InvalidArg);
+        REQUIRE(sfsClient == nullptr);
+
+        config.accountId = std::string();
+        REQUIRE(SFSClient::Make(config, sfsClient) == Result::E_InvalidArg);
+        REQUIRE(sfsClient == nullptr);
+
+        config.instanceId = instanceId;
+        REQUIRE(SFSClient::Make(config, sfsClient) == Result::E_InvalidArg);
+        REQUIRE(sfsClient == nullptr);
+    }
 }
 
 TEST_SCENARIO("Testing SFSClient::GetLatestDownloadInfo()")

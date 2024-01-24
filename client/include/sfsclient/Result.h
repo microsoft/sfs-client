@@ -15,11 +15,12 @@ class Result
     enum Code : uint32_t
     {
         S_Ok = 0x00000000,
-        E_HttpUnexpected = 0x80000001,
-        E_NotImpl = 0x80000002,
-        E_NotSet = 0x80000003,
-        E_OutOfMemory = 0x80000004,
-        E_Unexpected = 0x80000005,
+        E_InvalidArg = 0x80000001,
+        E_HttpUnexpected = 0x80000002,
+        E_NotImpl = 0x80000003,
+        E_NotSet = 0x80000004,
+        E_OutOfMemory = 0x80000005,
+        E_Unexpected = 0x80000006,
     };
 
     Result(Code code) noexcept;

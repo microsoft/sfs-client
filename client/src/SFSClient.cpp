@@ -17,7 +17,10 @@ SFSClient::~SFSClient() noexcept = default;
 Result SFSClient::Make(ClientStartupConfig config, std::unique_ptr<SFSClient>& out) noexcept
 try
 {
-    // TODO: should we error out when accountId is empty?
+    if (config.accountId.empty())
+    {
+        return Result(Result::E_InvalidArg, "ClientStartupConfig::accountId cannot be empty");
+    }
 
     out.reset();
     std::unique_ptr<SFSClient> tmp(new SFSClient());
