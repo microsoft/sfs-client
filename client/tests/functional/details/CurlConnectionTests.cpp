@@ -4,6 +4,7 @@
 #include "../../mock/MockWebServer.h"
 #include "../../util/TestHelper.h"
 #include "ReportingHandler.h"
+#include "Util.h"
 #include "connection/CurlConnection.h"
 #include "connection/CurlConnectionManager.h"
 
@@ -63,17 +64,6 @@ class CurlConnectionTimeoutManager : public CurlConnectionManager
         return std::make_unique<CurlConnectionTimeout>(m_handler);
     }
 };
-
-std::string GetBaseV1Url(const MockWebServer& server)
-{
-    return server.GetBaseUrl() + "/api/v1/contents/" + c_instanceId + "/namespaces/" + c_namespace + "/names/" +
-           c_productName;
-}
-
-std::string GetBaseV2Url(const MockWebServer& server)
-{
-    return server.GetBaseUrl() + "/api/v2/contents/" + c_instanceId + "/namespaces/" + c_namespace;
-}
 } // namespace
 
 TEST("Testing CurlConnection()")
@@ -86,7 +76,8 @@ TEST("Testing CurlConnection()")
 
     SECTION("Testing CurlConnection::Get()")
     {
-        const std::string url = GetBaseV1Url(server) + "/versions/" + c_version;
+        const std::string url =
+            util::GetSpecificVersionUrl(server.GetBaseUrl(), c_instanceId, c_namespace, c_productName, c_version);
 
         // Before registering the product, the URL returns 404 Not Found
         std::string out;
@@ -109,7 +100,7 @@ TEST("Testing CurlConnection()")
     {
         SECTION("With GetLatestVersion mock")
         {
-            const std::string url = GetBaseV2Url(server) + "/names?action=BatchUpdates";
+            const std::string url = util::GetLatestVersionUrl(server.GetBaseUrl(), c_instanceId, c_namespace);
 
             std::string out;
 
@@ -144,7 +135,7 @@ TEST("Testing CurlConnection()")
         SECTION("With GetDownloadInfo mock")
         {
             const std::string url =
-                GetBaseV1Url(server) + "/versions/" + c_version + "/files?action=GenerateDownloadInfo";
+                util::GetDownloadInfoUrl(server.GetBaseUrl(), c_instanceId, c_namespace, c_productName, c_version);
 
             // Before registering the product, the URL returns 404 Not Found
             std::string out;
@@ -186,9 +177,11 @@ TEST("Testing CurlConnection()")
         REQUIRE(connection->Get(url + "/names", out) == Result::E_HttpNotFound);
         REQUIRE(connection->Post(url + "/names", "{}", out) == Result::E_HttpNotFound);
 
-        url = GetBaseV1Url(server) + "/versYions/" + c_version + "/files?action=GenerateDownloadInfo";
+        url = server.GetBaseUrl() + "/api/v1/contents/" + c_instanceId + "/namespaces/" + c_namespace + "/names/" +
+              c_productName + "/versYions/" + c_version + "/files?action=GenerateDownloadInfo";
 
         REQUIRE(connection->Get(url, out) == Result::E_HttpNotFound);
+        REQUIRE(connection->Post(url, std::string(), out) == Result::E_HttpNotFound);
         REQUIRE(connection->Post(url, {}, out) == Result::E_HttpNotFound);
         CHECK(out.empty());
     }
@@ -233,7 +226,8 @@ TEST("Testing CurlConnection works from a second ConnectionManager")
     CurlConnectionManager connectionManager(handler);
     auto connection = connectionManager.MakeConnection();
 
-    const std::string url = GetBaseV1Url(server) + "/versions/" + c_version;
+    const std::string url =
+        util::GetSpecificVersionUrl(server.GetBaseUrl(), c_instanceId, c_namespace, c_productName, c_version);
 
     // Register the product
     server.RegisterProduct(c_productName, c_version);
