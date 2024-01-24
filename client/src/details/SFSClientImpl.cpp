@@ -15,18 +15,16 @@ using namespace SFS;
 using namespace SFS::details;
 
 constexpr const char* c_apiDomain = "api.cdp.microsoft.com";
+constexpr const char* c_defaultInstanceId = "default";
+constexpr const char* c_defaultNameSpace = "default";
 
 template <typename ConnectionManagerT>
-SFSClientImpl<ConnectionManagerT>::SFSClientImpl(ClientConfig&& config) : m_accountId(std::move(config.accountId))
+SFSClientImpl<ConnectionManagerT>::SFSClientImpl(ClientConfig&& config)
+    : m_accountId(std::move(config.accountId))
+    , m_instanceId(config.instanceId && !config.instanceId->empty() ? std::move(*config.instanceId)
+                                                                    : c_defaultInstanceId)
+    , m_nameSpace(config.nameSpace && !config.nameSpace->empty() ? std::move(*config.nameSpace) : c_defaultNameSpace)
 {
-    if (config.instanceId)
-    {
-        m_instanceId = std::move(*config.instanceId);
-    }
-    if (config.nameSpace)
-    {
-        m_nameSpace = std::move(*config.nameSpace);
-    }
     if (config.logCallbackFn)
     {
         m_reportingHandler.SetLoggingCallback(std::move(*config.logCallbackFn));
