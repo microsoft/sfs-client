@@ -2,7 +2,12 @@
   "$schema": "https://raw.githubusercontent.com/microsoft/vcpkg-tool/main/docs/vcpkg.schema.json",
   "dependencies": [
     "catch2",
-    "curl"
+    {
+      "name": "curl",
+      "features": [
+        "c-ares"
+      ]
+    }
   ],
   "overrides": [
     {

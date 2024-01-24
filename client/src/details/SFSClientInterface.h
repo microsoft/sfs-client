@@ -14,6 +14,8 @@
 
 namespace SFS::details
 {
+class Connection;
+class ConnectionManager;
 class DownloadInfoResponse;
 class VersionResponse;
 
@@ -34,6 +36,7 @@ class SFSClientInterface
      */
     [[nodiscard]] virtual Result GetLatestVersion(std::string_view productName,
                                                   const std::optional<SearchAttributes>& attributes,
+                                                  Connection& connection,
                                                   std::unique_ptr<VersionResponse>& response) const = 0;
 
     /**
@@ -42,6 +45,7 @@ class SFSClientInterface
     [[nodiscard]] virtual Result GetSpecificVersion(std::string_view productName,
                                                     std::string_view version,
                                                     const std::optional<SearchAttributes>& attributes,
+                                                    Connection& connection,
                                                     std::unique_ptr<VersionResponse>& content) const = 0;
 
     /**
@@ -50,17 +54,27 @@ class SFSClientInterface
     [[nodiscard]] virtual Result GetDownloadInfo(std::string_view productName,
                                                  std::string_view version,
                                                  const std::optional<SearchAttributes>& attributes,
+                                                 Connection& connection,
                                                  std::unique_ptr<DownloadInfoResponse>& content) const = 0;
 
     /**
-     * @brief Set a logging callback function that is called when the SFSClient logs a message.
+     * @brief Returns the ConnectionManager to be used by the SFSClient to create Connection objects
      */
-    virtual void SetLoggingCallback(LoggingCallbackFn&& callback) = 0;
+    virtual ConnectionManager& GetConnectionManager() = 0;
 
     const ReportingHandler& GetReportingHandler() const
     {
         return m_reportingHandler;
     }
+
+    //
+    // Configuration methods
+    //
+
+    /**
+     * @brief Set a logging callback function that is called when the SFSClient logs a message.
+     */
+    virtual void SetLoggingCallback(LoggingCallbackFn&& callback) = 0;
 
   protected:
     ReportingHandler m_reportingHandler;

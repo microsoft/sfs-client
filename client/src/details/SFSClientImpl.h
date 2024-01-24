@@ -15,14 +15,12 @@
 
 namespace SFS::details
 {
-class DownloadInfoResponse;
-class VersionResponse;
-
+template <typename ConnectionManagerT>
 class SFSClientImpl : public SFSClientInterface
 {
   public:
     SFSClientImpl(std::string&& accountId, std::string&& instanceId, std::string&& nameSpace);
-    ~SFSClientImpl() = default;
+    ~SFSClientImpl() override = default;
 
     //
     // Individual APIs 1:1 with service endpoints (SFSClientInterface)
@@ -34,6 +32,7 @@ class SFSClientImpl : public SFSClientInterface
      */
     [[nodiscard]] Result GetLatestVersion(std::string_view productName,
                                           const std::optional<SearchAttributes>& attributes,
+                                          Connection& connection,
                                           std::unique_ptr<VersionResponse>& response) const override;
 
     /**
@@ -42,6 +41,7 @@ class SFSClientImpl : public SFSClientInterface
     [[nodiscard]] Result GetSpecificVersion(std::string_view productName,
                                             std::string_view version,
                                             const std::optional<SearchAttributes>& attributes,
+                                            Connection& connection,
                                             std::unique_ptr<VersionResponse>& content) const override;
 
     /**
@@ -50,7 +50,13 @@ class SFSClientImpl : public SFSClientInterface
     [[nodiscard]] Result GetDownloadInfo(std::string_view productName,
                                          std::string_view version,
                                          const std::optional<SearchAttributes>& attributes,
+                                         Connection& connection,
                                          std::unique_ptr<DownloadInfoResponse>& content) const override;
+
+    /**
+     * @brief Returns the ConnectionManager to be used by the SFSClient to create Connection objects
+     */
+    ConnectionManager& GetConnectionManager() override;
 
     //
     // Configuration methods
@@ -77,6 +83,8 @@ class SFSClientImpl : public SFSClientInterface
     std::string m_accountId;
     std::string m_instanceId;
     std::string m_nameSpace;
+
+    std::unique_ptr<ConnectionManagerT> m_connectionManager;
 
     std::optional<std::string> m_customBaseUrl;
 };

@@ -14,6 +14,7 @@ target_sources(
             unit/ContentTests.cpp
             unit/DeliveryOptimizationDataTests.cpp
             unit/details/ErrorHandlingTests.cpp
+            unit/details/CurlConnectionManagerTests.cpp
             unit/details/ReportingHandlerTests.cpp
             unit/details/SFSClientImplTests.cpp
             unit/ResultTests.cpp

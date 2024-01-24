@@ -12,12 +12,20 @@ target_sources(
     PRIVATE src/ApplicabilityDetails.cpp
             src/Content.cpp
             src/DeliveryOptimizationData.cpp
-            src/Logging.cpp
-            src/Result.cpp
-            src/SFSClient.cpp
+            src/details/connection/Connection.cpp
+            src/details/connection/ConnectionManager.cpp
+            src/details/connection/CurlConnection.cpp
+            src/details/connection/CurlConnectionManager.cpp
+            src/details/connection/mock/MockConnection.cpp
+            src/details/connection/mock/MockConnectionManager.cpp
+            src/details/ErrorHandling.cpp
             src/details/ReportingHandler.cpp
             src/details/SFSClientImpl.cpp
-            src/details/Util.cpp)
+            src/details/SFSException.cpp
+            src/details/Util.cpp
+            src/Logging.cpp
+            src/Result.cpp
+            src/SFSClient.cpp)
 
 target_include_directories(${PROJECT_NAME} PUBLIC include/sfsclient)
 

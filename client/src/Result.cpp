@@ -64,6 +64,8 @@ std::string_view SFS::ToString(Result::Code code) noexcept
     {
     case Result::S_Ok:
         return "S_Ok";
+    case Result::E_HttpUnexpected:
+        return "E_HttpUnexpected";
     case Result::E_NotImpl:
         return "E_NotImpl";
     case Result::E_NotSet:
