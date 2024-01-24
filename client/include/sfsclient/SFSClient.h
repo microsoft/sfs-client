@@ -25,7 +25,7 @@ namespace details
 class SFSClientInterface;
 }
 
-struct Options
+struct ClientStartupConfig
 {
     /// @brief The account ID of the SFS service is used to identify the caller
     std::string accountId;
@@ -59,11 +59,11 @@ class SFSClient
      * @details An SFSClient object is used to make calls to the SFS service. The SFSClient object is initialized with
      * a few parameters that are used to build the URL for the SFS service. The URL is built as follows:
      * https://{accountId}.api.cdp.microsoft.com/api/v1/contents/{instanceId}/namespaces/{nameSpace}
-     * The instanceId and nameSpace are optional and will default to a default value if not provided.
+     * The instanceId and nameSpace are optionally set in @param config and have a default value if not provided.
      *
-     * @param options Set of Options that configure the SFSClient
+     * @param config Describes a set of startup configurations for the SFSClient
      */
-    [[nodiscard]] static Result Make(Options options, std::unique_ptr<SFSClient>& out) noexcept;
+    [[nodiscard]] static Result Make(ClientStartupConfig config, std::unique_ptr<SFSClient>& out) noexcept;
 
     //
     // API to retrieve download information from the SFS Service

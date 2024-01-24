@@ -51,8 +51,8 @@ TEST("Testing SFSClient::Make()")
         REQUIRE(SFSClient::Make({accountId}, sfsClient) == Result::S_Ok);
         REQUIRE(sfsClient != nullptr);
 
-        Options options{accountId};
-        REQUIRE(SFSClient::Make(options, sfsClient) == Result::S_Ok);
+        ClientStartupConfig config{accountId};
+        REQUIRE(SFSClient::Make(config, sfsClient) == Result::S_Ok);
         REQUIRE(sfsClient != nullptr);
     }
 
@@ -61,8 +61,8 @@ TEST("Testing SFSClient::Make()")
         REQUIRE(SFSClient::Make({accountId, instanceId}, sfsClient) == Result::S_Ok);
         REQUIRE(sfsClient != nullptr);
 
-        Options options{accountId, instanceId};
-        REQUIRE(SFSClient::Make(options, sfsClient) == Result::S_Ok);
+        ClientStartupConfig config{accountId, instanceId};
+        REQUIRE(SFSClient::Make(config, sfsClient) == Result::S_Ok);
         REQUIRE(sfsClient != nullptr);
     }
 
@@ -84,17 +84,17 @@ TEST("Testing SFSClient::Make()")
             REQUIRE(sfsClient != nullptr);
         }
 
-        SECTION("We can also use a separate Options object")
+        SECTION("We can also use a separate ClientStartupConfig object")
         {
-            Options options{accountId, instanceId, nameSpace};
-            REQUIRE(SFSClient::Make(options, sfsClient) == Result::S_Ok);
+            ClientStartupConfig config{accountId, instanceId, nameSpace};
+            REQUIRE(SFSClient::Make(config, sfsClient) == Result::S_Ok);
             REQUIRE(sfsClient != nullptr);
         }
 
-        SECTION("We can also move a separate Options object")
+        SECTION("We can also move a separate ClientStartupConfig object")
         {
-            Options options{accountId, instanceId, nameSpace};
-            REQUIRE(SFSClient::Make(std::move(options), sfsClient) == Result::S_Ok);
+            ClientStartupConfig config{accountId, instanceId, nameSpace};
+            REQUIRE(SFSClient::Make(std::move(config), sfsClient) == Result::S_Ok);
             REQUIRE(sfsClient != nullptr);
         }
     }
@@ -104,10 +104,10 @@ TEST("Testing SFSClient::Make()")
         REQUIRE(SFSClient::Make({accountId, std::nullopt, nameSpace}, sfsClient) == Result::S_Ok);
         REQUIRE(sfsClient != nullptr);
 
-        Options options;
-        options.accountId = accountId;
-        options.nameSpace = nameSpace;
-        REQUIRE(SFSClient::Make(options, sfsClient) == Result::S_Ok);
+        ClientStartupConfig config;
+        config.accountId = accountId;
+        config.nameSpace = nameSpace;
+        REQUIRE(SFSClient::Make(config, sfsClient) == Result::S_Ok);
         REQUIRE(sfsClient != nullptr);
     }
 
@@ -120,45 +120,48 @@ TEST("Testing SFSClient::Make()")
             REQUIRE(sfsClient != nullptr);
         }
 
-        SECTION("Using a lambda with an Options object")
+        SECTION("Using a lambda with a ClientStartupConfig object")
         {
-            Options options{accountId, instanceId, nameSpace, [](const LogData&) {}};
-            REQUIRE(SFSClient::Make(options, sfsClient) == Result::S_Ok);
+            ClientStartupConfig config{accountId, instanceId, nameSpace, [](const LogData&) {}};
+            REQUIRE(SFSClient::Make(config, sfsClient) == Result::S_Ok);
             REQUIRE(sfsClient != nullptr);
         }
 
-        SECTION("Using a nullptr with an Options object")
+        SECTION("Using a nullptr with a ClientStartupConfig object")
         {
-            Options options{accountId, instanceId, nameSpace, nullptr};
-            REQUIRE(SFSClient::Make(options, sfsClient) == Result::S_Ok);
+            ClientStartupConfig config{accountId, instanceId, nameSpace, nullptr};
+            REQUIRE(SFSClient::Make(config, sfsClient) == Result::S_Ok);
             REQUIRE(sfsClient != nullptr);
         }
 
-        SECTION("Using a valid empty-namespace function within an Options object")
+        SECTION("Using a valid empty-namespace function within a ClientStartupConfig object")
         {
-            Options options{accountId, instanceId, nameSpace, TestLoggingCallback};
-            REQUIRE(SFSClient::Make(options, sfsClient) == Result::S_Ok);
+            ClientStartupConfig config{accountId, instanceId, nameSpace, TestLoggingCallback};
+            REQUIRE(SFSClient::Make(config, sfsClient) == Result::S_Ok);
             REQUIRE(sfsClient != nullptr);
         }
 
-        SECTION("Using a valid static function within an Options object")
+        SECTION("Using a valid static function within a ClientStartupConfig object")
         {
-            Options options{accountId, instanceId, nameSpace, StaticTestLoggingCallback};
-            REQUIRE(SFSClient::Make(options, sfsClient) == Result::S_Ok);
+            ClientStartupConfig config{accountId, instanceId, nameSpace, StaticTestLoggingCallback};
+            REQUIRE(SFSClient::Make(config, sfsClient) == Result::S_Ok);
             REQUIRE(sfsClient != nullptr);
         }
 
-        SECTION("Using a valid static member method within an Options object")
+        SECTION("Using a valid static member method within a ClientStartupConfig object")
         {
-            Options options{accountId, instanceId, nameSpace, &TestLoggingCallbackStruct::TestLoggingCallback};
-            REQUIRE(SFSClient::Make(options, sfsClient) == Result::S_Ok);
+            ClientStartupConfig config{accountId,
+                                       instanceId,
+                                       nameSpace,
+                                       &TestLoggingCallbackStruct::TestLoggingCallback};
+            REQUIRE(SFSClient::Make(config, sfsClient) == Result::S_Ok);
             REQUIRE(sfsClient != nullptr);
         }
 
         SECTION("Can also move a lambda")
         {
-            Options options{accountId, instanceId, nameSpace, [](const LogData&) {}};
-            REQUIRE(SFSClient::Make(std::move(options), sfsClient) == Result::S_Ok);
+            ClientStartupConfig config{accountId, instanceId, nameSpace, [](const LogData&) {}};
+            REQUIRE(SFSClient::Make(std::move(config), sfsClient) == Result::S_Ok);
             REQUIRE(sfsClient != nullptr);
         }
     }

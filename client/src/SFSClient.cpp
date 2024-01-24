@@ -14,7 +14,7 @@ using namespace SFS::details;
 SFSClient::SFSClient() noexcept = default;
 SFSClient::~SFSClient() noexcept = default;
 
-Result SFSClient::Make(Options options, std::unique_ptr<SFSClient>& out) noexcept
+Result SFSClient::Make(ClientStartupConfig config, std::unique_ptr<SFSClient>& out) noexcept
 try
 {
     // TODO: should we error out when accountId is empty?
@@ -22,12 +22,12 @@ try
     out.reset();
     std::unique_ptr<SFSClient> tmp(new SFSClient());
     tmp->m_impl = std::make_unique<details::SFSClientImpl<CurlConnectionManager>>(
-        std::move(options.accountId),
-        options.instanceId ? std::move(*options.instanceId) : std::string(),
-        options.nameSpace ? std::move(*options.nameSpace) : std::string());
-    if (options.logCallbackFn)
+        std::move(config.accountId),
+        config.instanceId ? std::move(*config.instanceId) : std::string(),
+        config.nameSpace ? std::move(*config.nameSpace) : std::string());
+    if (config.logCallbackFn)
     {
-        tmp->m_impl->SetLoggingCallback(std::move(*options.logCallbackFn));
+        tmp->m_impl->SetLoggingCallback(std::move(*config.logCallbackFn));
     }
     out = std::move(tmp);
     return Result::S_Ok;

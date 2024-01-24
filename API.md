@@ -1,6 +1,6 @@
 ## Logging Callback
 
-To retrieve logging information from the API, set a logging callback in `Options::logCallbackFn` when constructing an SFSClient instance with `SFSClient::Make()`.
+To retrieve logging information from the API, set a logging callback in `ClientStartupConfig::logCallbackFn` when constructing an SFSClient instance with `SFSClient::Make()`.
 
 The logging callback function has the signature:
 
