@@ -5,6 +5,7 @@
 
 #include "ErrorHandling.h"
 #include "HttpRequestResponse.h"
+#include "Util.h"
 
 #ifdef _WIN32
 
@@ -55,6 +56,7 @@ using socket_length_t = socklen_t;
 
 using namespace SFS;
 using namespace SFS::details;
+using namespace SFS::details::util;
 using namespace SFS::test;
 using namespace SFS::test::details;
 using json = nlohmann::json;
@@ -88,28 +90,6 @@ enum class ApiMethod
     PostLatestVersion,
     PostDownloadInfo
 };
-
-bool AreEqualI(std::string_view a, std::string_view b)
-{
-    if (a.size() != b.size())
-    {
-        return false;
-    }
-
-    for (auto itA = a.begin(), itB = b.begin(); itA != a.end() && itB != b.end(); ++itA, ++itB)
-    {
-        if (std::tolower(*itA) != std::tolower(*itB))
-        {
-            return false;
-        }
-    }
-    return true;
-}
-
-bool AreNotEqualI(std::string_view a, std::string_view b)
-{
-    return !AreEqualI(a, b);
-}
 
 void ThrowLastSocketError(const std::string& activity)
 {

@@ -23,3 +23,8 @@ bool util::AreEqualI(std::string_view a, std::string_view b)
     }
     return true;
 }
+
+bool util::AreNotEqualI(std::string_view a, std::string_view b)
+{
+    return !AreEqualI(a, b);
+}
