@@ -30,6 +30,7 @@ const char* c_listenHostName = "localhost";
 
 namespace
 {
+// TODO: Check if possible to update to new httplib enums after v0.14.3 https://github.com/microsoft/vcpkg/pull/36264
 enum class StatusCode
 {
     Ok = 200,
