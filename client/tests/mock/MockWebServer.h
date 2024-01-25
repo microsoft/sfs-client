@@ -28,7 +28,7 @@ class MockWebServer
     std::string GetBaseUrl() const;
 
     // Registers a product with the server. Will fill the other data with gibberish for testing purposes.
-    void RegisterProduct(const std::string& name, const std::string& version);
+    void RegisterProduct(std::string name, std::string version);
 
   private:
     std::unique_ptr<details::MockWebServerImpl> m_impl;

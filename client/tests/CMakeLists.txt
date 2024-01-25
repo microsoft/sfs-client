@@ -7,12 +7,12 @@ include(Catch)
 # For mock http server
 find_package(httplib CONFIG REQUIRED)
 
-set(SFS_CLIENT_TESTS "SFSClientTests")
+project(SFSClientTests LANGUAGES CXX)
 
-add_executable(${SFS_CLIENT_TESTS})
+add_executable(${PROJECT_NAME})
 
 target_sources(
-    ${SFS_CLIENT_TESTS}
+    ${PROJECT_NAME}
     PRIVATE mock/MockWebServer.cpp
             unit/ApplicabilityDetailsTests.cpp
             unit/ContentTests.cpp
@@ -24,17 +24,16 @@ target_sources(
             unit/ResultTests.cpp
             unit/SFSClientTests.cpp)
 
-set(SFS_CLIENT_LIB_NAME "Microsoft::${PROJECT_NAME}")
-add_dependencies(${SFS_CLIENT_TESTS} ${SFS_CLIENT_LIB_NAME})
-target_link_libraries(${SFS_CLIENT_TESTS} PRIVATE ${SFS_CLIENT_LIB_NAME})
-target_link_libraries(${SFS_CLIENT_TESTS} PRIVATE Catch2::Catch2WithMain)
-target_link_libraries(${SFS_CLIENT_TESTS} PRIVATE httplib::httplib)
+set(SFS_CLIENT_LIB_NAME "Microsoft::${CMAKE_PROJECT_NAME}")
+add_dependencies(${PROJECT_NAME} ${SFS_CLIENT_LIB_NAME})
+target_link_libraries(${PROJECT_NAME} PRIVATE ${SFS_CLIENT_LIB_NAME})
+target_link_libraries(${PROJECT_NAME} PRIVATE Catch2::Catch2WithMain)
+target_link_libraries(${PROJECT_NAME} PRIVATE httplib::httplib)
 
-target_include_directories(${SFS_CLIENT_TESTS} PUBLIC ../include)
-target_include_directories(${SFS_CLIENT_TESTS} PUBLIC ../src/details)
+target_include_directories(${PROJECT_NAME} PUBLIC ../include)
+target_include_directories(${PROJECT_NAME} PUBLIC ../src/details)
 
-catch_discover_tests(${SFS_CLIENT_TESTS})
+catch_discover_tests(${PROJECT_NAME})
 
-set_target_properties(
-    ${SFS_CLIENT_TESTS} PROPERTIES RUNTIME_OUTPUT_DIRECTORY
-                                   ${CMAKE_BINARY_DIR}/tests/bin/)
+set_target_properties(${PROJECT_NAME} PROPERTIES RUNTIME_OUTPUT_DIRECTORY
+                                                 ${CMAKE_BINARY_DIR}/tests/bin/)

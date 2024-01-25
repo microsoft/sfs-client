@@ -62,7 +62,7 @@ std::string ToString(StatusCode status)
     return "";
 }
 
-void GenerateGetSpecificVersionResponse(const std::string& name, const std::string& version, json& jsonResponse)
+json GenerateGetSpecificVersionResponse(const std::string& name, const std::string& version)
 {
     // {
     //   "ContentId": {
@@ -76,11 +76,13 @@ void GenerateGetSpecificVersionResponse(const std::string& name, const std::stri
     //   ]
     // }
 
-    jsonResponse["ContentId"] = {{"Namespace", "default"}, {"Name", name}, {"Version", version}};
-    jsonResponse["Files"] = json::array({name + ".json", name + ".bin"});
+    json response;
+    response["ContentId"] = {{"Namespace", "default"}, {"Name", name}, {"Version", version}};
+    response["Files"] = json::array({name + ".json", name + ".bin"});
+    return response;
 }
 
-void GeneratePostLatestVersionResponse(const std::string& name, const std::string& latestVersion, json& jsonResponse)
+json GeneratePostLatestVersionResponse(const std::string& name, const std::string& latestVersion)
 {
     // [
     //   {
@@ -93,11 +95,13 @@ void GeneratePostLatestVersionResponse(const std::string& name, const std::strin
     //   ...
     // ]
 
-    jsonResponse = json::array();
-    jsonResponse.push_back({{"ContentId", {{"Namespace", "default"}, {"Name", name}, {"Version", latestVersion}}}});
+    json response;
+    response = json::array();
+    response.push_back({{"ContentId", {{"Namespace", "default"}, {"Name", name}, {"Version", latestVersion}}}});
+    return response;
 }
 
-void GeneratePostDownloadInfo(const std::string& name, json& jsonResponse)
+json GeneratePostDownloadInfo(const std::string& name)
 {
     // [
     //   {
@@ -121,22 +125,24 @@ void GeneratePostDownloadInfo(const std::string& name, json& jsonResponse)
     //   ...
     // ]
 
-    jsonResponse = json::array();
-    jsonResponse.push_back({{"Url", "http://localhost/1.json"},
-                            {"FileId", name + ".json"},
-                            {"SizeInBytes", 100},
-                            {"Hashes", {{"Sha1", "123"}, {"Sha256", "456"}}}});
-    jsonResponse[0]["DeliveryOptimization"] = {{"CatalogId", "789"}};
-    jsonResponse[0]["DeliveryOptimization"]["Properties"] = {
+    json response;
+    response = json::array();
+    response.push_back({{"Url", "http://localhost/1.json"},
+                        {"FileId", name + ".json"},
+                        {"SizeInBytes", 100},
+                        {"Hashes", {{"Sha1", "123"}, {"Sha256", "456"}}}});
+    response[0]["DeliveryOptimization"] = {{"CatalogId", "789"}};
+    response[0]["DeliveryOptimization"]["Properties"] = {
         {"IntegrityCheckInfo", {{"PiecesHashFileUrl", "http://localhost/1.json"}, {"HashOfHashes", "abc"}}}};
 
-    jsonResponse.push_back({{"Url", "http://localhost/2.bin"},
-                            {"FileId", name + ".bin"},
-                            {"SizeInBytes", 200},
-                            {"Hashes", {{"Sha1", "421"}, {"Sha256", "132"}}}});
-    jsonResponse[1]["DeliveryOptimization"] = {{"CatalogId", "14"}};
-    jsonResponse[1]["DeliveryOptimization"]["Properties"] = {
+    response.push_back({{"Url", "http://localhost/2.bin"},
+                        {"FileId", name + ".bin"},
+                        {"SizeInBytes", 200},
+                        {"Hashes", {{"Sha1", "421"}, {"Sha256", "132"}}}});
+    response[1]["DeliveryOptimization"] = {{"CatalogId", "14"}};
+    response[1]["DeliveryOptimization"]["Properties"] = {
         {"IntegrityCheckInfo", {{"PiecesHashFileUrl", "http://localhost/2.bin"}, {"HashOfHashes", "abcd"}}}};
+    return response;
 }
 } // namespace
 
@@ -156,7 +162,7 @@ class MockWebServerImpl
 
     std::string GetUrl() const;
 
-    void RegisterProduct(const std::string& name, const std::string& version);
+    void RegisterProduct(std::string&& name, std::string&& version);
 
   private:
     void ConfigureServerSettings();
@@ -191,7 +197,11 @@ MockWebServer::MockWebServer()
 
 MockWebServer::~MockWebServer()
 {
-    m_impl->Stop();
+    const auto ret = Stop();
+    if (!ret)
+    {
+        UNSCOPED_INFO("Failed to stop: " << ToString(ret.GetCode()));
+    }
 }
 
 Result MockWebServer::Stop()
@@ -204,9 +214,9 @@ std::string MockWebServer::GetBaseUrl() const
     return m_impl->GetUrl();
 }
 
-void MockWebServer::RegisterProduct(const std::string& name, const std::string& version)
+void MockWebServer::RegisterProduct(std::string name, std::string version)
 {
-    m_impl->RegisterProduct(name, version);
+    m_impl->RegisterProduct(std::move(name), std::move(version));
 }
 
 void MockWebServerImpl::Start()
@@ -266,7 +276,7 @@ void MockWebServerImpl::ConfigurePostLatestVersion()
             return;
         }
 
-        // Ignoring instanceId and ns for now
+        // TODO: Ignoring instanceId and ns for now
 
         if (!req.has_param("action") || util::AreNotEqualI(req.get_param_value("action"), "BatchUpdates"))
         {
@@ -322,11 +332,9 @@ void MockWebServerImpl::ConfigurePostLatestVersion()
         }
 
         const auto& latestVersion = *versions.rbegin();
-        json jsonResponse;
-        GeneratePostLatestVersionResponse(name, latestVersion, jsonResponse);
 
         res.status = static_cast<int>(StatusCode::Ok);
-        res.set_content(jsonResponse.dump(), "application/json");
+        res.set_content(GeneratePostLatestVersionResponse(name, latestVersion).dump(), "application/json");
     });
 }
 
@@ -341,7 +349,7 @@ void MockWebServerImpl::ConfigureGetSpecificVersion()
             return;
         }
 
-        // Ignoring instanceId and ns for now
+        // TODO: Ignoring instanceId and ns for now
 
         const std::string& name = req.path_params.at("name");
         auto it = m_products.find(name);
@@ -365,11 +373,8 @@ void MockWebServerImpl::ConfigureGetSpecificVersion()
             return;
         }
 
-        json jsonResponse;
-        GenerateGetSpecificVersionResponse(name, version, jsonResponse);
-
         res.status = static_cast<int>(StatusCode::Ok);
-        res.set_content(jsonResponse.dump(), "application/json");
+        res.set_content(GenerateGetSpecificVersionResponse(name, version).dump(), "application/json");
     });
 }
 
@@ -386,7 +391,7 @@ void MockWebServerImpl::ConfigurePostDownloadInfo()
             return;
         }
 
-        // Ignoring instanceId and ns for now
+        // TODO: Ignoring instanceId and ns for now
 
         if (!req.has_param("action") || util::AreNotEqualI(req.get_param_value("action"), "GenerateDownloadInfo"))
         {
@@ -419,11 +424,8 @@ void MockWebServerImpl::ConfigurePostDownloadInfo()
 
         // Response is a dummy, doesn't use the version above
 
-        json jsonResponse;
-        GeneratePostDownloadInfo(name, jsonResponse);
-
         res.status = static_cast<int>(StatusCode::Ok);
-        res.set_content(jsonResponse.dump(), "application/json");
+        res.set_content(GeneratePostDownloadInfo(name).dump(), "application/json");
     });
 }
 
@@ -453,7 +455,7 @@ std::string MockWebServerImpl::GetUrl() const
     return std::string("http://") + c_listenHostName + std::string(":") + std::to_string(m_port);
 }
 
-void MockWebServerImpl::RegisterProduct(const std::string& name, const std::string& version)
+void MockWebServerImpl::RegisterProduct(std::string&& name, std::string&& version)
 {
-    m_products[name].insert(version);
+    m_products[std::move(name)].emplace(std::move(version));
 }
