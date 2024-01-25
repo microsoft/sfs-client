@@ -17,7 +17,7 @@ using namespace SFS::details;
 
 TEST("Testing class SFSClientImpl()")
 {
-    SFSClientImpl<CurlConnectionManager> sfsClient("testAccountId", "testInstanceId", "testNameSpace");
+    SFSClientImpl<CurlConnectionManager> sfsClient({"testAccountId", "testInstanceId", "testNameSpace"});
     auto connection = sfsClient.GetConnectionManager().MakeConnection();
 
     SECTION("Testing SFSClientImpl::GetLatestVersion()")
@@ -54,7 +54,7 @@ TEST("Testing class SFSClientImpl()")
 
 TEST("Testing SFSClientImpl::SetCustomBaseUrl()")
 {
-    SFSClientImpl<MockConnectionManager> sfsClient("testAccountId", "testInstanceId", "testNameSpace");
+    SFSClientImpl<MockConnectionManager> sfsClient({"testAccountId", "testInstanceId", "testNameSpace"});
 
     REQUIRE(sfsClient.GetBaseUrl() == "https://testAccountId.api.cdp.microsoft.com");
 
@@ -62,10 +62,9 @@ TEST("Testing SFSClientImpl::SetCustomBaseUrl()")
     REQUIRE(sfsClient.GetBaseUrl() == "customUrl");
 }
 
-TEST("Testing SFSClientImpl::SetLoggingCallback()")
+TEST("Testing passing a logging callback to constructor of SFSClientImpl")
 {
-    SFSClientImpl<MockConnectionManager> sfsClient("testAccountId", "testInstanceId", "testNameSpace");
-
-    sfsClient.SetLoggingCallback([](const LogData&) {});
-    sfsClient.SetLoggingCallback(nullptr);
+    SFSClientImpl<MockConnectionManager> sfsClient(
+        {"testAccountId", "testInstanceId", "testNameSpace", [](const LogData&) {}});
+    SFSClientImpl<MockConnectionManager> sfsClient2({"testAccountId", "testInstanceId", "testNameSpace", nullptr});
 }

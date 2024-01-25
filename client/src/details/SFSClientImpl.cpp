@@ -15,15 +15,21 @@ using namespace SFS;
 using namespace SFS::details;
 
 constexpr const char* c_apiDomain = "api.cdp.microsoft.com";
+constexpr const char* c_defaultInstanceId = "default";
+constexpr const char* c_defaultNameSpace = "default";
 
 template <typename ConnectionManagerT>
-SFSClientImpl<ConnectionManagerT>::SFSClientImpl(std::string&& accountId,
-                                                 std::string&& instanceId,
-                                                 std::string&& nameSpace)
-    : m_accountId(accountId)
-    , m_instanceId(instanceId)
-    , m_nameSpace(nameSpace)
+SFSClientImpl<ConnectionManagerT>::SFSClientImpl(ClientConfig&& config)
+    : m_accountId(std::move(config.accountId))
+    , m_instanceId(config.instanceId && !config.instanceId->empty() ? std::move(*config.instanceId)
+                                                                    : c_defaultInstanceId)
+    , m_nameSpace(config.nameSpace && !config.nameSpace->empty() ? std::move(*config.nameSpace) : c_defaultNameSpace)
 {
+    if (config.logCallbackFn)
+    {
+        m_reportingHandler.SetLoggingCallback(std::move(*config.logCallbackFn));
+    }
+
     static_assert(std::is_base_of<ConnectionManager, ConnectionManagerT>::value,
                   "ConnectionManagerT not derived from ConnectionManager");
     m_connectionManager = std::make_unique<ConnectionManagerT>(m_reportingHandler);
@@ -66,12 +72,6 @@ template <typename ConnectionManagerT>
 ConnectionManager& SFSClientImpl<ConnectionManagerT>::GetConnectionManager()
 {
     return *m_connectionManager;
-}
-
-template <typename ConnectionManagerT>
-void SFSClientImpl<ConnectionManagerT>::SetLoggingCallback(LoggingCallbackFn&& callback)
-{
-    m_reportingHandler.SetLoggingCallback(std::move(callback));
 }
 
 template <typename ConnectionManagerT>

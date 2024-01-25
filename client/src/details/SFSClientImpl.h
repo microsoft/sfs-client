@@ -5,6 +5,7 @@
 
 #include "SFSClientInterface.h"
 
+#include "ClientConfig.h"
 #include "Content.h"
 #include "Logging.h"
 #include "Result.h"
@@ -19,7 +20,7 @@ template <typename ConnectionManagerT>
 class SFSClientImpl : public SFSClientInterface
 {
   public:
-    SFSClientImpl(std::string&& accountId, std::string&& instanceId, std::string&& nameSpace);
+    SFSClientImpl(ClientConfig&& config);
     ~SFSClientImpl() override = default;
 
     //
@@ -73,11 +74,6 @@ class SFSClientImpl : public SFSClientInterface
      * @return The URL for the SFS service based on the parameters passed to the constructor
      */
     std::string GetBaseUrl() const;
-
-    /**
-     * @brief Set a logging callback function that is called when the SFSClient logs a message.
-     */
-    void SetLoggingCallback(LoggingCallbackFn&& callback);
 
   private:
     std::string m_accountId;
