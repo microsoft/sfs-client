@@ -2,12 +2,14 @@
   "$schema": "https://raw.githubusercontent.com/microsoft/vcpkg-tool/main/docs/vcpkg.schema.json",
   "dependencies": [
     "catch2",
+    "cpp-httplib",
     {
       "name": "curl",
       "features": [
         "c-ares"
       ]
-    }
+    },
+    "nlohmann-json"
   ],
   "overrides": [
     {
@@ -15,8 +17,16 @@
       "version": "3.4.0"
     },
     {
+      "name": "cpp-httplib",
+      "version": "0.14.1"
+    },
+    {
       "name": "curl",
       "version": "8.4.0"
+    },
+    {
+      "name": "nlohmann-json",
+      "version": "3.11.3"
     }
   ],
   "vcpkg-configuration": {
