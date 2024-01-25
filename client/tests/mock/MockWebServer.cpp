@@ -4,55 +4,20 @@
 #include "MockWebServer.h"
 
 #include "ErrorHandling.h"
-#include "HttpRequestResponse.h"
 #include "Util.h"
 
 #ifdef _WIN32
-
-#include <winsock2.h>
-#include <ws2tcpip.h>
-
-#else
-
-#include <arpa/inet.h>
-#include <errno.h>
-#include <netinet/in.h>
-#include <sys/socket.h>
-#include <unistd.h>
-
+#define WIN32_LEAN_AND_MEAN
+#include <windows.h>
 #endif
 
 #include <catch2/catch_test_macros.hpp>
+#include <httplib.h>
 #include <nlohmann/json.hpp>
 
-#include <algorithm>
 #include <mutex>
 #include <optional>
-#include <set>
-#include <sstream>
 #include <thread>
-
-#define MAX_LOG_MESSAGE_SIZE 1000
-
-#ifdef _WIN32
-
-using socket_length_t = int;
-
-#else
-
-// Sockets are int values in Linux
-using SOCKET = int;
-#define INVALID_SOCKET -1
-#define SOCKET_ERROR -1
-
-// These defines have same behavior but different names
-#define SD_BOTH SHUT_RDWR
-#define SD_RECEIVE SHUT_RD
-#define SD_SEND SHUT_WR
-
-using socket_length_t = socklen_t;
-
-#endif
 
 using namespace SFS;
 using namespace SFS::details;
@@ -61,49 +26,39 @@ using namespace SFS::test;
 using namespace SFS::test::details;
 using json = nlohmann::json;
 
-// Keep these two in sync.
 const char* c_listenHostName = "localhost";
-const char* c_listenHostIp4Addr = "127.0.0.1";
 
 namespace
 {
-class ScopedSocket
+enum class StatusCode
 {
-  public:
-    ScopedSocket();
-    ~ScopedSocket();
+    Ok = 200,
+    BadRequest = 400,
+    NotFound = 404,
+    MethodNotAllowed = 405,
+    InternalServerError = 500,
+    ServiceUnavailable = 503,
+};
 
-    ScopedSocket(SOCKET socket);
-
-    SOCKET Get() const
+std::string ToString(StatusCode status)
+{
+    switch (status)
     {
-        return m_socket;
+    case StatusCode::Ok:
+        return "200 OK";
+    case StatusCode::BadRequest:
+        return "400 Bad Request";
+    case StatusCode::NotFound:
+        return "404 Not Found";
+    case StatusCode::MethodNotAllowed:
+        return "405 Method Not Allowed";
+    case StatusCode::ServiceUnavailable:
+        return "503 Service Unavailable";
+    case StatusCode::InternalServerError:
+        return "500 Internal Server Error";
     }
 
-  private:
-    SOCKET m_socket = INVALID_SOCKET;
-};
-
-enum class ApiMethod
-{
-    GetSpecificVersion,
-    PostLatestVersion,
-    PostDownloadInfo
-};
-
-void ThrowLastSocketError(const std::string& activity)
-{
-#ifdef _WIN32
-    const std::string errorCode = std::to_string(WSAGetLastError());
-#else
-    const std::string errorCode = std::to_string(errno);
-#endif
-    throw SFSException(Result::E_Unexpected, activity + " failed with error: " + errorCode);
-}
-
-void ThrowSocketError(const std::string& activity)
-{
-    throw SFSException(Result::E_Unexpected, activity + " failed");
+    return "";
 }
 
 void GenerateGetSpecificVersionResponse(const std::string& name, const std::string& version, json& jsonResponse)
@@ -202,35 +157,28 @@ class MockWebServerImpl
 
     void RegisterProduct(const std::string& name, const std::string& version);
 
-    static void StaticListen(MockWebServerImpl& server);
-
   private:
-    void SetupSocket();
-    void StartListening();
+    void ConfigureServerSettings();
+    void ConfigureRequestHandlers();
 
-    void Listen();
-    void ProcessRequest(ScopedSocket& clientSocket) const;
-    void ReceiveRequest(ScopedSocket& clientSocket, std::unique_ptr<HttpRequest>& request) const;
-    void GenerateResponse(const HttpRequest& request, HttpResponse& response) const;
-    void SendResponse(ScopedSocket& clientSocket, const std::string& response) const;
+    void ConfigurePostLatestVersion();
+    void ConfigureGetSpecificVersion();
+    void ConfigurePostDownloadInfo();
 
-    ApiMethod GetApiMethod(const HttpRequest& request, std::optional<std::string>& version, std::string& name) const;
+    void BufferLog(const std::string& message);
 
-    std::string GetBindPort() const;
+    httplib::Server m_server;
+    int m_port{-1};
 
-    std::mutex m_socketMutex;
-    std::unique_ptr<ScopedSocket> m_socket;
+    std::optional<Result> m_lastException;
 
     std::thread m_listenerThread;
-    std::optional<Result> m_listenerThreadResult;
-
-    bool m_shutdown{false};
-    std::mutex m_shutdownMutex;
-
-    bool m_isRunning{false};
 
     using VersionList = std::set<std::string>;
     std::unordered_map<std::string, VersionList> m_products;
+
+    std::vector<std::string> m_bufferedLog;
+    std::mutex m_logMutex;
 };
 } // namespace SFS::test::details
 
@@ -262,505 +210,249 @@ void MockWebServer::RegisterProduct(const std::string& name, const std::string& 
 
 void MockWebServerImpl::Start()
 {
-#ifdef _WIN32
-    // Initialize the latest WinSock 2.2
-    WSADATA wsaData;
-    if (auto err = WSAStartup(MAKEWORD(2, 2), &wsaData))
-    {
-        throw SFSException(Result::E_Unexpected, "WSAStartup failed with error: " + std::to_string(err));
-    }
-#endif
-    m_isRunning = true;
+    ConfigureServerSettings();
+    ConfigureRequestHandlers();
 
-    SetupSocket();
-    StartListening();
+    m_port = m_server.bind_to_any_port(c_listenHostName);
+    m_listenerThread = std::thread([&]() { m_server.listen_after_bind(); });
 }
 
-void MockWebServerImpl::SetupSocket()
+void MockWebServerImpl::ConfigureServerSettings()
 {
-    m_socket = std::make_unique<ScopedSocket>();
+    m_server.set_logger([&](const httplib::Request& req, const httplib::Response& res) {
+        BufferLog("Request: " + req.method + " " + req.path + " " + req.version);
+        BufferLog("Request Body: " + req.body);
 
-    sockaddr_in sin{};
-    sin.sin_family = AF_INET;
+        BufferLog("Response: " + res.version + " " + ToString(static_cast<StatusCode>(res.status)) + " " + res.reason);
+        BufferLog("Response body: " + res.body);
+    });
 
-    // Convert the address into a binary form
-    const auto inetRet = inet_pton(AF_INET, c_listenHostIp4Addr, &sin.sin_addr.s_addr);
-    if (inetRet == -1)
-    {
-        ThrowLastSocketError("Socket setup");
-    }
-    else if (inetRet == 0)
-    {
-        ThrowSocketError("Socket setup");
-    }
-
-    // Assign any available port from dynamic client range
-    sin.sin_port = ::htons(0);
-
-    // Bind the socket to the specified address
-    if (bind(m_socket->Get(), (const struct sockaddr*)&sin, static_cast<int>(sizeof(sin))) == SOCKET_ERROR)
-    {
-        ThrowLastSocketError("Socket setup");
-    }
-}
-
-void MockWebServerImpl::StartListening()
-{
-    if (listen(m_socket->Get(), 2 /*backlog*/) == SOCKET_ERROR)
-    {
-        ThrowLastSocketError("Socket listen");
-    }
-
-    m_listenerThread = std::thread(&MockWebServerImpl::StaticListen, std::ref(*this));
-}
-
-void MockWebServerImpl::StaticListen(MockWebServerImpl& server)
-{
-    try
-    {
-        server.Listen();
-    }
-    catch (const std::bad_alloc&)
-    {
-        server.m_listenerThreadResult = Result(Result::E_OutOfMemory);
-    }
-    catch (const SFSException& e)
-    {
-        server.m_listenerThreadResult = e.GetResult();
-    }
-    catch (...)
-    {
-        server.m_listenerThreadResult = Result(Result::E_Unexpected);
-    }
-
-    // Closing the socket here covers both a normal shutdown and an exception.
-    {
-        std::lock_guard<std::mutex> guard(server.m_socketMutex);
-        server.m_socket.reset();
-    }
-}
-
-void MockWebServerImpl::Listen()
-{
-    UNSCOPED_INFO("Listening on " << GetUrl());
-
-    timeval timeout = {0, 100000}; // 0.1 sec = 0 sec, 100000 microseconds
-
-    fd_set acceptSet;
-    while (true)
-    {
-        // First, see if we are shutting down.
-        {
-            std::lock_guard<std::mutex> guard(m_shutdownMutex);
-            if (m_shutdown)
-            {
-                break;
-            }
-        }
-
-        // Now, wait for an incoming connection on the listening socket.
-
-        // Set up the fd_set for the select call. The only file descriptor we are interested in is the listening socket.
-        FD_ZERO(&acceptSet);
-        FD_SET(m_socket->Get(), &acceptSet);
-
-#ifdef _WIN32
-        // On Windows, the first argument to select() is ignored.
-        int nfds = 1;
-#else
-        // On Linux, the first argument to select() has to be the highest-numbered file descriptor in any of the sets,
-        // plus 1.
-        int nfds = m_socket->Get() + 1;
-#endif
-
-        // Wait for a connection until the timeout expires
-        const int selectRet =
-            select(nfds, &acceptSet /*readfds*/, nullptr /*writefds*/, nullptr /*exceptfds*/, &timeout);
-        const bool timeoutReached = selectRet == 0;
-        if (timeoutReached)
-        {
-            continue;
-        }
-        else if (selectRet == SOCKET_ERROR)
-        {
-            ThrowLastSocketError("Socket select");
-        }
-
-        // accept() will not block since select() said one socket was ready.
-        sockaddr addr;
-        socket_length_t addrlen = sizeof(addr);
-
-        std::lock_guard<std::mutex> guard(m_socketMutex);
-        if (m_socket->Get() != INVALID_SOCKET)
-        {
-            // Get the socket from the client who is trying to connect
-            ScopedSocket clientSocket(accept(m_socket->Get(), &addr, &addrlen));
-            try
-            {
-                ProcessRequest(clientSocket); // calls ::shutdown on send/recv as needed.
-            }
-            catch (const SFSException& e)
-            {
-                shutdown(clientSocket.Get(), SD_BOTH);
-                UNSCOPED_INFO("Exception processing request: " << e.what());
-                throw e;
-            }
-        }
-    }
-}
-
-void MockWebServerImpl::ProcessRequest(ScopedSocket& clientSocket) const
-{
-    UNSCOPED_INFO("Received a request, processing it");
-
-    // Read the request.
-    std::unique_ptr<HttpRequest> request;
-    ReceiveRequest(clientSocket, request);
-
-    // Done reading request so disable the read half of connection.
-    shutdown(clientSocket.Get(), SD_RECEIVE);
-
-    UNSCOPED_INFO("Request: \n" << request->ToString());
-
-    // Now create a response and send it
-    HttpResponse response;
-    GenerateResponse(*request, response);
-    std::string responseStr = response.ToTransportString();
-
-    UNSCOPED_INFO("Response: \n" << responseStr);
-
-    SendResponse(clientSocket, responseStr);
-
-    // Now disable the write half of connection.
-    shutdown(clientSocket.Get(), SD_SEND);
-}
-
-void MockWebServerImpl::ReceiveRequest(ScopedSocket& clientSocket, std::unique_ptr<HttpRequest>& request) const
-{
-    const int bufSize = 16384;
-    char buffer[bufSize];
-    std::string data;
-
-    int bytesReceived;
-    do
-    {
-        bytesReceived = recv(clientSocket.Get(), buffer, bufSize, 0 /*flags*/);
-        if (bytesReceived > 0)
-        {
-            data.append(buffer, bytesReceived);
-        }
-        else if (bytesReceived < 0)
-        {
-            ThrowLastSocketError("Socket receive");
-        }
-
-        // Check if we have a complete request and then break out of the loop.
+    m_server.set_exception_handler([&](const httplib::Request&, httplib::Response& res, std::exception_ptr ep) {
         try
         {
-            // This will throw if the request is not yet parseable. The body may not be complete yet,
-            // so we will keep reading until we get a complete request.
-            request = std::make_unique<HttpRequest>(data);
-            break;
+            std::rethrow_exception(ep);
         }
-        catch (const SFSException& e)
+        catch (std::exception& e)
         {
-            UNSCOPED_INFO("Incomplete request, keep reading. Parse issue: " << e.what());
+            m_lastException = Result(Result::E_HttpUnexpected, e.what());
         }
-    } while (bytesReceived > 0);
+        catch (...)
+        {
+            m_lastException = Result(Result::E_HttpUnexpected, "Unknown Exception");
+        }
+        res.status = static_cast<int>(StatusCode::InternalServerError);
+    });
+
+    // Keeping this interval to a minimum ensures tests run quicker
+    m_server.set_keep_alive_timeout(1); // 1 second
 }
 
-void MockWebServerImpl::GenerateResponse(const HttpRequest& request, HttpResponse& response) const
+void MockWebServerImpl::ConfigureRequestHandlers()
 {
-    std::optional<std::string> version;
-    std::string name;
-    ApiMethod apiMethod;
+    ConfigurePostLatestVersion();
+    ConfigureGetSpecificVersion();
+    ConfigurePostDownloadInfo();
+}
 
-    try
-    {
-        apiMethod = GetApiMethod(request, version, name);
-    }
-    catch (const HttpException& e)
-    {
-        response.SetStatus(e.GetStatusCode());
-        return;
-    }
-
-    auto it = m_products.find(name);
-    if (it == m_products.end())
-    {
-        response.SetStatus(StatusCode::NotFound);
-        return;
-    }
-
-    const VersionList& versions = it->second;
-    if (versions.empty())
-    {
-        response.SetStatus(StatusCode::InternalServerError);
-        return;
-    }
-
-    json jsonResponse;
-    switch (apiMethod)
-    {
-    case ApiMethod::GetSpecificVersion:
-    {
-        if (!version || !versions.count(*version))
+void MockWebServerImpl::ConfigurePostLatestVersion()
+{
+    // Path: /api/<apiVersion:v2>/contents/<instanceId>/namespaces/<ns>/names?action=BatchUpdates
+    const std::string pattern = "/api/:apiVersion/contents/:instanceId/namespaces/:ns/names";
+    m_server.Post(pattern, [&](const httplib::Request& req, httplib::Response& res) {
+        if (util::AreNotEqualI(req.path_params.at("apiVersion"), "v2"))
         {
-            response.SetStatus(StatusCode::NotFound);
+            res.status = static_cast<int>(StatusCode::NotFound);
             return;
         }
-        GenerateGetSpecificVersionResponse(name, *version, jsonResponse);
-        break;
-    }
-    case ApiMethod::PostLatestVersion:
-    {
+
+        // Ignoring instanceId and ns for now
+
+        if (!req.has_param("action") || util::AreNotEqualI(req.get_param_value("action"), "BatchUpdates"))
+        {
+            // TODO: SFS might throw a different error when the query string is unexpected
+            res.status = static_cast<int>(StatusCode::NotFound);
+            return;
+        }
+
+        if (req.body.empty())
+        {
+            res.status = static_cast<int>(StatusCode::BadRequest);
+            return;
+        }
+
+        json body;
+        try
+        {
+            body = json::parse(req.body);
+        }
+        catch (const json::parse_error& ex)
+        {
+            BufferLog("JSON parse error: " + std::string(ex.what()));
+            res.status = static_cast<int>(StatusCode::BadRequest);
+            return;
+        }
+
+        // The BatchUpdates API returns an array of objects, each with a "Product" key.
+        // For this mock we're only interested in the first one.
+        // In the future we may want to support multiple products in a single request.
+        std::string name;
+        if (body.is_array() && body[0].is_object() && body[0].contains("Product"))
+        {
+            name = body[0]["Product"];
+        }
+        else
+        {
+            res.status = static_cast<int>(StatusCode::BadRequest);
+            return;
+        }
+
+        auto it = m_products.find(name);
+        if (it == m_products.end())
+        {
+            res.status = static_cast<int>(StatusCode::NotFound);
+            return;
+        }
+
+        const VersionList& versions = it->second;
+        if (versions.empty())
+        {
+            res.status = static_cast<int>(StatusCode::InternalServerError);
+            return;
+        }
+
         const auto& latestVersion = *versions.rbegin();
+        json jsonResponse;
         GeneratePostLatestVersionResponse(name, latestVersion, jsonResponse);
-        break;
-    }
-    case ApiMethod::PostDownloadInfo:
-    {
-        if (!version || !versions.count(*version))
-        {
-            response.SetStatus(StatusCode::NotFound);
-            return;
-        }
-        GeneratePostDownloadInfo(name, jsonResponse);
-        break;
-    }
-    default:
-        break;
-    }
 
-    response.SetBody(jsonResponse.dump());
+        res.status = static_cast<int>(StatusCode::Ok);
+        res.set_content(jsonResponse.dump(), "application/json");
+    });
 }
 
-void MockWebServerImpl::SendResponse(ScopedSocket& clientSocket, const std::string& response) const
+void MockWebServerImpl::ConfigureGetSpecificVersion()
 {
-    int totalBytesSent = 0;
-    int bytesSent = 0;
-    int bytesRemaining = static_cast<int>(response.size());
-    const char* buffer = response.data();
-    do
-    {
-        bytesSent = send(clientSocket.Get(), buffer + totalBytesSent, bytesRemaining, 0);
-        if (bytesSent == SOCKET_ERROR)
+    // Path: /api/<apiVersion:v1>/contents/<instanceId>/namespaces/<ns>/names/<name>/versions/<version>
+    const std::string pattern = "/api/:apiVersion/contents/:instanceId/namespaces/:ns/names/:name/versions/:version";
+    m_server.Get(pattern, [&](const httplib::Request& req, httplib::Response& res) {
+        if (util::AreNotEqualI(req.path_params.at("apiVersion"), "v1"))
         {
-            ThrowLastSocketError("Socket send");
+            res.status = static_cast<int>(StatusCode::NotFound);
+            return;
         }
-        totalBytesSent += bytesSent;
-        bytesRemaining -= bytesSent;
-    } while (bytesRemaining > 0);
+
+        // Ignoring instanceId and ns for now
+
+        const std::string& name = req.path_params.at("name");
+        auto it = m_products.find(name);
+        if (it == m_products.end())
+        {
+            res.status = static_cast<int>(StatusCode::NotFound);
+            return;
+        }
+
+        const VersionList& versions = it->second;
+        if (versions.empty())
+        {
+            res.status = static_cast<int>(StatusCode::InternalServerError);
+            return;
+        }
+
+        const std::string& version = req.path_params.at("version");
+        if (version.empty() || !versions.count(version))
+        {
+            res.status = static_cast<int>(StatusCode::NotFound);
+            return;
+        }
+
+        json jsonResponse;
+        GenerateGetSpecificVersionResponse(name, version, jsonResponse);
+
+        res.status = static_cast<int>(StatusCode::Ok);
+        res.set_content(jsonResponse.dump(), "application/json");
+    });
+}
+
+void MockWebServerImpl::ConfigurePostDownloadInfo()
+{
+    // Path:
+    // /api/<apiVersion:v1>/contents/<instanceId>/namespaces/<ns>/names/<name>/versions/<version>/files?action=GenerateDownloadInfo
+    const std::string pattern =
+        "/api/:apiVersion/contents/:instanceId/namespaces/:ns/names/:name/versions/:version/files";
+    m_server.Post(pattern, [&](const httplib::Request& req, httplib::Response& res) {
+        if (util::AreNotEqualI(req.path_params.at("apiVersion"), "v1"))
+        {
+            res.status = static_cast<int>(StatusCode::NotFound);
+            return;
+        }
+
+        // Ignoring instanceId and ns for now
+
+        if (!req.has_param("action") || util::AreNotEqualI(req.get_param_value("action"), "GenerateDownloadInfo"))
+        {
+            // TODO: SFS might throw a different error when the query string is unexpected
+            res.status = static_cast<int>(StatusCode::NotFound);
+            return;
+        }
+
+        const std::string& name = req.path_params.at("name");
+        auto it = m_products.find(name);
+        if (it == m_products.end())
+        {
+            res.status = static_cast<int>(StatusCode::NotFound);
+            return;
+        }
+
+        const VersionList& versions = it->second;
+        if (versions.empty())
+        {
+            res.status = static_cast<int>(StatusCode::InternalServerError);
+            return;
+        }
+
+        const std::string& version = req.path_params.at("version");
+        if (version.empty() || !versions.count(version))
+        {
+            res.status = static_cast<int>(StatusCode::NotFound);
+            return;
+        }
+
+        // Response is a dummy, doesn't use the version above
+
+        json jsonResponse;
+        GeneratePostDownloadInfo(name, jsonResponse);
+
+        res.status = static_cast<int>(StatusCode::Ok);
+        res.set_content(jsonResponse.dump(), "application/json");
+    });
+}
+
+void MockWebServerImpl::BufferLog(const std::string& message)
+{
+    std::lock_guard guard(m_logMutex);
+    m_bufferedLog.push_back(message);
 }
 
 Result MockWebServerImpl::Stop()
 {
-    if (!m_isRunning)
-    {
-        return m_listenerThreadResult.value_or(Result::S_Ok);
-    }
-
-    {
-        std::lock_guard<std::mutex> guard(m_shutdownMutex);
-        m_shutdown = true;
-    }
     if (m_listenerThread.joinable())
     {
+        m_server.stop();
         m_listenerThread.join();
     }
-#ifdef _WIN32
-    WSACleanup();
-#endif
-    m_isRunning = false;
-
-    return m_listenerThreadResult.value_or(Result::S_Ok);
+    for (const auto& message : m_bufferedLog)
+    {
+        UNSCOPED_INFO(message);
+    }
+    m_bufferedLog.clear();
+    return m_lastException.value_or(Result::S_Ok);
 }
 
 std::string MockWebServerImpl::GetUrl() const
 {
-    return c_listenHostName + std::string(":") + GetBindPort();
-}
-
-std::string MockWebServerImpl::GetBindPort() const
-{
-    sockaddr_in addr{};
-    socket_length_t sizeAddr = sizeof(addr);
-
-    if (getsockname(m_socket->Get(), reinterpret_cast<sockaddr*>(&addr), &sizeAddr))
-    {
-        ThrowLastSocketError("Socket getsockname");
-    }
-
-    return std::to_string(ntohs(addr.sin_port));
-}
-
-ScopedSocket::ScopedSocket()
-{
-    m_socket = socket(AF_INET, SOCK_STREAM, IPPROTO_TCP);
-    if (m_socket == INVALID_SOCKET)
-    {
-        ThrowLastSocketError("Socket creation");
-    }
-}
-
-ScopedSocket::ScopedSocket(SOCKET socket)
-{
-    if (socket == INVALID_SOCKET)
-    {
-        ThrowSocketError("Invalid socket");
-    }
-    m_socket = socket;
-}
-
-ScopedSocket::~ScopedSocket()
-{
-    if (m_socket != INVALID_SOCKET)
-    {
-#ifdef _WIN32
-        closesocket(m_socket);
-#else
-        close(m_socket);
-#endif
-        m_socket = INVALID_SOCKET;
-    }
+    return std::string("http://") + c_listenHostName + std::string(":") + std::to_string(m_port);
 }
 
 void MockWebServerImpl::RegisterProduct(const std::string& name, const std::string& version)
 {
     m_products[name].insert(version);
-}
-
-ApiMethod MockWebServerImpl::GetApiMethod(const HttpRequest& request,
-                                          std::optional<std::string>& version,
-                                          std::string& name) const
-{
-    // Path example: /api/v1/contents/default/namespaces/default/names/ACDC.ACDUALTest07/versions/<version>
-    // Arguments must be in order
-    // SFS throws 404 NotFound when the URL is malformed
-
-    std::string_view path = request.GetPath();
-    if (path.empty() || path[0] != '/')
-    {
-        throw HttpException(StatusCode::BadRequest);
-    }
-
-    std::size_t offset = 1;
-    auto getNextWord([&]() -> std::string_view {
-        if (offset >= path.size())
-        {
-            throw HttpException(StatusCode::NotFound);
-        }
-        std::size_t nextSlash = path.find('/', offset);
-        std::string_view word;
-        if (nextSlash != std::string::npos)
-        {
-            word = path.substr(offset, nextSlash - offset);
-        }
-        else
-        {
-            word = path.substr(offset);
-        }
-        offset += word.size() + 1;
-        return word;
-    });
-
-    std::string_view word = getNextWord();
-    if (AreNotEqualI(word, "api"))
-    {
-        throw HttpException(StatusCode::NotFound);
-    }
-    std::string_view api = getNextWord();
-
-    word = getNextWord();
-    if (AreNotEqualI(word, "contents"))
-    {
-        throw HttpException(StatusCode::NotFound);
-    }
-    std::string_view tmp = getNextWord(); // Currently ignored
-
-    word = getNextWord();
-    if (AreNotEqualI(word, "namespaces"))
-    {
-        throw HttpException(StatusCode::NotFound);
-    }
-    tmp = getNextWord(); // Currently ignored
-
-    word = getNextWord();
-    if (AreEqualI(word, "names?action=BatchUpdates"))
-    {
-        // Path: /api/<apiVersion:v2>/contents/<instanceId>/namespaces/<ns>/names?action=BatchUpdates
-        const bool isPostLatestVersion =
-            !version.has_value() && request.GetMethod() == Method::POST && AreEqualI(api, "v2");
-        if (isPostLatestVersion)
-        {
-            json body;
-            try
-            {
-                body = json::parse(request.GetBody());
-            }
-            catch (const json::parse_error& ex)
-            {
-                UNSCOPED_INFO("JSON parse error: " << ex.what());
-                throw HttpException(StatusCode::BadRequest);
-            }
-
-            // The BatchUpdates API returns an array of objects, each with a "Product" key.
-            // For this mock we're only interested in the first one.
-            // In the future we may want to support multiple products in a single request.
-            if (body.is_array() && body[0].is_object() && body[0].contains("Product"))
-            {
-                name = body[0]["Product"];
-            }
-            else
-            {
-                throw HttpException(StatusCode::BadRequest);
-            }
-
-            return ApiMethod::PostLatestVersion;
-        }
-        throw HttpException(StatusCode::NotFound);
-
-        // TODO: SFS throws a different error when the query string is unexpected
-    }
-    else if (AreNotEqualI(word, "names"))
-    {
-        throw HttpException(StatusCode::NotFound);
-    }
-    name = getNextWord();
-
-    word = getNextWord();
-    if (AreNotEqualI(word, "versions"))
-    {
-        throw HttpException(StatusCode::NotFound);
-    }
-    version = getNextWord();
-
-    if (offset >= path.size())
-    {
-        // Path: /api/<apiVersion:v1>/contents/<instanceId>/namespaces/<ns>/names/<name>/versions/<version>
-        const bool isGetSpecificVersion =
-            version && !version->empty() && request.GetMethod() == Method::GET && AreEqualI(api, "v1");
-        if (isGetSpecificVersion)
-        {
-            return ApiMethod::GetSpecificVersion;
-        }
-        throw HttpException(StatusCode::NotFound);
-    }
-
-    word = getNextWord();
-    if (AreEqualI(word, "files?action=GenerateDownloadInfo"))
-    {
-        // Path:
-        // /api/<apiVersion:v1>/contents/<instanceId>/namespaces/<ns>/names/<name>/versions/<version>/files?action=GenerateDownloadInfo
-        const bool isPostDownloadInfo =
-            version && !version->empty() && request.GetMethod() == Method::POST && AreEqualI(api, "v1");
-        if (isPostDownloadInfo)
-        {
-            return ApiMethod::PostDownloadInfo;
-        }
-
-        // TODO: SFS throws a different error when the query string is unexpected
-    }
-
-    throw HttpException(StatusCode::NotFound);
 }

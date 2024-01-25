@@ -4,14 +4,16 @@
 find_package(Catch2 CONFIG REQUIRED)
 include(Catch)
 
+# For mock http server
+find_package(httplib CONFIG REQUIRED)
+
 set(SFS_CLIENT_TESTS "SFSClientTests")
 
 add_executable(${SFS_CLIENT_TESTS})
 
 target_sources(
     ${SFS_CLIENT_TESTS}
-    PRIVATE mock/HttpRequestResponse.cpp
-            mock/MockWebServer.cpp
+    PRIVATE mock/MockWebServer.cpp
             unit/ApplicabilityDetailsTests.cpp
             unit/ContentTests.cpp
             unit/DeliveryOptimizationDataTests.cpp
@@ -26,11 +28,7 @@ set(SFS_CLIENT_LIB_NAME "Microsoft::${PROJECT_NAME}")
 add_dependencies(${SFS_CLIENT_TESTS} ${SFS_CLIENT_LIB_NAME})
 target_link_libraries(${SFS_CLIENT_TESTS} PRIVATE ${SFS_CLIENT_LIB_NAME})
 target_link_libraries(${SFS_CLIENT_TESTS} PRIVATE Catch2::Catch2WithMain)
-
-# Socket lib for Windows
-if(WIN32)
-    target_link_libraries(${SFS_CLIENT_TESTS} PRIVATE wsock32 ws2_32)
-endif()
+target_link_libraries(${SFS_CLIENT_TESTS} PRIVATE httplib::httplib)
 
 target_include_directories(${SFS_CLIENT_TESTS} PUBLIC ../include)
 target_include_directories(${SFS_CLIENT_TESTS} PUBLIC ../src/details)
