@@ -9,18 +9,19 @@
 
 #include <cstring>
 
-#define RETURN_IF_CURL_ERROR(curlCall)                                                                                 \
+#define RETURN_IF_CURL_ERROR(curlCall, error)                                                                          \
     do                                                                                                                 \
     {                                                                                                                  \
         auto __curlCode = (curlCall);                                                                                  \
         std::string __message = "Curl error: " + std::string(curl_easy_strerror(__curlCode));                          \
-        RETURN_CODE_IF_LOG(E_HttpUnexpected, __curlCode != CURLE_OK, m_handler, std::move(__message));                 \
+        RETURN_CODE_IF_LOG(error, __curlCode != CURLE_OK, m_handler, std::move(__message));                            \
     } while ((void)0, 0)
+
+#define RETURN_IF_CURL_SETUP_ERROR(curlCall) RETURN_IF_CURL_ERROR(curlCall, E_ConnectionSetupFailed)
+#define RETURN_IF_CURL_UNEXPECTED_ERROR(curlCall) RETURN_IF_CURL_ERROR(curlCall, E_ConnectionUnexpectedError)
 
 using namespace SFS;
 using namespace SFS::details;
-
-static_assert(SFS_CURL_ERROR_SIZE >= CURL_ERROR_SIZE, "SFS_CURL_ERROR_SIZE must be at least CURL_ERROR_SIZE");
 
 namespace
 {
@@ -75,7 +76,7 @@ Result CurlCodeToResult(CURLcode curlCode, char* errorBuffer)
         code = Result::E_HttpTimeout;
         break;
     default:
-        code = Result::E_HttpUnexpected;
+        code = Result::E_ConnectionUnexpectedError;
         break;
     }
 
@@ -115,17 +116,17 @@ Result HttpCodeToResult(long httpCode)
 CurlConnection::CurlConnection(const ReportingHandler& handler) : Connection(handler)
 {
     m_handle = curl_easy_init();
-    THROW_CODE_IF_LOG(E_HttpUnexpected, !m_handle, m_handler, "Failed to init curl connection");
+    THROW_CODE_IF_LOG(E_ConnectionSetupFailed, !m_handle, m_handler, "Failed to init curl connection");
 
     // Turning timeout signals off to avoid issues with threads
     // See https://curl.se/libcurl/c/threadsafe.html
-    THROW_CODE_IF_LOG(E_HttpUnexpected,
+    THROW_CODE_IF_LOG(E_ConnectionSetupFailed,
                       curl_easy_setopt(m_handle, CURLOPT_NOSIGNAL, 1L) != CURLE_OK,
                       m_handler,
                       "Failed to set up curl");
 
     // Setting up error buffer where error messages get written
-    THROW_CODE_IF_LOG(E_HttpUnexpected,
+    THROW_CODE_IF_LOG(E_ConnectionSetupFailed,
                       curl_easy_setopt(m_handle, CURLOPT_ERRORBUFFER, m_errorBuffer) != CURLE_OK,
                       m_handler,
                       "Failed to set up curl");
@@ -147,8 +148,8 @@ Result CurlConnection::Get(std::string_view url, std::string& response)
 {
     RETURN_CODE_IF_LOG(E_InvalidArg, url.empty(), m_handler, "url cannot be empty");
 
-    RETURN_IF_CURL_ERROR(curl_easy_setopt(m_handle, CURLOPT_HTTPGET, 1L));
-    RETURN_IF_CURL_ERROR(curl_easy_setopt(m_handle, CURLOPT_HTTPHEADER, nullptr));
+    RETURN_IF_CURL_SETUP_ERROR(curl_easy_setopt(m_handle, CURLOPT_HTTPGET, 1L));
+    RETURN_IF_CURL_SETUP_ERROR(curl_easy_setopt(m_handle, CURLOPT_HTTPHEADER, nullptr));
 
     RETURN_IF_FAILED_LOG(CurlPerform(url, response), m_handler);
 
@@ -162,9 +163,9 @@ Result CurlConnection::Post(std::string_view url, std::string_view data, std::st
     CurlHeaderList headerList;
     headerList.Add(HttpHeader::ContentType, "application/json");
 
-    RETURN_IF_CURL_ERROR(curl_easy_setopt(m_handle, CURLOPT_POST, 1L));
-    RETURN_IF_CURL_ERROR(curl_easy_setopt(m_handle, CURLOPT_COPYPOSTFIELDS, data.empty() ? "" : data.data()));
-    RETURN_IF_CURL_ERROR(curl_easy_setopt(m_handle, CURLOPT_HTTPHEADER, headerList.m_slist));
+    RETURN_IF_CURL_SETUP_ERROR(curl_easy_setopt(m_handle, CURLOPT_POST, 1L));
+    RETURN_IF_CURL_SETUP_ERROR(curl_easy_setopt(m_handle, CURLOPT_COPYPOSTFIELDS, data.empty() ? "" : data.data()));
+    RETURN_IF_CURL_SETUP_ERROR(curl_easy_setopt(m_handle, CURLOPT_HTTPHEADER, headerList.m_slist));
 
     RETURN_IF_FAILED_LOG(CurlPerform(url, response), m_handler);
 
@@ -173,11 +174,11 @@ Result CurlConnection::Post(std::string_view url, std::string_view data, std::st
 
 Result CurlConnection::CurlPerform(std::string_view url, std::string& response)
 {
-    RETURN_IF_CURL_ERROR(curl_easy_setopt(m_handle, CURLOPT_URL, url.data()));
+    RETURN_IF_CURL_SETUP_ERROR(curl_easy_setopt(m_handle, CURLOPT_URL, url.data()));
 
     std::string readBuffer;
-    RETURN_IF_CURL_ERROR(curl_easy_setopt(m_handle, CURLOPT_WRITEFUNCTION, WriteCallback));
-    RETURN_IF_CURL_ERROR(curl_easy_setopt(m_handle, CURLOPT_WRITEDATA, &readBuffer));
+    RETURN_IF_CURL_SETUP_ERROR(curl_easy_setopt(m_handle, CURLOPT_WRITEFUNCTION, WriteCallback));
+    RETURN_IF_CURL_SETUP_ERROR(curl_easy_setopt(m_handle, CURLOPT_WRITEDATA, &readBuffer));
 
     auto result = curl_easy_perform(m_handle);
     if (result != CURLE_OK)
@@ -191,7 +192,7 @@ Result CurlConnection::CurlPerform(std::string_view url, std::string& response)
     // The retry logic should also be opt-out-able by the user
 
     long httpCode = 0;
-    RETURN_IF_CURL_ERROR(curl_easy_getinfo(m_handle, CURLINFO_RESPONSE_CODE, &httpCode));
+    RETURN_IF_CURL_UNEXPECTED_ERROR(curl_easy_getinfo(m_handle, CURLINFO_RESPONSE_CODE, &httpCode));
     return HttpCodeToResult(httpCode);
 }
 

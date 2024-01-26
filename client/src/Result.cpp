@@ -64,6 +64,10 @@ std::string_view SFS::ToString(Result::Code code) noexcept
     {
     case Result::S_Ok:
         return "S_Ok";
+    case Result::E_ConnectionSetupFailed:
+        return "E_ConnectionSetupFailed";
+    case Result::E_ConnectionUnexpectedError:
+        return "E_ConnectionUnexpectedError";
     case Result::E_HttpBadRequest:
         return "E_HttpBadRequest";
     case Result::E_HttpNotFound:
