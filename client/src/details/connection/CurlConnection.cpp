@@ -148,7 +148,7 @@ Result CurlConnection::Get(std::string_view url, std::string& response)
     RETURN_IF_CURL_ERROR(curl_easy_setopt(m_handle, CURLOPT_HTTPGET, 1L));
     RETURN_IF_CURL_ERROR(curl_easy_setopt(m_handle, CURLOPT_HTTPHEADER, nullptr));
 
-    RETURN_IF_FAILED(CurlPerform(url, response));
+    RETURN_IF_FAILED_LOG(CurlPerform(url, response), m_handler);
 
     return Result::S_Ok;
 }
@@ -164,7 +164,7 @@ Result CurlConnection::Post(std::string_view url, std::string_view data, std::st
     RETURN_IF_CURL_ERROR(curl_easy_setopt(m_handle, CURLOPT_COPYPOSTFIELDS, data.empty() ? "" : data.data()));
     RETURN_IF_CURL_ERROR(curl_easy_setopt(m_handle, CURLOPT_HTTPHEADER, headerList.m_slist));
 
-    RETURN_IF_FAILED(CurlPerform(url, response));
+    RETURN_IF_FAILED_LOG(CurlPerform(url, response), m_handler);
 
     return Result::S_Ok;
 }

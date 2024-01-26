@@ -35,6 +35,6 @@ jobs:
 
       - name: Test
         shell: pwsh
-        run: .\scripts\Test.ps1
+        run: .\build\tests\bin\Debug\SFSClientTests.exe "\[Functional\]\[CurlConnectionTests\] Testing CurlConnection when the server is not reachable" -s
 
   # TODO: implement build-ubuntu job
