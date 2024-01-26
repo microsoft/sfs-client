@@ -35,6 +35,6 @@ jobs:
 
       - name: Test
         shell: pwsh
-        run: .\scripts\Test.ps1
+        run: .\scripts\Test.ps1 -OutputOnFailure
 
   # TODO: implement build-ubuntu job
