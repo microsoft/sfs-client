@@ -61,9 +61,17 @@ struct CurlHeaderList
 {
   public:
     CurlHeaderList() = default;
-    ~CurlHeaderList();
 
-    void Add(HttpHeader header, const std::string& value);
+    ~CurlHeaderList()
+    {
+        curl_slist_free_all(m_slist);
+    }
+
+    void Add(HttpHeader header, const std::string& value)
+    {
+        const std::string data = ToString(header) + ": " + value;
+        m_slist = curl_slist_append(m_slist, data.c_str());
+    }
 
     struct curl_slist* m_slist{nullptr};
 };
@@ -200,15 +208,4 @@ Result CurlConnection::CurlPerform(std::string_view url, std::string& response)
     long httpCode = 0;
     RETURN_IF_CURL_UNEXPECTED_ERROR(curl_easy_getinfo(m_handle, CURLINFO_RESPONSE_CODE, &httpCode));
     return HttpCodeToResult(httpCode);
-}
-
-void CurlHeaderList::Add(HttpHeader header, const std::string& value)
-{
-    const std::string data = ToString(header) + ": " + value;
-    m_slist = curl_slist_append(m_slist, data.c_str());
-}
-
-CurlHeaderList::~CurlHeaderList()
-{
-    curl_slist_free_all(m_slist);
 }
