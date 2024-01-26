@@ -4,7 +4,7 @@
 #include "../../mock/MockWebServer.h"
 #include "../../util/TestHelper.h"
 #include "ReportingHandler.h"
-#include "Util.h"
+#include "SFSUrlComponents.h"
 #include "connection/CurlConnection.h"
 #include "connection/CurlConnectionManager.h"
 
@@ -76,8 +76,11 @@ TEST("Testing CurlConnection()")
 
     SECTION("Testing CurlConnection::Get()")
     {
-        const std::string url =
-            util::GetSpecificVersionUrl(server.GetBaseUrl(), c_instanceId, c_namespace, c_productName, c_version);
+        const std::string url = SFSUrlComponents::GetSpecificVersionUrl(server.GetBaseUrl(),
+                                                                        c_instanceId,
+                                                                        c_namespace,
+                                                                        c_productName,
+                                                                        c_version);
 
         // Before registering the product, the URL returns 404 Not Found
         std::string out;
@@ -100,7 +103,8 @@ TEST("Testing CurlConnection()")
     {
         SECTION("With GetLatestVersion mock")
         {
-            const std::string url = util::GetLatestVersionUrl(server.GetBaseUrl(), c_instanceId, c_namespace);
+            const std::string url =
+                SFSUrlComponents::GetLatestVersionUrl(server.GetBaseUrl(), c_instanceId, c_namespace);
 
             std::string out;
 
@@ -134,8 +138,11 @@ TEST("Testing CurlConnection()")
 
         SECTION("With GetDownloadInfo mock")
         {
-            const std::string url =
-                util::GetDownloadInfoUrl(server.GetBaseUrl(), c_instanceId, c_namespace, c_productName, c_version);
+            const std::string url = SFSUrlComponents::GetDownloadInfoUrl(server.GetBaseUrl(),
+                                                                         c_instanceId,
+                                                                         c_namespace,
+                                                                         c_productName,
+                                                                         c_version);
 
             // Before registering the product, the URL returns 404 Not Found
             std::string out;
@@ -231,8 +238,11 @@ TEST("Testing CurlConnection works from a second ConnectionManager")
     handler.SetLoggingCallback(LogCallbackToTest);
     auto connection = connectionManager.MakeConnection();
 
-    const std::string url =
-        util::GetSpecificVersionUrl(server.GetBaseUrl(), c_instanceId, c_namespace, c_productName, c_version);
+    const std::string url = SFSUrlComponents::GetSpecificVersionUrl(server.GetBaseUrl(),
+                                                                    c_instanceId,
+                                                                    c_namespace,
+                                                                    c_productName,
+                                                                    c_version);
 
     // Register the product
     server.RegisterProduct(c_productName, c_version);
