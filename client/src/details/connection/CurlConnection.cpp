@@ -158,7 +158,7 @@ CurlConnection::~CurlConnection()
     }
 }
 
-Result CurlConnection::Get(std::string_view url, std::string& response)
+Result CurlConnection::Get(const std::string& url, std::string& response)
 {
     RETURN_CODE_IF_LOG(E_InvalidArg, url.empty(), m_handler, "url cannot be empty");
 
@@ -170,7 +170,7 @@ Result CurlConnection::Get(std::string_view url, std::string& response)
     return Result::S_Ok;
 }
 
-Result CurlConnection::Post(std::string_view url, std::string_view data, std::string& response)
+Result CurlConnection::Post(const std::string& url, const std::string& data, std::string& response)
 {
     RETURN_CODE_IF_LOG(E_InvalidArg, url.empty(), m_handler, "url cannot be empty");
 
@@ -178,7 +178,7 @@ Result CurlConnection::Post(std::string_view url, std::string_view data, std::st
     headerList.Add(HttpHeader::ContentType, "application/json");
 
     RETURN_IF_CURL_SETUP_ERROR(curl_easy_setopt(m_handle, CURLOPT_POST, 1L));
-    RETURN_IF_CURL_SETUP_ERROR(curl_easy_setopt(m_handle, CURLOPT_COPYPOSTFIELDS, data.empty() ? "" : data.data()));
+    RETURN_IF_CURL_SETUP_ERROR(curl_easy_setopt(m_handle, CURLOPT_COPYPOSTFIELDS, data.c_str()));
     RETURN_IF_CURL_SETUP_ERROR(curl_easy_setopt(m_handle, CURLOPT_HTTPHEADER, headerList.m_slist));
 
     RETURN_IF_FAILED_LOG(CurlPerform(url, response), m_handler);
@@ -186,9 +186,9 @@ Result CurlConnection::Post(std::string_view url, std::string_view data, std::st
     return Result::S_Ok;
 }
 
-Result CurlConnection::CurlPerform(std::string_view url, std::string& response)
+Result CurlConnection::CurlPerform(const std::string& url, std::string& response)
 {
-    RETURN_IF_CURL_SETUP_ERROR(curl_easy_setopt(m_handle, CURLOPT_URL, url.data()));
+    RETURN_IF_CURL_SETUP_ERROR(curl_easy_setopt(m_handle, CURLOPT_URL, url.c_str()));
 
     std::string readBuffer;
     RETURN_IF_CURL_SETUP_ERROR(curl_easy_setopt(m_handle, CURLOPT_WRITEFUNCTION, WriteCallback));

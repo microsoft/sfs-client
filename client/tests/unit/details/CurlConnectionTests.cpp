@@ -28,7 +28,7 @@ class MockCurlConnection : public CurlConnection
     }
 
   protected:
-    [[nodiscard]] Result CurlPerform(std::string_view, std::string& response) override
+    [[nodiscard]] Result CurlPerform(const std::string&, std::string& response) override
     {
         if (m_responseCode == Result::S_Ok)
         {

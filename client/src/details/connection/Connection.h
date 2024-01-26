@@ -6,7 +6,6 @@
 #include "Result.h"
 
 #include <string>
-#include <string_view>
 
 namespace SFS::details
 {
@@ -24,10 +23,10 @@ class Connection
     Connection(const Connection&) = delete;
     Connection& operator=(const Connection&) = delete;
 
-    [[nodiscard]] virtual Result Get(std::string_view url, std::string& response) = 0;
-    [[nodiscard]] virtual Result Post(std::string_view url, std::string_view data, std::string& response) = 0;
+    [[nodiscard]] virtual Result Get(const std::string& url, std::string& response) = 0;
+    [[nodiscard]] virtual Result Post(const std::string& url, const std::string& data, std::string& response) = 0;
 
-    [[nodiscard]] Result Post(std::string_view url, std::string& response);
+    [[nodiscard]] Result Post(const std::string& url, std::string& response);
 
   protected:
     const ReportingHandler& m_handler;

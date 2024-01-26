@@ -7,7 +7,6 @@
 #include "Result.h"
 
 #include <string>
-#include <string_view>
 
 namespace SFS::details
 {
@@ -19,7 +18,7 @@ class MockConnection : public Connection
     MockConnection(const ReportingHandler& handler);
     ~MockConnection() override;
 
-    [[nodiscard]] Result Get(std::string_view url, std::string& response) override;
-    [[nodiscard]] Result Post(std::string_view url, std::string_view data, std::string& response) override;
+    [[nodiscard]] Result Get(const std::string& url, std::string& response) override;
+    [[nodiscard]] Result Post(const std::string& url, const std::string& data, std::string& response) override;
 };
 } // namespace SFS::details

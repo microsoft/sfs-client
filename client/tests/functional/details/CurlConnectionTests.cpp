@@ -37,14 +37,14 @@ class CurlConnectionTimeout : public CurlConnection
     {
     }
 
-    [[nodiscard]] Result Get(std::string_view url, std::string& response) override
+    [[nodiscard]] Result Get(const std::string& url, std::string& response) override
     {
         // Timeout within 100ms
         curl_easy_setopt(m_handle, CURLOPT_TIMEOUT_MS, 100L);
         return CurlConnection::Get(url, response);
     }
 
-    [[nodiscard]] Result Post(std::string_view url, std::string_view data, std::string& response) override
+    [[nodiscard]] Result Post(const std::string& url, const std::string& data, std::string& response) override
     {
         // Timeout within 100ms
         curl_easy_setopt(m_handle, CURLOPT_TIMEOUT_MS, 100L);

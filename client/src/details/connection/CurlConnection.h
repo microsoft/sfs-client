@@ -7,7 +7,6 @@
 #include "Result.h"
 
 #include <string>
-#include <string_view>
 
 // Forward declarations
 #define SFS_CURL_ERROR_SIZE 256 // Size will be checked against curl lib reqs in source
@@ -23,11 +22,11 @@ class CurlConnection : public Connection
     CurlConnection(const ReportingHandler& handler);
     ~CurlConnection() override;
 
-    [[nodiscard]] Result Get(std::string_view url, std::string& response) override;
-    [[nodiscard]] Result Post(std::string_view url, std::string_view data, std::string& response) override;
+    [[nodiscard]] Result Get(const std::string& url, std::string& response) override;
+    [[nodiscard]] Result Post(const std::string& url, const std::string& data, std::string& response) override;
 
   protected:
-    [[nodiscard]] virtual Result CurlPerform(std::string_view url, std::string& response);
+    [[nodiscard]] virtual Result CurlPerform(const std::string& url, std::string& response);
 
     CURL* m_handle;
     char m_errorBuffer[SFS_CURL_ERROR_SIZE];
