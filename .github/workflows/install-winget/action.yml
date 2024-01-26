@@ -14,7 +14,7 @@ runs:
   steps:
     - name: Cache WinGet installation
       id: cache-winget-installation
-      uses: actions/cache@v3.3.2
+      uses: actions/cache@v4
       with:
         path: winget-installation-cache
         key: winget-installation
