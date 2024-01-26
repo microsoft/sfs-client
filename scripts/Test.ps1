@@ -16,4 +16,4 @@ PS> ./scripts/Test.ps1
 $GitRoot = (Resolve-Path (&git -C $PSScriptRoot rev-parse --show-toplevel)).Path
 $BuildFolder = "$GitRoot/build"
 
-ctest --test-dir "$BuildFolder/client"
+ctest --test-dir "$BuildFolder/client" --output-on-failure
