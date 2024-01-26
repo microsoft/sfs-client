@@ -23,6 +23,8 @@ using namespace SFS::details;
 namespace
 {
 // Curl callback for writing data to a std::string. Must return the number of bytes written.
+// This callback may be called multiple times for a single request, and will keep appending
+// to userData until the request is complete. The data received is not null-terminated.
 size_t WriteCallback(char* contents, size_t sizeInBytes, size_t numElements, void* userData)
 {
     auto readBufferPtr = static_cast<std::string*>(userData);
@@ -35,13 +37,29 @@ size_t WriteCallback(char* contents, size_t sizeInBytes, size_t numElements, voi
     return 0;
 }
 
-struct CurlSList
+enum class HttpHeader
+{
+    ContentType
+};
+
+std::string ToString(HttpHeader header)
+{
+    switch (header)
+    {
+    case HttpHeader::ContentType:
+        return "Content-Type";
+    }
+
+    return "";
+}
+
+struct CurlHeaderList
 {
   public:
-    CurlSList() = default;
-    ~CurlSList();
+    CurlHeaderList() = default;
+    ~CurlHeaderList();
 
-    void Append(const char* data);
+    void Add(HttpHeader header, const std::string& value);
 
     struct curl_slist* m_slist{nullptr};
 };
@@ -59,15 +77,19 @@ Result CurlCodeToResult(CURLcode curlCode, char* errorBuffer)
         break;
     }
 
-    const bool isErrorStringRegistered = strlen(errorBuffer) > 0;
-    std::string message = isErrorStringRegistered ? std::string(errorBuffer) : "Curl error";
+    const bool isErrorStringRegistered = errorBuffer && errorBuffer[0] != '\0';
+    std::string message = isErrorStringRegistered ? errorBuffer : "Curl error";
 
     return Result(code, std::move(message));
 }
 
 Result HttpCodeToResult(long httpCode)
 {
-    if (httpCode == 400)
+    if (httpCode == 200)
+    {
+        return Result::S_Ok;
+    }
+    else if (httpCode == 400)
     {
         return Result(Result::E_HttpBadRequest, "400 Bad Request");
     }
@@ -83,12 +105,8 @@ Result HttpCodeToResult(long httpCode)
     {
         return Result(Result::E_HttpServiceNotAvailable, "503 Service Unavailable");
     }
-    else if (httpCode != 200)
-    {
-        return Result(Result::E_HttpUnexpected, "Unexpected HTTP code");
-    }
 
-    return Result::S_Ok;
+    return Result(Result::E_HttpUnexpected, "Unexpected HTTP code " + std::to_string(httpCode));
 }
 } // namespace
 
@@ -139,12 +157,12 @@ Result CurlConnection::Post(std::string_view url, std::string_view data, std::st
 {
     RETURN_CODE_IF_LOG(E_InvalidArg, url.empty(), m_handler, "url cannot be empty");
 
-    CurlSList slist;
-    slist.Append("Content-Type: application/json");
+    CurlHeaderList headerList;
+    headerList.Add(HttpHeader::ContentType, "application/json");
 
     RETURN_IF_CURL_ERROR(curl_easy_setopt(m_handle, CURLOPT_POST, 1L));
     RETURN_IF_CURL_ERROR(curl_easy_setopt(m_handle, CURLOPT_COPYPOSTFIELDS, data.empty() ? "" : data.data()));
-    RETURN_IF_CURL_ERROR(curl_easy_setopt(m_handle, CURLOPT_HTTPHEADER, slist.m_slist));
+    RETURN_IF_CURL_ERROR(curl_easy_setopt(m_handle, CURLOPT_HTTPHEADER, headerList.m_slist));
 
     RETURN_IF_FAILED(CurlPerform(url, response));
 
@@ -175,12 +193,13 @@ Result CurlConnection::CurlPerform(std::string_view url, std::string& response)
     return HttpCodeToResult(httpCode);
 }
 
-void CurlSList::Append(const char* data)
+void CurlHeaderList::Add(HttpHeader header, const std::string& value)
 {
-    m_slist = curl_slist_append(m_slist, data);
+    const std::string data = ToString(header) + ": " + value;
+    m_slist = curl_slist_append(m_slist, data.c_str());
 }
 
-CurlSList::~CurlSList()
+CurlHeaderList::~CurlHeaderList()
 {
     curl_slist_free_all(m_slist);
 }
