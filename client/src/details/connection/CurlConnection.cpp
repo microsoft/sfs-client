@@ -88,28 +88,33 @@ Result CurlCodeToResult(CURLcode curlCode, char* errorBuffer)
 
 Result HttpCodeToResult(long httpCode)
 {
-    if (httpCode == 200)
+    switch (httpCode)
+    {
+    case 200:
     {
         return Result::S_Ok;
     }
-    else if (httpCode == 400)
+    case 400:
     {
         return Result(Result::E_HttpBadRequest, "400 Bad Request");
     }
-    else if (httpCode == 404)
+    case 404:
     {
         return Result(Result::E_HttpNotFound, "404 Not Found");
     }
-    else if (httpCode == 405)
+    case 405:
     {
         return Result(Result::E_HttpBadRequest, "405 Method Not Allowed");
     }
-    else if (httpCode == 503)
+    case 503:
     {
         return Result(Result::E_HttpServiceNotAvailable, "503 Service Unavailable");
     }
-
-    return Result(Result::E_HttpUnexpected, "Unexpected HTTP code " + std::to_string(httpCode));
+    default:
+    {
+        return Result(Result::E_HttpUnexpected, "Unexpected HTTP code " + std::to_string(httpCode));
+    }
+    }
 }
 } // namespace
 
