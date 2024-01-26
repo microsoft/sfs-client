@@ -20,6 +20,8 @@
 using namespace SFS;
 using namespace SFS::details;
 
+static_assert(SFS_CURL_ERROR_SIZE >= CURL_ERROR_SIZE, "SFS_CURL_ERROR_SIZE must be at least CURL_ERROR_SIZE");
+
 namespace
 {
 // Curl callback for writing data to a std::string. Must return the number of bytes written.

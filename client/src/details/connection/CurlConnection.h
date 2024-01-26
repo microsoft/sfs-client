@@ -10,7 +10,7 @@
 #include <string_view>
 
 // Forward declarations
-#define CURL_ERROR_SIZE 256
+#define SFS_CURL_ERROR_SIZE 256 // Size will be checked against curl lib reqs in source
 typedef void CURL;
 
 namespace SFS::details
@@ -30,6 +30,6 @@ class CurlConnection : public Connection
     [[nodiscard]] virtual Result CurlPerform(std::string_view url, std::string& response);
 
     CURL* m_handle;
-    char m_errorBuffer[CURL_ERROR_SIZE];
+    char m_errorBuffer[SFS_CURL_ERROR_SIZE];
 };
 } // namespace SFS::details
