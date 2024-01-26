@@ -28,6 +28,7 @@ namespace
 // Curl callback for writing data to a std::string. Must return the number of bytes written.
 // This callback may be called multiple times for a single request, and will keep appending
 // to userData until the request is complete. The data received is not null-terminated.
+// For SFS, this data will likely be a JSON string.
 size_t WriteCallback(char* contents, size_t sizeInBytes, size_t numElements, void* userData)
 {
     auto readBufferPtr = static_cast<std::string*>(userData);
