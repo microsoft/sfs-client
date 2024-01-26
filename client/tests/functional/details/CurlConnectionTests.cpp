@@ -194,6 +194,7 @@ TEST("Testing CurlConnection when the server is not reachable")
     // Using a custom override class just to time out faster on an invalid URL
     ReportingHandler handler;
     CurlConnectionTimeoutManager connectionManager(handler);
+    handler.SetLoggingCallback(LogCallbackToTest);
     auto connection = connectionManager.MakeConnection();
 
     std::string url = "dummy";
@@ -224,6 +225,7 @@ TEST("Testing CurlConnection works from a second ConnectionManager")
 
     test::MockWebServer server;
     CurlConnectionManager connectionManager(handler);
+    handler.SetLoggingCallback(LogCallbackToTest);
     auto connection = connectionManager.MakeConnection();
 
     const std::string url =
