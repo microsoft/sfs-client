@@ -197,12 +197,15 @@ TEST("Testing CurlConnection when the server is not reachable")
     handler.SetLoggingCallback(LogCallbackToTest);
     auto connection = connectionManager.MakeConnection();
 
-    std::string url = "dummy";
+    // Using a non-routable IP address to ensure the server is not reachable
+    // https://www.rfc-editor.org/rfc/rfc5737#section-3: The blocks 192.0.2.0/24 (...) are provided for use in
+    // documentation.
+    std::string url = "192.0.2.0";
     std::string out;
     REQUIRE(connection->Get(url, out) == Result::E_HttpTimeout);
     REQUIRE(connection->Post(url + "/names", "{}", out) == Result::E_HttpTimeout);
 
-    url = "dummy/files?action=GenerateDownloadInfo";
+    url = "192.0.2.0/files?action=GenerateDownloadInfo";
 
     auto ret = connection->Get(url, out);
     REQUIRE(ret.GetCode() == Result::E_HttpTimeout);
