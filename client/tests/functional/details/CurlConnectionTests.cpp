@@ -257,3 +257,63 @@ TEST("Testing CurlConnection works from a second ConnectionManager")
         REQUIRE(connection2->Get(url, out) == Result::S_Ok);
     }
 }
+
+TEST("Testing a url that's too big throws 414")
+{
+    ReportingHandler handler;
+    handler.SetLoggingCallback(LogCallbackToTest);
+
+    test::MockWebServer server;
+    CurlConnectionManager connectionManager(handler);
+    auto connection = connectionManager.MakeConnection();
+
+    // Will use a fake large product name to produce a large url
+    const std::string largeProductName(90000, 'a');
+
+    // Register the products
+    server.RegisterProduct(largeProductName, c_version);
+
+    // Url produces: 414 URI Too Long
+    std::string out;
+    auto ret = connection->Get(SFSUrlComponents::GetSpecificVersionUrl(server.GetBaseUrl(),
+                                                                       c_instanceId,
+                                                                       c_namespace,
+                                                                       largeProductName,
+                                                                       c_version),
+                               out);
+    REQUIRE(ret.GetCode() == Result::E_HttpUnexpected);
+    REQUIRE(ret.GetMessage() == "Unexpected HTTP code 414");
+}
+
+TEST("Testing a response over the limit fails the operation")
+{
+    ReportingHandler handler;
+    handler.SetLoggingCallback(LogCallbackToTest);
+
+    test::MockWebServer server;
+    CurlConnectionManager connectionManager(handler);
+    auto connection = connectionManager.MakeConnection();
+
+    // Will use a fake large product name to produce a response over the limit of 100k characters
+    const std::string largeProductName(90000, 'a');
+    const std::string overLimitProductName(1000000, 'a');
+
+    // Register the products
+    server.RegisterProduct(largeProductName, c_version);
+    server.RegisterProduct(overLimitProductName, c_version);
+
+    // Using GetLatestVersion api since the product name is in the body and not in the url, to avoid a 414 error like on
+    // the test above
+    const std::string url = SFSUrlComponents::GetLatestVersionUrl(server.GetBaseUrl(), c_instanceId, c_namespace);
+
+    // Large one works
+    json body = {{{"TargetingAttributes", {}}, {"Product", largeProductName}}};
+    std::string out;
+    REQUIRE(connection->Post(url, body.dump(), out) == Result::S_Ok);
+
+    // Over limit fails
+    body[0]["Product"] = overLimitProductName;
+    auto ret = connection->Post(url, body.dump(), out);
+    REQUIRE(ret.GetCode() == Result::E_ConnectionUnexpectedError);
+    REQUIRE(ret.GetMessage() == "Failure writing output to destination");
+}
