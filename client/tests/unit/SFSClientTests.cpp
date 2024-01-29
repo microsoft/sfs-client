@@ -42,10 +42,12 @@ static void StaticTestLoggingCallback(const LogData&)
 
 TEST("Testing SFSClient::Make()")
 {
+#ifdef __GNUG__
 // For GCC, explicitly turning off "missing-field-initializers" warning as this block tests
 // users calling explicitly onto the API with field initializers for ClientConfig
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wmissing-field-initializers"
+#endif
 
     const std::string accountId{"testAccountId"};
     const std::string instanceId{"testInstanceId"};
@@ -192,8 +194,10 @@ TEST("Testing SFSClient::Make()")
         REQUIRE(sfsClient == nullptr);
     }
 
+#ifdef __GNUG__
 // For "-Wmissing-field-initializers"
 #pragma GCC diagnostic pop
+#endif
 }
 
 TEST_SCENARIO("Testing SFSClient::GetLatestDownloadInfo()")
