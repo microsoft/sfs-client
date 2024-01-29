@@ -13,35 +13,35 @@ TEST("Testing Result() class methods")
 {
     SECTION("Default constructor")
     {
-        Result resultOk(Result::Code::S_Ok);
+        Result resultSuccess(Result::Code::Success);
 
-        REQUIRE(resultOk.GetCode() == Result::Code::S_Ok);
-        REQUIRE(resultOk.GetMessage().empty());
-        REQUIRE(resultOk.IsSuccess());
-        REQUIRE_FALSE(resultOk.IsFailure());
+        REQUIRE(resultSuccess.GetCode() == Result::Code::Success);
+        REQUIRE(resultSuccess.GetMessage().empty());
+        REQUIRE(resultSuccess.IsSuccess());
+        REQUIRE_FALSE(resultSuccess.IsFailure());
 
         INFO("Comparison operators");
-        REQUIRE(resultOk == Result::Code::S_Ok);
-        REQUIRE(resultOk == Result::S_Ok);
-        REQUIRE(resultOk != Result::Code::E_NotSet);
-        REQUIRE(resultOk != Result::E_NotSet);
-        REQUIRE_FALSE(resultOk == Result::E_NotSet);
+        REQUIRE(resultSuccess == Result::Code::Success);
+        REQUIRE(resultSuccess == Result::Success);
+        REQUIRE(resultSuccess != Result::Code::NotSet);
+        REQUIRE(resultSuccess != Result::NotSet);
+        REQUIRE_FALSE(resultSuccess == Result::NotSet);
 
         INFO("bool operator");
-        REQUIRE(resultOk);
+        REQUIRE(resultSuccess);
     }
 
     SECTION("Constructor with message")
     {
-        Result resultUnexpected(Result::Code::E_Unexpected, "message");
-        REQUIRE(resultUnexpected.GetCode() == Result::Code::E_Unexpected);
+        Result resultUnexpected(Result::Code::Unexpected, "message");
+        REQUIRE(resultUnexpected.GetCode() == Result::Code::Unexpected);
         REQUIRE(resultUnexpected.GetMessage() == "message");
         REQUIRE_FALSE(resultUnexpected.IsSuccess());
         REQUIRE(resultUnexpected.IsFailure());
 
         INFO("Comparison operators on constructor with message");
-        REQUIRE(resultUnexpected == Result::Code::E_Unexpected);
-        REQUIRE(resultUnexpected != Result::Code::E_NotSet);
+        REQUIRE(resultUnexpected == Result::Code::Unexpected);
+        REQUIRE(resultUnexpected != Result::Code::NotSet);
 
         INFO("bool operator");
         REQUIRE_FALSE(resultUnexpected);
@@ -50,9 +50,9 @@ TEST("Testing Result() class methods")
 
 TEST("Testing ToString(Result)")
 {
-    REQUIRE(SFS::ToString(Result::Code::S_Ok) == "S_Ok");
-    REQUIRE(SFS::ToString(Result::Code::E_NotImpl) == "E_NotImpl");
-    REQUIRE(SFS::ToString(Result::Code::E_NotSet) == "E_NotSet");
-    REQUIRE(SFS::ToString(Result::Code::E_OutOfMemory) == "E_OutOfMemory");
-    REQUIRE(SFS::ToString(Result::Code::E_Unexpected) == "E_Unexpected");
+    REQUIRE(SFS::ToString(Result::Code::Success) == "Success");
+    REQUIRE(SFS::ToString(Result::Code::NotImpl) == "NotImpl");
+    REQUIRE(SFS::ToString(Result::Code::NotSet) == "NotSet");
+    REQUIRE(SFS::ToString(Result::Code::OutOfMemory) == "OutOfMemory");
+    REQUIRE(SFS::ToString(Result::Code::Unexpected) == "Unexpected");
 }

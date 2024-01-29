@@ -17,7 +17,7 @@ std::unique_ptr<ApplicabilityDetails> GetDetails(const std::vector<Architecture>
 {
     std::unique_ptr<ApplicabilityDetails> details;
     REQUIRE(ApplicabilityDetails::Make(architectures, platformApplicabilityForPackage, fileMoniker, details) ==
-            Result::S_Ok);
+            Result::Success);
     REQUIRE(details != nullptr);
     return details;
 };

@@ -37,7 +37,7 @@ try
 }
 SFS_CATCH_RETURN();
 
-Result TestSFS_ReturnIfFailed(const Result& result, const Result& ifNotFailed = Result::S_Ok)
+Result TestSFS_ReturnIfFailed(const Result& result, const Result& ifNotFailed = Result::Success)
 {
     RETURN_IF_FAILED(result);
     return ifNotFailed;
@@ -46,21 +46,21 @@ Result TestSFS_ReturnIfFailed(const Result& result, const Result& ifNotFailed = 
 
 TEST("Testing ErrorHandling's SFS_CATCH_RETURN()")
 {
-    REQUIRE(TestSFS_Catch_Return_bad_alloc() == Result::E_OutOfMemory);
-    REQUIRE(TestSFS_Catch_Return_std_exception() == Result::E_Unexpected);
-    REQUIRE(TestSFS_Catch_Return_unknown() == Result::E_Unexpected);
+    REQUIRE(TestSFS_Catch_Return_bad_alloc() == Result::OutOfMemory);
+    REQUIRE(TestSFS_Catch_Return_std_exception() == Result::Unexpected);
+    REQUIRE(TestSFS_Catch_Return_unknown() == Result::Unexpected);
 }
 
 TEST("Testing ErrorHandling's RETURN_IF_FAILED()")
 {
     SECTION("Test that RETURN_IF_FAILED returns the result if it is a failure")
     {
-        REQUIRE(TestSFS_ReturnIfFailed(Result::Code::E_Unexpected) == Result::Code::E_Unexpected);
+        REQUIRE(TestSFS_ReturnIfFailed(Result::Code::Unexpected) == Result::Code::Unexpected);
     }
 
     SECTION("Test that RETURN_IF_FAILED does not return if the result is a success")
     {
-        REQUIRE(TestSFS_ReturnIfFailed(Result::Code::S_Ok) == Result::Code::S_Ok);
-        REQUIRE(TestSFS_ReturnIfFailed(Result::Code::S_Ok, Result::Code::E_Unexpected) == Result::Code::E_Unexpected);
+        REQUIRE(TestSFS_ReturnIfFailed(Result::Code::Success) == Result::Code::Success);
+        REQUIRE(TestSFS_ReturnIfFailed(Result::Code::Success, Result::Code::Unexpected) == Result::Code::Unexpected);
     }
 }

@@ -26,7 +26,7 @@ try
 
     out = std::move(tmp);
 
-    return Result::S_Ok;
+    return Result::Success;
 }
 SFS_CATCH_RETURN()
 
@@ -73,7 +73,7 @@ try
 
     out = std::move(tmp);
 
-    return Result::S_Ok;
+    return Result::Success;
 }
 SFS_CATCH_RETURN()
 
@@ -137,7 +137,7 @@ try
 
     out = std::move(tmp);
 
-    return Result::S_Ok;
+    return Result::Success;
 }
 SFS_CATCH_RETURN()
 
@@ -159,7 +159,7 @@ try
 
     out = std::move(tmp);
 
-    return Result::S_Ok;
+    return Result::Success;
 }
 SFS_CATCH_RETURN()
 

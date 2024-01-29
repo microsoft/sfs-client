@@ -30,7 +30,7 @@ class MockCurlConnection : public CurlConnection
   protected:
     [[nodiscard]] Result CurlPerform(const std::string&, std::string& response) override
     {
-        if (m_responseCode == Result::S_Ok)
+        if (m_responseCode == Result::Success)
         {
             response = m_response;
         }
@@ -47,7 +47,7 @@ TEST("Testing CurlConnection()")
 {
     ReportingHandler handler;
     handler.SetLoggingCallback(LogCallbackToTest);
-    Result::Code responseCode = Result::E_HttpNotFound;
+    Result::Code responseCode = Result::HttpNotFound;
     std::string response = "expected";
     std::unique_ptr<Connection> connection = std::make_unique<MockCurlConnection>(handler, responseCode, response);
 
@@ -57,7 +57,7 @@ TEST("Testing CurlConnection()")
         REQUIRE(connection->Get("url", out) == responseCode);
         REQUIRE(out.empty());
 
-        responseCode = Result::S_Ok;
+        responseCode = Result::Success;
         REQUIRE(connection->Get("url", out) == responseCode);
         REQUIRE(out == response);
     }
@@ -72,7 +72,7 @@ TEST("Testing CurlConnection()")
         REQUIRE(connection->Post("url", body.dump(), out) == responseCode);
         REQUIRE(out.empty());
 
-        responseCode = Result::S_Ok;
+        responseCode = Result::Success;
         REQUIRE(connection->Get("url", out) == responseCode);
         REQUIRE(out == response);
 

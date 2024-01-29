@@ -17,8 +17,8 @@
         RETURN_CODE_IF_LOG(error, __curlCode != CURLE_OK, m_handler, std::move(__message));                            \
     } while ((void)0, 0)
 
-#define RETURN_IF_CURL_SETUP_ERROR(curlCall) RETURN_IF_CURL_ERROR(curlCall, E_ConnectionSetupFailed)
-#define RETURN_IF_CURL_UNEXPECTED_ERROR(curlCall) RETURN_IF_CURL_ERROR(curlCall, E_ConnectionUnexpectedError)
+#define RETURN_IF_CURL_SETUP_ERROR(curlCall) RETURN_IF_CURL_ERROR(curlCall, ConnectionSetupFailed)
+#define RETURN_IF_CURL_UNEXPECTED_ERROR(curlCall) RETURN_IF_CURL_ERROR(curlCall, ConnectionUnexpectedError)
 
 // Setting a hard limit of 100k characters for the response to avoid rogue servers sending huge amounts of data
 #define MAX_RESPONSE_CHARACTERS 100000
@@ -83,10 +83,10 @@ struct CurlHeaderList
         const auto ret = curl_slist_append(m_slist, data.c_str());
         if (!ret)
         {
-            return Result(Result::E_ConnectionSetupFailed, "Failed to add header to CurlHeaderList");
+            return Result(Result::ConnectionSetupFailed, "Failed to add header to CurlHeaderList");
         }
         m_slist = ret;
-        return Result::S_Ok;
+        return Result::Success;
     }
 
     struct curl_slist* m_slist{nullptr};
@@ -110,7 +110,7 @@ struct CurlErrorBuffer
 
     void SetBuffer()
     {
-        THROW_CODE_IF_LOG(E_ConnectionSetupFailed,
+        THROW_CODE_IF_LOG(ConnectionSetupFailed,
                           curl_easy_setopt(m_handle, CURLOPT_ERRORBUFFER, m_errorBuffer) != CURLE_OK,
                           m_reportingHandler,
                           "Failed to set up error buffer for curl");
@@ -119,8 +119,8 @@ struct CurlErrorBuffer
     Result UnsetBuffer()
     {
         return curl_easy_setopt(m_handle, CURLOPT_ERRORBUFFER, nullptr) == CURLE_OK
-                   ? Result::S_Ok
-                   : Result(Result::E_ConnectionSetupFailed, "Failed to unset curl error buffer");
+                   ? Result::Success
+                   : Result(Result::ConnectionSetupFailed, "Failed to unset curl error buffer");
     }
 
     char* Get()
@@ -141,10 +141,10 @@ Result CurlCodeToResult(CURLcode curlCode, char* errorBuffer)
     switch (curlCode)
     {
     case CURLE_OPERATION_TIMEDOUT:
-        code = Result::E_HttpTimeout;
+        code = Result::HttpTimeout;
         break;
     default:
-        code = Result::E_ConnectionUnexpectedError;
+        code = Result::ConnectionUnexpectedError;
         break;
     }
 
@@ -160,27 +160,27 @@ Result HttpCodeToResult(long httpCode)
     {
     case 200:
     {
-        return Result::S_Ok;
+        return Result::Success;
     }
     case 400:
     {
-        return Result(Result::E_HttpBadRequest, "400 Bad Request");
+        return Result(Result::HttpBadRequest, "400 Bad Request");
     }
     case 404:
     {
-        return Result(Result::E_HttpNotFound, "404 Not Found");
+        return Result(Result::HttpNotFound, "404 Not Found");
     }
     case 405:
     {
-        return Result(Result::E_HttpBadRequest, "405 Method Not Allowed");
+        return Result(Result::HttpBadRequest, "405 Method Not Allowed");
     }
     case 503:
     {
-        return Result(Result::E_HttpServiceNotAvailable, "503 Service Unavailable");
+        return Result(Result::HttpServiceNotAvailable, "503 Service Unavailable");
     }
     default:
     {
-        return Result(Result::E_HttpUnexpected, "Unexpected HTTP code " + std::to_string(httpCode));
+        return Result(Result::HttpUnexpected, "Unexpected HTTP code " + std::to_string(httpCode));
     }
     }
 }
@@ -189,11 +189,11 @@ Result HttpCodeToResult(long httpCode)
 CurlConnection::CurlConnection(const ReportingHandler& handler) : Connection(handler)
 {
     m_handle = curl_easy_init();
-    THROW_CODE_IF_LOG(E_ConnectionSetupFailed, !m_handle, m_handler, "Failed to init curl connection");
+    THROW_CODE_IF_LOG(ConnectionSetupFailed, !m_handle, m_handler, "Failed to init curl connection");
 
     // Turning timeout signals off to avoid issues with threads
     // See https://curl.se/libcurl/c/threadsafe.html
-    THROW_CODE_IF_LOG(E_ConnectionSetupFailed,
+    THROW_CODE_IF_LOG(ConnectionSetupFailed,
                       curl_easy_setopt(m_handle, CURLOPT_NOSIGNAL, 1L) != CURLE_OK,
                       m_handler,
                       "Failed to set up curl");
@@ -213,19 +213,19 @@ CurlConnection::~CurlConnection()
 
 Result CurlConnection::Get(const std::string& url, std::string& response)
 {
-    RETURN_CODE_IF_LOG(E_InvalidArg, url.empty(), m_handler, "url cannot be empty");
+    RETURN_CODE_IF_LOG(InvalidArg, url.empty(), m_handler, "url cannot be empty");
 
     RETURN_IF_CURL_SETUP_ERROR(curl_easy_setopt(m_handle, CURLOPT_HTTPGET, 1L));
     RETURN_IF_CURL_SETUP_ERROR(curl_easy_setopt(m_handle, CURLOPT_HTTPHEADER, nullptr));
 
     RETURN_IF_FAILED_LOG(CurlPerform(url, response), m_handler);
 
-    return Result::S_Ok;
+    return Result::Success;
 }
 
 Result CurlConnection::Post(const std::string& url, const std::string& data, std::string& response)
 {
-    RETURN_CODE_IF_LOG(E_InvalidArg, url.empty(), m_handler, "url cannot be empty");
+    RETURN_CODE_IF_LOG(InvalidArg, url.empty(), m_handler, "url cannot be empty");
 
     CurlHeaderList headerList;
     RETURN_IF_FAILED_LOG(headerList.Add(HttpHeader::ContentType, "application/json"), m_handler);
@@ -236,7 +236,7 @@ Result CurlConnection::Post(const std::string& url, const std::string& data, std
 
     RETURN_IF_FAILED_LOG(CurlPerform(url, response), m_handler);
 
-    return Result::S_Ok;
+    return Result::Success;
 }
 
 Result CurlConnection::CurlPerform(const std::string& url, std::string& response)

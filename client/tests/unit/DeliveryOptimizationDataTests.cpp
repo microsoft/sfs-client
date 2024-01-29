@@ -14,7 +14,7 @@ namespace
 std::unique_ptr<DeliveryOptimizationData> GetData(const std::string& catalogId, const DOProperties& properties)
 {
     std::unique_ptr<DeliveryOptimizationData> data;
-    REQUIRE(DeliveryOptimizationData::Make(catalogId, properties, data) == Result::S_Ok);
+    REQUIRE(DeliveryOptimizationData::Make(catalogId, properties, data) == Result::Success);
     REQUIRE(data != nullptr);
     return data;
 };

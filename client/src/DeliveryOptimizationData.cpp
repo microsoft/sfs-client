@@ -21,7 +21,7 @@ try
     tmp->m_properties = std::move(properties);
 
     out = std::move(tmp);
-    return Result::S_Ok;
+    return Result::Success;
 }
 SFS_CATCH_RETURN()
 

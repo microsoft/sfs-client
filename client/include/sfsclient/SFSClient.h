@@ -73,7 +73,7 @@ class SFSClient
 
     /**
      * @brief Retrieve Delivery Optimization data for a given piece of content, if existing
-     * @details If the Delivery Optimization data is not available, the result code will be set to E_NotSet
+     * @details If the Delivery Optimization data is not available, the result code will be set to Result::NotSet
      * and the param data will not be modified
      * @param content A content object that was returned from a previous call to GetDownloadInfo
      * @param data A DeliveryOptimizationData object that is populated with the result
@@ -83,7 +83,7 @@ class SFSClient
 
     /**
      * @brief Retrieve Applicability details for a given piece of content, if existing
-     * @details If the Applicability details are not available, the result code will be set to E_NotSet
+     * @details If the Applicability details are not available, the result code will be set to Result::NotSet
      * and the param details will not be modified
      * @param content A content object that was returned from a previous call to GetDownloadInfo
      * @param data A ApplicabilityDetails object that is populated with the result
