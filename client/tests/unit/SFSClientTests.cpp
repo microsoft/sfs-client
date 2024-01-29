@@ -43,8 +43,8 @@ static void StaticTestLoggingCallback(const LogData&)
 TEST("Testing SFSClient::Make()")
 {
 #ifdef __GNUG__
-// For GCC, explicitly turning off "missing-field-initializers" warning as this block tests
-// users calling explicitly onto the API with field initializers for ClientConfig
+// For GCC, explicitly turning off "missing-field-initializers" warning as this block is testing the scenario
+// in which a user calls explicitly onto the API with field initializers for ClientConfig
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wmissing-field-initializers"
 #endif
