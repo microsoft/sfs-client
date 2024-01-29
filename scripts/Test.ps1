@@ -12,8 +12,17 @@ Use this on Windows platforms in a PowerShell session.
 .EXAMPLE
 PS> ./scripts/Test.ps1
 #>
+param (
+    [switch] $OutputOnFailure = $false
+)
 
 $GitRoot = (Resolve-Path (&git -C $PSScriptRoot rev-parse --show-toplevel)).Path
 $BuildFolder = "$GitRoot/build"
 
-ctest --test-dir "$BuildFolder/client"
+$cmd = "ctest --test-dir ""$BuildFolder/client"""
+if ($OutputOnFailure)
+{
+    $cmd += " --output-on-failure"
+}
+
+Invoke-Expression $cmd
