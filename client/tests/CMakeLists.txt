@@ -13,16 +13,19 @@ add_executable(${PROJECT_NAME})
 
 target_sources(
     ${PROJECT_NAME}
-    PRIVATE mock/MockWebServer.cpp
+    PRIVATE functional/details/CurlConnectionTests.cpp
+            mock/MockWebServer.cpp
             unit/ApplicabilityDetailsTests.cpp
             unit/ContentTests.cpp
             unit/DeliveryOptimizationDataTests.cpp
             unit/details/ErrorHandlingTests.cpp
+            unit/details/CurlConnectionTests.cpp
             unit/details/CurlConnectionManagerTests.cpp
             unit/details/ReportingHandlerTests.cpp
             unit/details/SFSClientImplTests.cpp
             unit/ResultTests.cpp
-            unit/SFSClientTests.cpp)
+            unit/SFSClientTests.cpp
+            util/TestHelper.cpp)
 
 set(SFS_CLIENT_LIB_NAME "Microsoft::${CMAKE_PROJECT_NAME}")
 add_dependencies(${PROJECT_NAME} ${SFS_CLIENT_LIB_NAME})

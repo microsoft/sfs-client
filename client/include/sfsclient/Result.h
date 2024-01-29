@@ -15,12 +15,18 @@ class Result
     enum Code : uint32_t
     {
         S_Ok = 0x00000000,
-        E_InvalidArg = 0x80000001,
-        E_HttpUnexpected = 0x80000002,
-        E_NotImpl = 0x80000003,
-        E_NotSet = 0x80000004,
-        E_OutOfMemory = 0x80000005,
-        E_Unexpected = 0x80000006,
+        E_ConnectionSetupFailed = 0x80000001,
+        E_ConnectionUnexpectedError = 0x80000002,
+        E_HttpBadRequest = 0x80000003,
+        E_HttpNotFound = 0x80000004,
+        E_HttpTimeout = 0x80000005,
+        E_HttpServiceNotAvailable = 0x80000006,
+        E_HttpUnexpected = 0x80000007,
+        E_InvalidArg = 0x80000008,
+        E_NotImpl = 0x80000009,
+        E_NotSet = 0x8000000A,
+        E_OutOfMemory = 0x8000000B,
+        E_Unexpected = 0x8000000C,
     };
 
     Result(Code code) noexcept;

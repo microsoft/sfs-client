@@ -34,6 +34,38 @@
         }                                                                                                              \
     } while ((void)0, 0)
 
+#define RETURN_IF_FAILED_LOG(result, handler)                                                                          \
+    do                                                                                                                 \
+    {                                                                                                                  \
+        auto __result = (result); /* Assigning to a variable ensures a code block gets called only once */             \
+        if (__result.IsFailure())                                                                                      \
+        {                                                                                                              \
+            SFS::details::LogFailedResult(handler, __result, __FILE__, __LINE__);                                      \
+            return __result;                                                                                           \
+        }                                                                                                              \
+    } while ((void)0, 0)
+
+#define LOG_IF_FAILED(result, handler, ...)                                                                            \
+    do                                                                                                                 \
+    {                                                                                                                  \
+        auto __result = (result); /* Assigning to a variable ensures a code block gets called only once */             \
+        if (__result.IsFailure())                                                                                      \
+        {                                                                                                              \
+            SFS::details::LogFailedResult(handler, __result, __FILE__, __LINE__);                                      \
+        }                                                                                                              \
+    } while ((void)0, 0)
+
+#define RETURN_CODE_IF_LOG(code, condition, handler, ...)                                                              \
+    do                                                                                                                 \
+    {                                                                                                                  \
+        if (condition)                                                                                                 \
+        {                                                                                                              \
+            auto __result = SFS::Result(SFS::Result::code, ##__VA_ARGS__);                                             \
+            SFS::details::LogFailedResult(handler, __result, __FILE__, __LINE__);                                      \
+            return __result;                                                                                           \
+        }                                                                                                              \
+    } while ((void)0, 0)
+
 #define THROW_CODE_IF_LOG(code, condition, handler, ...)                                                               \
     do                                                                                                                 \
     {                                                                                                                  \
