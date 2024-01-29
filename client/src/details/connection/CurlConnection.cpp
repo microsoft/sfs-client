@@ -198,9 +198,9 @@ CurlConnection::CurlConnection(const ReportingHandler& handler) : Connection(han
                       m_handler,
                       "Failed to set up curl");
 
-    // TODO: Pass AAD token in the header if it is available
-    // TODO: Allow passing user agent and MS-CV in the header
-    // TODO: Cert pinning with service
+    // TODO #40: Allow passing user agent and MS-CV in the header
+    // TODO #41: Pass AAD token in the header if it is available
+    // TODO #42: Cert pinning with service
 }
 
 CurlConnection::~CurlConnection()
@@ -258,7 +258,7 @@ Result CurlConnection::CurlPerform(const std::string& url, std::string& response
 
     response = std::move(readBuffer);
 
-    // TODO: perform retry logic according to response errors
+    // TODO #43: perform retry logic according to response errors
     // The retry logic should also be opt-out-able by the user
 
     long httpCode = 0;
