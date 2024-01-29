@@ -20,6 +20,9 @@
 #define RETURN_IF_CURL_SETUP_ERROR(curlCall) RETURN_IF_CURL_ERROR(curlCall, E_ConnectionSetupFailed)
 #define RETURN_IF_CURL_UNEXPECTED_ERROR(curlCall) RETURN_IF_CURL_ERROR(curlCall, E_ConnectionUnexpectedError)
 
+// Setting a hard limit of 100k characters for the response to avoid rogue servers sending huge amounts of data
+#define MAX_RESPONSE_CHARACTERS 100000
+
 using namespace SFS;
 using namespace SFS::details;
 
@@ -34,11 +37,18 @@ size_t WriteCallback(char* contents, size_t sizeInBytes, size_t numElements, voi
     auto readBufferPtr = static_cast<std::string*>(userData);
     if (readBufferPtr)
     {
-        auto totalSize = sizeInBytes * numElements;
+        size_t totalSize = sizeInBytes * numElements;
+
+        // Checking final response size to avoid unexpected amounts of data
+        if ((readBufferPtr->length() + totalSize) > MAX_RESPONSE_CHARACTERS)
+        {
+            return CURL_WRITEFUNC_ERROR;
+        }
+
         readBufferPtr->append(contents, totalSize);
         return totalSize;
     }
-    return 0;
+    return CURL_WRITEFUNC_ERROR;
 }
 
 enum class HttpHeader
