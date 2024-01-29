@@ -17,7 +17,7 @@ using namespace SFS::details;
 
 TEST("Testing class SFSClientImpl()")
 {
-    SFSClientImpl<CurlConnectionManager> sfsClient({"testAccountId", "testInstanceId", "testNameSpace"});
+    SFSClientImpl<CurlConnectionManager> sfsClient({"testAccountId", "testInstanceId", "testNameSpace", std::nullopt});
     auto connection = sfsClient.GetConnectionManager().MakeConnection();
 
     SECTION("Testing SFSClientImpl::GetLatestVersion()")
@@ -54,7 +54,7 @@ TEST("Testing class SFSClientImpl()")
 
 TEST("Testing SFSClientImpl::SetCustomBaseUrl()")
 {
-    SFSClientImpl<MockConnectionManager> sfsClient({"testAccountId", "testInstanceId", "testNameSpace"});
+    SFSClientImpl<MockConnectionManager> sfsClient({"testAccountId", "testInstanceId", "testNameSpace", std::nullopt});
 
     REQUIRE(sfsClient.GetBaseUrl() == "https://testAccountId.api.cdp.microsoft.com");
 
