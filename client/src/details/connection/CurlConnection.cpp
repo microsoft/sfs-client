@@ -77,10 +77,16 @@ struct CurlHeaderList
         curl_slist_free_all(m_slist);
     }
 
-    void Add(HttpHeader header, const std::string& value)
+    [[nodiscard]] Result Add(HttpHeader header, const std::string& value)
     {
         const std::string data = ToString(header) + ": " + value;
-        m_slist = curl_slist_append(m_slist, data.c_str());
+        const auto ret = curl_slist_append(m_slist, data.c_str());
+        if (!ret)
+        {
+            return Result(Result::E_ConnectionSetupFailed, "Failed to add header to CurlHeaderList");
+        }
+        m_slist = ret;
+        return Result::S_Ok;
     }
 
     struct curl_slist* m_slist{nullptr};
@@ -222,7 +228,7 @@ Result CurlConnection::Post(const std::string& url, const std::string& data, std
     RETURN_CODE_IF_LOG(E_InvalidArg, url.empty(), m_handler, "url cannot be empty");
 
     CurlHeaderList headerList;
-    headerList.Add(HttpHeader::ContentType, "application/json");
+    RETURN_IF_FAILED_LOG(headerList.Add(HttpHeader::ContentType, "application/json"), m_handler);
 
     RETURN_IF_CURL_SETUP_ERROR(curl_easy_setopt(m_handle, CURLOPT_POST, 1L));
     RETURN_IF_CURL_SETUP_ERROR(curl_easy_setopt(m_handle, CURLOPT_COPYPOSTFIELDS, data.c_str()));
