@@ -19,14 +19,14 @@ try
 {
     if (config.accountId.empty())
     {
-        return Result(Result::E_InvalidArg, "ClientConfig::accountId cannot be empty");
+        return Result(Result::InvalidArg, "ClientConfig::accountId cannot be empty");
     }
 
     out.reset();
     std::unique_ptr<SFSClient> tmp(new SFSClient());
     tmp->m_impl = std::make_unique<details::SFSClientImpl<CurlConnectionManager>>(std::move(config));
     out = std::move(tmp);
-    return Result::S_Ok;
+    return Result::Success;
 }
 SFS_CATCH_RETURN()
 
@@ -35,7 +35,7 @@ Result SFSClient::GetLatestDownloadInfo([[maybe_unused]] std::string_view produc
 try
 {
     // return m_impl->GetDownloadInfo(...);
-    return Result::E_NotImpl;
+    return Result::NotImpl;
 }
 SFS_CATCH_RETURN()
 
@@ -45,7 +45,7 @@ Result SFSClient::GetLatestDownloadInfo([[maybe_unused]] std::string_view produc
 try
 {
     // return m_impl->GetDownloadInfo(...);
-    return Result::E_NotImpl;
+    return Result::NotImpl;
 }
 SFS_CATCH_RETURN()
 
@@ -55,7 +55,7 @@ Result SFSClient::GetDeliveryOptimizationData(
 try
 {
     // return m_impl->GetDeliveryOptimizationData(...);
-    return Result::E_NotImpl;
+    return Result::NotImpl;
 }
 SFS_CATCH_RETURN()
 
@@ -65,6 +65,6 @@ Result SFSClient::GetApplicabilityDetails(
 try
 {
     // return m_impl->GetApplicabilityDetails(...);
-    return Result::E_NotImpl;
+    return Result::NotImpl;
 }
 SFS_CATCH_RETURN()

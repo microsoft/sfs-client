@@ -23,32 +23,32 @@ TEST("Testing class SFSClientImpl()")
     SECTION("Testing SFSClientImpl::GetLatestVersion()")
     {
         std::unique_ptr<VersionResponse> response;
-        REQUIRE(sfsClient.GetLatestVersion("productName", std::nullopt, *connection, response) == Result::E_NotImpl);
+        REQUIRE(sfsClient.GetLatestVersion("productName", std::nullopt, *connection, response) == Result::NotImpl);
 
         const SearchAttributes attributes{{"attr1", "value"}};
-        REQUIRE(sfsClient.GetLatestVersion("productName", attributes, *connection, response) == Result::E_NotImpl);
+        REQUIRE(sfsClient.GetLatestVersion("productName", attributes, *connection, response) == Result::NotImpl);
     }
 
     SECTION("Testing SFSClientImpl::GetSpecificVersion()")
     {
         std::unique_ptr<VersionResponse> response;
         REQUIRE(sfsClient.GetSpecificVersion("productName", "version", std::nullopt, *connection, response) ==
-                Result::E_NotImpl);
+                Result::NotImpl);
 
         const SearchAttributes attributes{{"attr1", "value"}};
         REQUIRE(sfsClient.GetSpecificVersion("productName", "version", attributes, *connection, response) ==
-                Result::E_NotImpl);
+                Result::NotImpl);
     }
 
     SECTION("Testing SFSClientImpl::GetDownloadInfo()")
     {
         std::unique_ptr<DownloadInfoResponse> response;
         REQUIRE(sfsClient.GetDownloadInfo("productName", "version", std::nullopt, *connection, response) ==
-                Result::E_NotImpl);
+                Result::NotImpl);
 
         const SearchAttributes attributes{{"attr1", "value"}};
         REQUIRE(sfsClient.GetDownloadInfo("productName", "version", attributes, *connection, response) ==
-                Result::E_NotImpl);
+                Result::NotImpl);
     }
 }
 

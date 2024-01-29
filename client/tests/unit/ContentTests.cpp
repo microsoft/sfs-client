@@ -17,7 +17,7 @@ std::unique_ptr<ContentId> GetContentId(const std::string& nameSpace,
                                         const std::string& version)
 {
     std::unique_ptr<ContentId> contentId;
-    REQUIRE(ContentId::Make(nameSpace, name, version, contentId) == Result::S_Ok);
+    REQUIRE(ContentId::Make(nameSpace, name, version, contentId) == Result::Success);
     REQUIRE(contentId != nullptr);
     return contentId;
 };
@@ -28,7 +28,7 @@ std::unique_ptr<File> GetFile(const std::string& fileId,
                               const std::unordered_map<HashType, std::string>& hashes)
 {
     std::unique_ptr<File> file;
-    REQUIRE(File::Make(fileId, url, sizeInBytes, hashes, file) == Result::S_Ok);
+    REQUIRE(File::Make(fileId, url, sizeInBytes, hashes, file) == Result::Success);
     REQUIRE(file != nullptr);
     return file;
 };
@@ -39,7 +39,7 @@ std::unique_ptr<Content> GetContent(const std::string& contentNameSpace,
                                     const std::vector<std::unique_ptr<File>>& files)
 {
     std::unique_ptr<Content> content;
-    REQUIRE(Content::Make(contentNameSpace, contentName, contentVersion, files, content) == Result::S_Ok);
+    REQUIRE(Content::Make(contentNameSpace, contentName, contentVersion, files, content) == Result::Success);
     REQUIRE(content != nullptr);
     return content;
 };
@@ -156,7 +156,8 @@ TEST_SCENARIO("Testing Content::Make()")
         WHEN("A Content is created by copying the parameters")
         {
             std::unique_ptr<Content> copiedContent;
-            REQUIRE(Content::Make(contentNameSpace, contentName, contentVersion, files, copiedContent) == Result::S_Ok);
+            REQUIRE(Content::Make(contentNameSpace, contentName, contentVersion, files, copiedContent) ==
+                    Result::Success);
             REQUIRE(copiedContent != nullptr);
 
             THEN("The content elements are copies")
@@ -183,7 +184,7 @@ TEST_SCENARIO("Testing Content::Make()")
             {
                 std::unique_ptr<Content> movedContent;
                 REQUIRE(Content::Make(contentNameSpace, contentName, contentVersion, std::move(files), movedContent) ==
-                        Result::S_Ok);
+                        Result::Success);
                 REQUIRE(movedContent != nullptr);
 
                 // Checking contents
@@ -211,7 +212,7 @@ TEST("Testing Content equality operators")
     std::unique_ptr<File> file = GetFile("fileId", "url", 1 /*sizeInBytes*/, {{HashType::Sha1, "sha1"}});
 
     std::unique_ptr<File> clonedFile;
-    REQUIRE(file->Clone(clonedFile) == Result::S_Ok);
+    REQUIRE(file->Clone(clonedFile) == Result::Success);
 
     std::vector<std::unique_ptr<File>> files;
     files.push_back(std::move(file));

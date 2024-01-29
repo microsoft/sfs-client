@@ -19,7 +19,7 @@ std::unique_ptr<SFSClient> GetSFSClient()
     std::unique_ptr<SFSClient> sfsClient;
     ClientConfig options;
     options.accountId = "testAccountId";
-    REQUIRE(SFSClient::Make(options, sfsClient) == Result::S_Ok);
+    REQUIRE(SFSClient::Make(options, sfsClient) == Result::Success);
     REQUIRE(sfsClient != nullptr);
     return sfsClient;
 }
@@ -57,66 +57,66 @@ TEST("Testing SFSClient::Make()")
 
     SECTION("Make({accountId}, out)")
     {
-        REQUIRE(SFSClient::Make({accountId}, sfsClient) == Result::S_Ok);
+        REQUIRE(SFSClient::Make({accountId}, sfsClient) == Result::Success);
         REQUIRE(sfsClient != nullptr);
 
         ClientConfig config{accountId};
-        REQUIRE(SFSClient::Make(config, sfsClient) == Result::S_Ok);
+        REQUIRE(SFSClient::Make(config, sfsClient) == Result::Success);
         REQUIRE(sfsClient != nullptr);
     }
 
     SECTION("Make(accountId, instanceId, out)")
     {
-        REQUIRE(SFSClient::Make({accountId, instanceId}, sfsClient) == Result::S_Ok);
+        REQUIRE(SFSClient::Make({accountId, instanceId}, sfsClient) == Result::Success);
         REQUIRE(sfsClient != nullptr);
 
         ClientConfig config{accountId, instanceId};
-        REQUIRE(SFSClient::Make(config, sfsClient) == Result::S_Ok);
+        REQUIRE(SFSClient::Make(config, sfsClient) == Result::Success);
         REQUIRE(sfsClient != nullptr);
     }
 
     SECTION("Make(accountId, instanceId, namespace, out)")
     {
-        REQUIRE(SFSClient::Make({accountId, instanceId, nameSpace}, sfsClient) == Result::S_Ok);
+        REQUIRE(SFSClient::Make({accountId, instanceId, nameSpace}, sfsClient) == Result::Success);
         REQUIRE(sfsClient != nullptr);
 
         SECTION("Call make when the pointer is reset")
         {
             sfsClient.reset();
-            REQUIRE(SFSClient::Make({accountId, instanceId, nameSpace}, sfsClient) == Result::S_Ok);
+            REQUIRE(SFSClient::Make({accountId, instanceId, nameSpace}, sfsClient) == Result::Success);
             REQUIRE(sfsClient != nullptr);
         }
 
         SECTION("Call make if the pointer is not reset, as Make() resets it")
         {
-            REQUIRE(SFSClient::Make({accountId, instanceId, nameSpace}, sfsClient) == Result::S_Ok);
+            REQUIRE(SFSClient::Make({accountId, instanceId, nameSpace}, sfsClient) == Result::Success);
             REQUIRE(sfsClient != nullptr);
         }
 
         SECTION("We can also use a separate ClientConfig object")
         {
             ClientConfig config{accountId, instanceId, nameSpace};
-            REQUIRE(SFSClient::Make(config, sfsClient) == Result::S_Ok);
+            REQUIRE(SFSClient::Make(config, sfsClient) == Result::Success);
             REQUIRE(sfsClient != nullptr);
         }
 
         SECTION("We can also move a separate ClientConfig object")
         {
             ClientConfig config{accountId, instanceId, nameSpace};
-            REQUIRE(SFSClient::Make(std::move(config), sfsClient) == Result::S_Ok);
+            REQUIRE(SFSClient::Make(std::move(config), sfsClient) == Result::Success);
             REQUIRE(sfsClient != nullptr);
         }
     }
 
     SECTION("Make(accountId, std::nullopt, nameSpace, out)")
     {
-        REQUIRE(SFSClient::Make({accountId, std::nullopt, nameSpace}, sfsClient) == Result::S_Ok);
+        REQUIRE(SFSClient::Make({accountId, std::nullopt, nameSpace}, sfsClient) == Result::Success);
         REQUIRE(sfsClient != nullptr);
 
         ClientConfig config;
         config.accountId = accountId;
         config.nameSpace = nameSpace;
-        REQUIRE(SFSClient::Make(config, sfsClient) == Result::S_Ok);
+        REQUIRE(SFSClient::Make(config, sfsClient) == Result::Success);
         REQUIRE(sfsClient != nullptr);
     }
 
@@ -125,72 +125,72 @@ TEST("Testing SFSClient::Make()")
         SECTION("Using a lambda with {} initialization")
         {
             REQUIRE(SFSClient::Make({accountId, instanceId, nameSpace, [](const LogData&) {}}, sfsClient) ==
-                    Result::S_Ok);
+                    Result::Success);
             REQUIRE(sfsClient != nullptr);
         }
 
         SECTION("Using a lambda with a ClientConfig object")
         {
             ClientConfig config{accountId, instanceId, nameSpace, [](const LogData&) {}};
-            REQUIRE(SFSClient::Make(config, sfsClient) == Result::S_Ok);
+            REQUIRE(SFSClient::Make(config, sfsClient) == Result::Success);
             REQUIRE(sfsClient != nullptr);
         }
 
         SECTION("Using a nullptr with a ClientConfig object")
         {
             ClientConfig config{accountId, instanceId, nameSpace, nullptr};
-            REQUIRE(SFSClient::Make(config, sfsClient) == Result::S_Ok);
+            REQUIRE(SFSClient::Make(config, sfsClient) == Result::Success);
             REQUIRE(sfsClient != nullptr);
         }
 
         SECTION("Using a valid empty-namespace function within a ClientConfig object")
         {
             ClientConfig config{accountId, instanceId, nameSpace, TestLoggingCallback};
-            REQUIRE(SFSClient::Make(config, sfsClient) == Result::S_Ok);
+            REQUIRE(SFSClient::Make(config, sfsClient) == Result::Success);
             REQUIRE(sfsClient != nullptr);
         }
 
         SECTION("Using a valid static function within a ClientConfig object")
         {
             ClientConfig config{accountId, instanceId, nameSpace, StaticTestLoggingCallback};
-            REQUIRE(SFSClient::Make(config, sfsClient) == Result::S_Ok);
+            REQUIRE(SFSClient::Make(config, sfsClient) == Result::Success);
             REQUIRE(sfsClient != nullptr);
         }
 
         SECTION("Using a valid static member method within a ClientConfig object")
         {
             ClientConfig config{accountId, instanceId, nameSpace, &TestLoggingCallbackStruct::TestLoggingCallback};
-            REQUIRE(SFSClient::Make(config, sfsClient) == Result::S_Ok);
+            REQUIRE(SFSClient::Make(config, sfsClient) == Result::Success);
             REQUIRE(sfsClient != nullptr);
         }
 
         SECTION("Can also move a lambda")
         {
             ClientConfig config{accountId, instanceId, nameSpace, [](const LogData&) {}};
-            REQUIRE(SFSClient::Make(std::move(config), sfsClient) == Result::S_Ok);
+            REQUIRE(SFSClient::Make(std::move(config), sfsClient) == Result::Success);
             REQUIRE(sfsClient != nullptr);
         }
     }
 
     SECTION("AccountId cannot be empty")
     {
-        REQUIRE(SFSClient::Make({}, sfsClient) == Result::E_InvalidArg);
+        REQUIRE(SFSClient::Make({}, sfsClient) == Result::InvalidArg);
         REQUIRE(sfsClient == nullptr);
 
         ClientConfig config;
-        REQUIRE(SFSClient::Make(config, sfsClient) == Result::E_InvalidArg);
+        REQUIRE(SFSClient::Make(config, sfsClient) == Result::InvalidArg);
         REQUIRE(sfsClient == nullptr);
 
         config = {};
-        REQUIRE(SFSClient::Make(config, sfsClient) == Result::E_InvalidArg);
+        REQUIRE(SFSClient::Make(config, sfsClient) == Result::InvalidArg);
         REQUIRE(sfsClient == nullptr);
 
         config.accountId = std::string();
-        REQUIRE(SFSClient::Make(config, sfsClient) == Result::E_InvalidArg);
+        REQUIRE(SFSClient::Make(config, sfsClient) == Result::InvalidArg);
         REQUIRE(sfsClient == nullptr);
 
         config.instanceId = instanceId;
-        REQUIRE(SFSClient::Make(config, sfsClient) == Result::E_InvalidArg);
+        REQUIRE(SFSClient::Make(config, sfsClient) == Result::InvalidArg);
         REQUIRE(sfsClient == nullptr);
     }
 
@@ -209,7 +209,7 @@ TEST_SCENARIO("Testing SFSClient::GetLatestDownloadInfo()")
         THEN("SFSClient::GetLatestDownloadInfo() is not implemented")
         {
             Contents contents;
-            REQUIRE(sfsClient->GetLatestDownloadInfo("productName", contents) == Result::E_NotImpl);
+            REQUIRE(sfsClient->GetLatestDownloadInfo("productName", contents) == Result::NotImpl);
         }
     }
 }
@@ -225,7 +225,7 @@ TEST_SCENARIO("Testing SFSClient::GetLatestDownloadInfoWithAttributes()")
             const SearchAttributes attributes{{"attr1", "value"}};
 
             Contents contents;
-            REQUIRE(sfsClient->GetLatestDownloadInfo("productName", attributes, contents) == Result::E_NotImpl);
+            REQUIRE(sfsClient->GetLatestDownloadInfo("productName", attributes, contents) == Result::NotImpl);
         }
     }
 }
@@ -241,11 +241,11 @@ TEST_SCENARIO("Testing SFSClient::GetDeliveryOptimizationData()")
             const SearchAttributes attributes{{"attr1", "value"}};
 
             Contents contents;
-            REQUIRE(sfsClient->GetLatestDownloadInfo("productName", attributes, contents) == Result::E_NotImpl);
+            REQUIRE(sfsClient->GetLatestDownloadInfo("productName", attributes, contents) == Result::NotImpl);
 
             std::unique_ptr<Content> content;
             std::unique_ptr<DeliveryOptimizationData> data;
-            REQUIRE(sfsClient->GetDeliveryOptimizationData(*content, data) == Result::E_NotImpl);
+            REQUIRE(sfsClient->GetDeliveryOptimizationData(*content, data) == Result::NotImpl);
         }
     }
 }
@@ -261,11 +261,11 @@ TEST_SCENARIO("Testing SFSClient::GetApplicabilityDetails()")
             const SearchAttributes attributes{{"attr1", "value"}};
 
             Contents contents;
-            REQUIRE(sfsClient->GetLatestDownloadInfo("productName", attributes, contents) == Result::E_NotImpl);
+            REQUIRE(sfsClient->GetLatestDownloadInfo("productName", attributes, contents) == Result::NotImpl);
 
             std::unique_ptr<Content> content;
             std::unique_ptr<ApplicabilityDetails> details;
-            REQUIRE(sfsClient->GetApplicabilityDetails(*content, details) == Result::E_NotImpl);
+            REQUIRE(sfsClient->GetApplicabilityDetails(*content, details) == Result::NotImpl);
         }
     }
 }

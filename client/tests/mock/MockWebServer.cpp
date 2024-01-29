@@ -269,11 +269,11 @@ void MockWebServerImpl::ConfigureServerSettings()
         }
         catch (std::exception& e)
         {
-            m_lastException = Result(Result::E_HttpUnexpected, e.what());
+            m_lastException = Result(Result::HttpUnexpected, e.what());
         }
         catch (...)
         {
-            m_lastException = Result(Result::E_HttpUnexpected, "Unknown Exception");
+            m_lastException = Result(Result::HttpUnexpected, "Unknown Exception");
         }
         res.status = static_cast<int>(StatusCode::InternalServerError);
     });
@@ -477,7 +477,7 @@ Result MockWebServerImpl::Stop()
         LogCallbackToTest(ToLogData(data));
     }
     m_bufferedLog.clear();
-    return m_lastException.value_or(Result::S_Ok);
+    return m_lastException.value_or(Result::Success);
 }
 
 std::string MockWebServerImpl::GetUrl() const

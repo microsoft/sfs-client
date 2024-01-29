@@ -16,10 +16,10 @@ MockConnection::~MockConnection()
 
 Result MockConnection::Get(const std::string&, std::string&)
 {
-    return Result::S_Ok;
+    return Result::Success;
 }
 
 Result MockConnection::Post(const std::string&, const std::string&, std::string&)
 {
-    return Result::S_Ok;
+    return Result::Success;
 }

@@ -43,7 +43,7 @@ Result SFSClientImpl<ConnectionManagerT>::GetLatestVersion(
     [[maybe_unused]] std::unique_ptr<VersionResponse>& response) const
 {
     LOG_INFO(m_reportingHandler, "GetLatestVersion not implemented");
-    return Result::E_NotImpl;
+    return Result::NotImpl;
 }
 
 template <typename ConnectionManagerT>
@@ -54,7 +54,7 @@ Result SFSClientImpl<ConnectionManagerT>::GetSpecificVersion(
     [[maybe_unused]] Connection& connection,
     [[maybe_unused]] std::unique_ptr<VersionResponse>& content) const
 {
-    return Result::E_NotImpl;
+    return Result::NotImpl;
 }
 
 template <typename ConnectionManagerT>
@@ -65,7 +65,7 @@ Result SFSClientImpl<ConnectionManagerT>::GetDownloadInfo(
     [[maybe_unused]] Connection& connection,
     [[maybe_unused]] std::unique_ptr<DownloadInfoResponse>& content) const
 {
-    return Result::E_NotImpl;
+    return Result::NotImpl;
 }
 
 template <typename ConnectionManagerT>
