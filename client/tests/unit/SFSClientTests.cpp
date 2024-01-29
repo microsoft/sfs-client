@@ -17,7 +17,9 @@ namespace
 std::unique_ptr<SFSClient> GetSFSClient()
 {
     std::unique_ptr<SFSClient> sfsClient;
-    REQUIRE(SFSClient::Make({"testAccountId"}, sfsClient) == Result::S_Ok);
+    ClientConfig options;
+    options.accountId = "testAccountId";
+    REQUIRE(SFSClient::Make(options, sfsClient) == Result::S_Ok);
     REQUIRE(sfsClient != nullptr);
     return sfsClient;
 }
@@ -40,6 +42,11 @@ static void StaticTestLoggingCallback(const LogData&)
 
 TEST("Testing SFSClient::Make()")
 {
+// For GCC, explicitly turning off "missing-field-initializers" warning as this block tests
+// users calling explicitly onto the API with field initializers for ClientConfig
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wmissing-field-initializers"
+
     const std::string accountId{"testAccountId"};
     const std::string instanceId{"testInstanceId"};
     const std::string nameSpace{"testNameSpace"};
@@ -184,6 +191,9 @@ TEST("Testing SFSClient::Make()")
         REQUIRE(SFSClient::Make(config, sfsClient) == Result::E_InvalidArg);
         REQUIRE(sfsClient == nullptr);
     }
+
+// For "-Wmissing-field-initializers"
+#pragma GCC diagnostic pop
 }
 
 TEST_SCENARIO("Testing SFSClient::GetLatestDownloadInfo()")
