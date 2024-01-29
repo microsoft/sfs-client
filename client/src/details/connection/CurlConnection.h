@@ -8,8 +8,7 @@
 
 #include <string>
 
-// Forward declarations
-#define SFS_CURL_ERROR_SIZE 256 // Size will be checked against curl lib reqs in source
+// Forward declaration
 typedef void CURL;
 
 namespace SFS::details
@@ -29,6 +28,5 @@ class CurlConnection : public Connection
     [[nodiscard]] virtual Result CurlPerform(const std::string& url, std::string& response);
 
     CURL* m_handle;
-    char m_errorBuffer[SFS_CURL_ERROR_SIZE];
 };
 } // namespace SFS::details
