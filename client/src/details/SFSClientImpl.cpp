@@ -14,8 +14,8 @@
 
 #include <nlohmann/json.hpp>
 
-#define INFO(...) LOG_INFO(m_reportingHandler, __VA_ARGS__)
-#define RETURN_IF_FAILED2(result) RETURN_IF_FAILED_LOG(result, m_reportingHandler)
+#define SFS_INFO(...) LOG_INFO(m_reportingHandler, __VA_ARGS__)
+#define SFS_RETURN_IF_FAILED(result) RETURN_IF_FAILED_LOG(result, m_reportingHandler)
 
 using namespace SFS;
 using namespace SFS::details;
@@ -50,7 +50,7 @@ Result SFSClientImpl<ConnectionManagerT>::GetLatestVersion(const std::string& pr
 {
     const std::string url = SFSUrlComponents::GetLatestVersionUrl(GetBaseUrl(), m_instanceId, m_nameSpace);
 
-    INFO("Requesting latest version of [%s] from URL [%s]", productName.c_str(), url.c_str());
+    SFS_INFO("Requesting latest version of [%s] from URL [%s]", productName.c_str(), url.c_str());
 
     json targettingAttributes = json::object();
     for (const auto& [key, value] : attributes.value_or(SearchAttributes()))
@@ -60,10 +60,10 @@ Result SFSClientImpl<ConnectionManagerT>::GetLatestVersion(const std::string& pr
     json body = json::array();
     body.push_back({{"TargetingAttributes", targettingAttributes}, {"Product", productName}});
 
-    INFO("Request body [%s]", body.dump().c_str());
+    SFS_INFO("Request body [%s]", body.dump().c_str());
 
     std::string out;
-    RETURN_IF_FAILED2(connection.Post(url, body.dump(), out));
+    SFS_RETURN_IF_FAILED(connection.Post(url, body.dump(), out));
 
     // TODO: currently the response is just being sent as is, we have to parse it and check the return values
     // TODO: Check for json::parse exceptions
@@ -81,10 +81,10 @@ Result SFSClientImpl<ConnectionManagerT>::GetSpecificVersion(const std::string& 
     const std::string url =
         SFSUrlComponents::GetSpecificVersionUrl(GetBaseUrl(), m_instanceId, m_nameSpace, productName, version);
 
-    INFO("Requesting version [%s] of [%s] from URL [%s]", version.c_str(), productName.c_str(), url.c_str());
+    SFS_INFO("Requesting version [%s] of [%s] from URL [%s]", version.c_str(), productName.c_str(), url.c_str());
 
     std::string out;
-    RETURN_IF_FAILED2(connection.Get(url, out));
+    SFS_RETURN_IF_FAILED(connection.Get(url, out));
 
     // TODO: currently the response is just being sent as is, we have to parse it and check the return values
     // TODO: Check for json::parse exceptions
@@ -102,13 +102,13 @@ Result SFSClientImpl<ConnectionManagerT>::GetDownloadInfo(const std::string& pro
     const std::string url =
         SFSUrlComponents::GetDownloadInfoUrl(GetBaseUrl(), m_instanceId, m_nameSpace, productName, version);
 
-    INFO("Requesting download info of version [%s] of [%s] from URL [%s]",
-         version.c_str(),
-         productName.c_str(),
-         url.c_str());
+    SFS_INFO("Requesting download info of version [%s] of [%s] from URL [%s]",
+             version.c_str(),
+             productName.c_str(),
+             url.c_str());
 
     std::string out;
-    RETURN_IF_FAILED2(connection.Post(url, out));
+    SFS_RETURN_IF_FAILED(connection.Post(url, out));
 
     // TODO: currently the response is just being sent as is, we have to parse it and check the return values
     // TODO: Check for json::parse exceptions
