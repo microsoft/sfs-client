@@ -17,3 +17,4 @@ When these test overrides are enabled, a few environment variables can be used t
 
 | Environment Variable       | Description                                                                                 |
 |----------------------------|---------------------------------------------------------------------------------------------|
+| SFS_TEST_OVERRIDE_BASE_URL | Set this to any string value which will be used as the SFS URL rather than the default one. |
