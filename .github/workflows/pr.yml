@@ -31,7 +31,7 @@ jobs:
 
       - name: Build
         shell: pwsh
-        run: .\scripts\Build.ps1
+        run: .\scripts\Build.ps1 -EnableTestOverrides
 
       - name: Test
         shell: pwsh
@@ -54,7 +54,7 @@ jobs:
         run: source ./scripts/setup.sh
 
       - name: Build
-        run: ./scripts/build.sh
+        run: ./scripts/build.sh --enable-test-overrides
 
       - name: Test
         run: ./scripts/test.sh --output-on-failure

@@ -36,6 +36,11 @@ target_include_directories(${PROJECT_NAME} PUBLIC include/sfsclient)
 target_link_libraries(${PROJECT_NAME} PRIVATE CURL::libcurl)
 target_link_libraries(${PROJECT_NAME} PRIVATE nlohmann_json::nlohmann_json)
 
+if(SFS_ENABLE_TEST_OVERRIDES)
+    target_compile_definitions(${PROJECT_NAME}
+                               PRIVATE SFS_ENABLE_TEST_OVERRIDES=1)
+endif()
+
 # Enables one to run tests through "ctest --test-dir .\build\client"
 enable_testing()
 

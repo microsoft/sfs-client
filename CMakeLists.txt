@@ -19,6 +19,11 @@ project(
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED True)
 
+option(
+    SFS_ENABLE_TEST_OVERRIDES
+    "Set SFS_ENABLE_OVERRIDES to ON to enable certain test overrides through environment variables."
+    OFF)
+
 # Setting warning level and warnings as errors
 if(MSVC)
     # Enable some MSVC warnings that are off by default:
