@@ -32,7 +32,7 @@ class SFSClientImpl : public SFSClientInterface
      * request attributes
      */
     [[nodiscard]] Result GetLatestVersion(const std::string& productName,
-                                          const std::optional<SearchAttributes>& attributes,
+                                          const SearchAttributes& attributes,
                                           Connection& connection,
                                           std::unique_ptr<VersionResponse>& response) const override;
 

@@ -9,7 +9,6 @@
 #include "Result.h"
 
 #include <memory>
-#include <optional>
 #include <string>
 
 namespace SFS::details
@@ -35,7 +34,7 @@ class SFSClientInterface
      * request attributes
      */
     [[nodiscard]] virtual Result GetLatestVersion(const std::string& productName,
-                                                  const std::optional<SearchAttributes>& attributes,
+                                                  const SearchAttributes& attributes,
                                                   Connection& connection,
                                                   std::unique_ptr<VersionResponse>& response) const = 0;
 

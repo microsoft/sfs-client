@@ -44,7 +44,7 @@ SFSClientImpl<ConnectionManagerT>::SFSClientImpl(ClientConfig&& config)
 
 template <typename ConnectionManagerT>
 Result SFSClientImpl<ConnectionManagerT>::GetLatestVersion(const std::string& productName,
-                                                           const std::optional<SearchAttributes>& attributes,
+                                                           const SearchAttributes& attributes,
                                                            Connection& connection,
                                                            std::unique_ptr<VersionResponse>& response) const
 {
@@ -53,7 +53,7 @@ Result SFSClientImpl<ConnectionManagerT>::GetLatestVersion(const std::string& pr
     SFS_INFO("Requesting latest version of [%s] from URL [%s]", productName.c_str(), url.c_str());
 
     json targettingAttributes = json::object();
-    for (const auto& [key, value] : attributes.value_or(SearchAttributes()))
+    for (const auto& [key, value] : attributes)
     {
         targettingAttributes[key] = value;
     }

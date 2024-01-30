@@ -129,7 +129,7 @@ TEST("Testing class SFSClientImpl()")
         std::unique_ptr<VersionResponse> response;
         SECTION("No attributes")
         {
-            REQUIRE(sfsClient.GetLatestVersion(productName, std::nullopt, *connection, response) == Result::Success);
+            REQUIRE(sfsClient.GetLatestVersion(productName, {}, *connection, response) == Result::Success);
             CheckProductArray(response->GetResponseData(), productName, expectedVersion);
         }
 
@@ -143,7 +143,7 @@ TEST("Testing class SFSClientImpl()")
         SECTION("Failing")
         {
             responseCode = Result::HttpNotFound;
-            REQUIRE(sfsClient.GetLatestVersion("badName", std::nullopt, *connection, response) == responseCode);
+            REQUIRE(sfsClient.GetLatestVersion("badName", {}, *connection, response) == responseCode);
 
             const SearchAttributes attributes{{"attr1", "value"}};
             REQUIRE(sfsClient.GetLatestVersion("badName", attributes, *connection, response) == responseCode);
