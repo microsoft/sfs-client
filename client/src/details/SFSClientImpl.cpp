@@ -7,6 +7,7 @@
 #include "Logging.h"
 #include "Responses.h"
 #include "SFSUrlComponents.h"
+#include "Util.h"
 #include "connection/Connection.h"
 #include "connection/ConnectionManager.h"
 #include "connection/CurlConnectionManager.h"
@@ -133,11 +134,9 @@ template <typename ConnectionManagerT>
 std::string SFSClientImpl<ConnectionManagerT>::GetBaseUrl() const
 {
 #ifdef SFS_ENABLE_TEST_OVERRIDES
-    size_t len = 0;
-    char url[100];
-    if (getenv_s(&len, url, sizeof(url), "SFS_TEST_OVERRIDE_BASE_URL") == 0)
+    if (auto envVar = util::GetEnv("SFS_TEST_OVERRIDE_BASE_URL"))
     {
-        return std::string(url);
+        return *envVar;
     }
 #endif
 
