@@ -2,7 +2,6 @@
 // Licensed under the MIT License.
 
 #include "../../util/TestHelper.h"
-#include "Responses.h"
 #include "SFSClientImpl.h"
 #include "TestOverride.h"
 #include "connection/Connection.h"
@@ -12,6 +11,7 @@
 #include "connection/mock/MockConnectionManager.h"
 
 #include <catch2/catch_test_macros.hpp>
+#include <nlohmann/json.hpp>
 
 #define TEST(...) TEST_CASE("[SFSClientImplTests] " __VA_ARGS__)
 
@@ -75,14 +75,13 @@ void CheckProduct(const ContentId& contentId, std::string_view ns, std::string_v
     REQUIRE(contentId.GetVersion() == version);
 }
 
-void CheckDownloadInfo(const json& info, const std::string& name)
+void CheckDownloadInfo(const std::vector<std::unique_ptr<File>>& files, const std::string& name)
 {
-    INFO("DownloadInfo: " << info.dump());
-    REQUIRE(info.is_array());
-    REQUIRE(info.size() == 2);
-    REQUIRE((info[0].contains("FileId") && info[1].contains("FileId")));
-    REQUIRE(info[0]["FileId"].get<std::string>() == (name + ".json"));
-    REQUIRE(info[1]["FileId"].get<std::string>() == (name + ".bin"));
+    REQUIRE(files.size() == 2);
+    REQUIRE(files[0]->GetFileId() == (name + ".json"));
+    REQUIRE(files[0]->GetUrl() == ("http://localhost/1.json"));
+    REQUIRE(files[1]->GetFileId() == (name + ".bin"));
+    REQUIRE(files[1]->GetUrl() == ("http://localhost/2.bin"));
 }
 } // namespace
 
@@ -178,17 +177,19 @@ TEST("Testing class SFSClientImpl()")
         downloadInfoResponse[1]["DeliveryOptimization"] = downloadInfoResponse[0]["DeliveryOptimization"];
         postResponse = downloadInfoResponse.dump();
 
-        std::unique_ptr<DownloadInfoResponse> response;
+        std::vector<std::unique_ptr<File>> files;
         SECTION("Getting version")
         {
-            REQUIRE(sfsClient.GetDownloadInfo(productName, expectedVersion, *connection, response) == Result::Success);
-            CheckDownloadInfo(response->GetResponseData(), productName);
+            REQUIRE(sfsClient.GetDownloadInfo(productName, expectedVersion, *connection, files) == Result::Success);
+            REQUIRE(!files.empty());
+            CheckDownloadInfo(files, productName);
         }
 
         SECTION("Failing")
         {
             responseCode = Result::HttpNotFound;
-            REQUIRE(sfsClient.GetDownloadInfo(productName, expectedVersion, *connection, response) == responseCode);
+            REQUIRE(sfsClient.GetDownloadInfo(productName, expectedVersion, *connection, files) == responseCode);
+            REQUIRE(files.empty());
         }
     }
 }

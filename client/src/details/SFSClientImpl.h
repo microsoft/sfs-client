@@ -50,7 +50,7 @@ class SFSClientImpl : public SFSClientInterface
     [[nodiscard]] Result GetDownloadInfo(const std::string& productName,
                                          const std::string& version,
                                          Connection& connection,
-                                         std::unique_ptr<DownloadInfoResponse>& response) const override;
+                                         std::vector<std::unique_ptr<File>>& files) const override;
 
     /**
      * @brief Returns the ConnectionManager to be used by the SFSClient to create Connection objects

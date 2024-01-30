@@ -15,7 +15,6 @@ namespace SFS::details
 {
 class Connection;
 class ConnectionManager;
-class DownloadInfoResponse;
 
 class SFSClientInterface
 {
@@ -51,7 +50,7 @@ class SFSClientInterface
     [[nodiscard]] virtual Result GetDownloadInfo(const std::string& productName,
                                                  const std::string& version,
                                                  Connection& connection,
-                                                 std::unique_ptr<DownloadInfoResponse>& response) const = 0;
+                                                 std::vector<std::unique_ptr<File>>& files) const = 0;
 
     /**
      * @brief Returns the ConnectionManager to be used by the SFSClient to create Connection objects

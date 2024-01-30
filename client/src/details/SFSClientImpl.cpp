@@ -5,7 +5,6 @@
 
 #include "ErrorHandling.h"
 #include "Logging.h"
-#include "Responses.h"
 #include "SFSUrlComponents.h"
 #include "TestOverride.h"
 #include "Util.h"
@@ -37,6 +36,19 @@ void LogIfTestOverridesAllowed(const ReportingHandler& handler)
     {
         LOG_INFO(handler, "Test overrides are allowed");
     }
+}
+
+Result ParseStringToJson(const std::string& data, const std::string& method, json& out)
+{
+    try
+    {
+        out = json::parse(data);
+    }
+    catch (json::parse_error& ex)
+    {
+        return Result(Result::ServiceInvalidResponse, "(" + method + ") JSON Parsing error: " + std::string(ex.what()));
+    }
+    return Result::Success;
 }
 
 Result ContentIdJsonToObj(const nlohmann::json& contentId,
@@ -108,9 +120,99 @@ Result GetSpecificVersionResponseToContentId(const nlohmann::json& data,
     // We don't care about Files in this response, so we just ignore them
 
     CHECK_JSON(!data.is_object(), "Response is not a JSON object");
-    CHECK_JSON(!data.contains("ContentId"), "Missing ContentId in response");
 
     return ContentIdJsonToObj(data["ContentId"], handler, out);
+}
+
+Result HashTypeFromString(const std::string& hashType, HashType& out)
+{
+    if (AreEqualI(hashType, "Sha1"))
+    {
+        out = HashType::Sha1;
+    }
+    else if (AreEqualI(hashType, "Sha256"))
+    {
+        out = HashType::Sha256;
+    }
+    else
+    {
+        return Result(Result::Unexpected, "Unknown hash type: " + hashType);
+    }
+    return Result::Success;
+}
+
+Result FileJsonToObj(const nlohmann::json& file, const ReportingHandler& handler, std::unique_ptr<File>& out)
+{
+    CHECK_JSON(!file.is_object(), "File is not a JSON object");
+
+    CHECK_JSON(!file.contains("FileId"), "Missing File.FileId in response");
+    CHECK_JSON(!file["FileId"].is_string(), "File.FileId is not a string");
+    std::string fileId = file["FileId"].get<std::string>();
+
+    CHECK_JSON(!file.contains("Url"), "Missing File.Url in response");
+    CHECK_JSON(!file["Url"].is_string(), "File.Url is not a string");
+    std::string url = file["Url"].get<std::string>();
+
+    CHECK_JSON(!file.contains("SizeInBytes"), "Missing File.SizeInBytes in response");
+    CHECK_JSON(!file["SizeInBytes"].is_number_unsigned(), "File.SizeInBytes is not an unsigned number");
+    uint64_t sizeInBytes = file["SizeInBytes"].get<uint64_t>();
+
+    CHECK_JSON(!file.contains("Hashes"), "Missing File.Hashes in response");
+    CHECK_JSON(!file["Hashes"].is_object(), "File.Hashes is not an object");
+    std::unordered_map<HashType, std::string> hashes;
+    for (const auto& [hashType, hashValue] : file["Hashes"].items())
+    {
+        CHECK_JSON(!hashValue.is_string(), "File.Hashes object value is not a string");
+
+        HashType type;
+        RETURN_IF_FAILED_LOG(HashTypeFromString(hashType, type), handler);
+        hashes[type] = hashValue.get<std::string>();
+    }
+
+    return File::Make(std::move(fileId), std::move(url), sizeInBytes, std::move(hashes), out);
+}
+
+Result GetDownloadInfoResponseToFileVector(const nlohmann::json& data,
+                                           const ReportingHandler& handler,
+                                           std::vector<std::unique_ptr<File>>& out)
+{
+    // Expected format:
+    // [
+    //   {
+    //     "FileId": <fileid>,
+    //     "Url": <url>,
+    //     "SizeInBytes": <size>,
+    //     "Hashes": {
+    //       "Sha1": <sha1>,
+    //       "Sha256": <sha2>
+    //     },
+    //     "DeliveryOptimization": {
+    //       "CatalogId": <catalogid>,
+    //       "Properties": {
+    //         <pair_value_list>
+    //       }
+    //     }
+    //   },
+    //   ...
+    // ]
+
+    CHECK_JSON(!data.is_array(), "Response is not a JSON array");
+
+    // TODO #48: For now ignore DeliveryOptimization data. Will implement its separate parsing later
+
+    std::vector<std::unique_ptr<File>> tmp;
+    for (const auto& fileData : data)
+    {
+        CHECK_JSON(!fileData.is_object(), "Array element is not a JSON object");
+
+        std::unique_ptr<File> file;
+        RETURN_IF_FAILED_LOG(FileJsonToObj(fileData, handler, file), handler);
+        tmp.push_back(std::move(file));
+    }
+
+    out = std::move(tmp);
+
+    return Result::Success;
 }
 
 bool IsVersionResponseValid(const ContentId& contentId, std::string_view nameSpace, std::string_view name)
@@ -162,15 +264,7 @@ Result SFSClientImpl<ConnectionManagerT>::GetLatestVersion(const std::string& pr
     SFS_RETURN_IF_FAILED(connection.Post(url, body.dump(), out));
 
     json response;
-    try
-    {
-        response = json::parse(out);
-    }
-    catch (json::parse_error& ex)
-    {
-        return Result(Result::ServiceInvalidResponse,
-                      "(GetLatestVersion) JSON Parsing error: " + std::string(ex.what()));
-    }
+    SFS_RETURN_IF_FAILED(ParseStringToJson(out, "GetLatestVersion", response));
 
     std::unique_ptr<ContentId> tmp;
     SFS_RETURN_IF_FAILED(GetLatestVersionResponseToContentId(response, m_reportingHandler, tmp));
@@ -199,15 +293,7 @@ Result SFSClientImpl<ConnectionManagerT>::GetSpecificVersion(const std::string& 
     SFS_RETURN_IF_FAILED(connection.Get(url, out));
 
     json response;
-    try
-    {
-        response = json::parse(out);
-    }
-    catch (json::parse_error& ex)
-    {
-        return Result(Result::ServiceInvalidResponse,
-                      "(GetSpecificVersion) JSON Parsing error: " + std::string(ex.what()));
-    }
+    SFS_RETURN_IF_FAILED(ParseStringToJson(out, "GetSpecificVersion", response));
 
     std::unique_ptr<ContentId> tmp;
     SFS_RETURN_IF_FAILED(GetSpecificVersionResponseToContentId(response, m_reportingHandler, tmp));
@@ -225,7 +311,7 @@ template <typename ConnectionManagerT>
 Result SFSClientImpl<ConnectionManagerT>::GetDownloadInfo(const std::string& productName,
                                                           const std::string& version,
                                                           Connection& connection,
-                                                          std::unique_ptr<DownloadInfoResponse>& response) const
+                                                          std::vector<std::unique_ptr<File>>& files) const
 {
     const std::string url{
         SFSUrlComponents::GetDownloadInfoUrl(GetBaseUrl(), m_instanceId, m_nameSpace, productName, version)};
@@ -238,9 +324,13 @@ Result SFSClientImpl<ConnectionManagerT>::GetDownloadInfo(const std::string& pro
     std::string out;
     SFS_RETURN_IF_FAILED(connection.Post(url, out));
 
-    // TODO: currently the response is just being sent as is, we have to parse it and check the return values
-    // TODO: Check for json::parse exceptions
-    response = std::make_unique<DownloadInfoResponse>(json::parse(out));
+    json response;
+    SFS_RETURN_IF_FAILED(ParseStringToJson(out, "GetDownloadInfo", response));
+
+    std::vector<std::unique_ptr<File>> tmp;
+    SFS_RETURN_IF_FAILED(GetDownloadInfoResponseToFileVector(response, m_reportingHandler, tmp));
+
+    files = std::move(tmp);
 
     return Result::Success;
 }
