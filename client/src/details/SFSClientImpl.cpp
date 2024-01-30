@@ -48,7 +48,7 @@ Result SFSClientImpl<ConnectionManagerT>::GetLatestVersion(const std::string& pr
                                                            Connection& connection,
                                                            std::unique_ptr<VersionResponse>& response) const
 {
-    const std::string url = SFSUrlComponents::GetLatestVersionUrl(GetBaseUrl(), m_instanceId, m_nameSpace);
+    const std::string url{SFSUrlComponents::GetLatestVersionUrl(GetBaseUrl(), m_instanceId, m_nameSpace)};
 
     SFS_INFO("Requesting latest version of [%s] from URL [%s]", productName.c_str(), url.c_str());
 
@@ -78,8 +78,8 @@ Result SFSClientImpl<ConnectionManagerT>::GetSpecificVersion(const std::string& 
                                                              Connection& connection,
                                                              std::unique_ptr<VersionResponse>& response) const
 {
-    const std::string url =
-        SFSUrlComponents::GetSpecificVersionUrl(GetBaseUrl(), m_instanceId, m_nameSpace, productName, version);
+    const std::string url{
+        SFSUrlComponents::GetSpecificVersionUrl(GetBaseUrl(), m_instanceId, m_nameSpace, productName, version)};
 
     SFS_INFO("Requesting version [%s] of [%s] from URL [%s]", version.c_str(), productName.c_str(), url.c_str());
 
@@ -99,8 +99,8 @@ Result SFSClientImpl<ConnectionManagerT>::GetDownloadInfo(const std::string& pro
                                                           Connection& connection,
                                                           std::unique_ptr<DownloadInfoResponse>& response) const
 {
-    const std::string url =
-        SFSUrlComponents::GetDownloadInfoUrl(GetBaseUrl(), m_instanceId, m_nameSpace, productName, version);
+    const std::string url{
+        SFSUrlComponents::GetDownloadInfoUrl(GetBaseUrl(), m_instanceId, m_nameSpace, productName, version)};
 
     SFS_INFO("Requesting download info of version [%s] of [%s] from URL [%s]",
              version.c_str(),
