@@ -124,9 +124,9 @@ constexpr std::string_view ToString(HashType type)
     return "";
 }
 
-void DisplayResults(const Contents& responseContents)
+void DisplayResults(const std::unique_ptr<Content>& content)
 {
-    if (responseContents.empty())
+    if (!content)
     {
         std::cout << "No results found." << std::endl;
         return;
@@ -134,45 +134,41 @@ void DisplayResults(const Contents& responseContents)
 
     auto comma = [](size_t count, size_t size) -> std::string { return count == size - 1 ? "" : ","; };
 
-    std::cout << "Contents found: " << responseContents.size() << std::endl;
-    size_t contentCount = 0;
+    std::cout << "Content found:" << std::endl;
     std::cout << "{" << std::endl;
-    for (const auto& content : responseContents)
+    std::cout << R"(  "Content": {)" << std::endl;
+    std::cout << R"(    "NameSpace": ")" << content->GetContentId().GetNameSpace() << R"(",)" << std::endl;
+    std::cout << R"(    "Name": ")" << content->GetContentId().GetName() << R"(",)" << std::endl;
+    std::cout << R"(    "Version": ")" << content->GetContentId().GetVersion() << R"(",)" << std::endl;
+
+    if (content->GetFiles().size() == 0)
     {
-        std::cout << R"(  "Content )" << contentCount << R"(": {)" << std::endl;
-        std::cout << R"(    "NameSpace": ")" << content->GetContentId().GetNameSpace() << R"(",)" << std::endl;
-        std::cout << R"(    "Name": ")" << content->GetContentId().GetName() << R"(",)" << std::endl;
-        std::cout << R"(    "Version": ")" << content->GetContentId().GetVersion() << R"(",)" << std::endl;
-
-        if (content->GetFiles().size() == 0)
-        {
-            std::cout << R"(    "Files": [])" << std::endl;
-        }
-        else
-        {
-            std::cout << R"(    "Files": [)" << std::endl;
-
-            size_t fileCount = 0;
-            for (const auto& file : content->GetFiles())
-            {
-                std::cout << R"(      {)" << std::endl;
-                std::cout << R"(        "FileId": ")" << file->GetFileId() << R"(",)" << std::endl;
-                std::cout << R"(        "Url": ")" << file->GetUrl() << R"(",)" << std::endl;
-                std::cout << R"(        "SizeInBytes": ")" << file->GetSizeInBytes() << R"(",)" << std::endl;
-                std::cout << R"(        "Hashes": {)" << std::endl;
-                size_t hashCount = 0;
-                for (const auto& hash : file->GetHashes())
-                {
-                    std::cout << "          \"" << ToString(hash.first) << R"(": ")" << hash.second << '"'
-                              << comma(hashCount++, file->GetHashes().size()) << std::endl;
-                }
-                std::cout << R"(        })" << std::endl;
-                std::cout << R"(      })" << comma(fileCount++, content->GetFiles().size()) << std::endl;
-            }
-            std::cout << R"(    ])" << std::endl;
-        }
-        std::cout << R"(  })" << comma(contentCount++, responseContents.size()) << std::endl;
+        std::cout << R"(    "Files": [])" << std::endl;
     }
+    else
+    {
+        std::cout << R"(    "Files": [)" << std::endl;
+
+        size_t fileCount = 0;
+        for (const auto& file : content->GetFiles())
+        {
+            std::cout << R"(      {)" << std::endl;
+            std::cout << R"(        "FileId": ")" << file->GetFileId() << R"(",)" << std::endl;
+            std::cout << R"(        "Url": ")" << file->GetUrl() << R"(",)" << std::endl;
+            std::cout << R"(        "SizeInBytes": )" << file->GetSizeInBytes() << R"(,)" << std::endl;
+            std::cout << R"(        "Hashes": {)" << std::endl;
+            size_t hashCount = 0;
+            for (const auto& hash : file->GetHashes())
+            {
+                std::cout << "          \"" << ToString(hash.first) << R"(": ")" << hash.second << '"'
+                            << comma(hashCount++, file->GetHashes().size()) << std::endl;
+            }
+            std::cout << R"(        })" << std::endl;
+            std::cout << R"(      })" << comma(fileCount++, content->GetFiles().size()) << std::endl;
+        }
+        std::cout << R"(    ])" << std::endl;
+    }
+    std::cout << R"(  })" << std::endl;
     std::cout << R"(})" << std::endl;
 }
 
@@ -247,8 +243,8 @@ int main(int argc, char* argv[])
 
     // Perform operations using SFSClient
     std::cout << "Getting latest download info for product: " << settings.productName << std::endl;
-    Contents responseContents;
-    result = sfsClient->GetLatestDownloadInfo(settings.productName, responseContents);
+    std::unique_ptr<Content> content;
+    result = sfsClient->GetLatestDownloadInfo(settings.productName, content);
     if (!result)
     {
         std::cout << "Failed to get latest download info." << std::endl;
@@ -257,7 +253,7 @@ int main(int argc, char* argv[])
     }
 
     // Display results
-    DisplayResults(responseContents);
+    DisplayResults(content);
 
     return 0;
 }
