@@ -6,6 +6,7 @@
 #include "details/ErrorHandling.h"
 #include "details/SFSClientImpl.h"
 #include "details/connection/CurlConnectionManager.h"
+#include "details/connection/Connection.h"
 
 using namespace SFS;
 using namespace SFS::details;
@@ -31,21 +32,41 @@ try
 SFS_CATCH_RETURN()
 
 Result SFSClient::GetLatestDownloadInfo([[maybe_unused]] const std::string& productName,
-                                        [[maybe_unused]] Contents& responseContents) const noexcept
+                                        [[maybe_unused]] std::unique_ptr<Content>& content) const noexcept
 try
 {
-    // return m_impl->GetDownloadInfo(...);
-    return Result::NotImpl;
+    return GetLatestDownloadInfo(productName, SearchAttributes(), content);
 }
 SFS_CATCH_RETURN()
 
 Result SFSClient::GetLatestDownloadInfo([[maybe_unused]] const std::string& productName,
                                         [[maybe_unused]] const SearchAttributes& attributes,
-                                        [[maybe_unused]] Contents& responseContents) const noexcept
+                                        [[maybe_unused]] std::unique_ptr<Content>& content) const noexcept
 try
 {
-    // return m_impl->GetDownloadInfo(...);
-    return Result::NotImpl;
+    if (productName.empty())
+    {
+        return Result(Result::InvalidArg, "productName cannot be empty");
+    }
+
+    // TODO #50: Adapt retrieval to storeapps flow with pre-requisites once that is implemented server-side
+
+    auto connection = m_impl->GetConnectionManager().MakeConnection();
+
+    std::unique_ptr<ContentId> contentId;
+    RETURN_IF_FAILED_LOG(m_impl->GetLatestVersion(productName, attributes, *connection, contentId),
+                         m_impl->GetReportingHandler());
+
+    std::vector<std::unique_ptr<File>> files;
+    RETURN_IF_FAILED_LOG(m_impl->GetDownloadInfo(productName, contentId->GetVersion(), *connection, files),
+                         m_impl->GetReportingHandler());
+
+    std::unique_ptr<Content> tmp;
+    RETURN_IF_FAILED_LOG(Content::Make(std::move(contentId), std::move(files), tmp), m_impl->GetReportingHandler());
+
+    content = std::move(tmp);
+
+    return Result::Success;
 }
 SFS_CATCH_RETURN()
 

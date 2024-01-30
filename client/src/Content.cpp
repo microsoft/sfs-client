@@ -163,6 +163,23 @@ try
 }
 SFS_CATCH_RETURN()
 
+Result Content::Make(std::unique_ptr<ContentId>&& contentId,
+                     std::vector<std::unique_ptr<File>>&& files,
+                     std::unique_ptr<Content>& out) noexcept
+try
+{
+    out.reset();
+
+    std::unique_ptr<Content> tmp(new Content());
+    tmp->m_contentId = std::move(contentId);
+    tmp->m_files = std::move(files);
+
+    out = std::move(tmp);
+
+    return Result::Success;
+}
+SFS_CATCH_RETURN()
+
 const ContentId& Content::GetContentId() const noexcept
 {
     return *m_contentId;

@@ -18,8 +18,6 @@ namespace SFS
 class ApplicabilityDetails;
 class DeliveryOptimizationData;
 
-using Contents = std::vector<std::unique_ptr<Content>>;
-
 namespace details
 {
 class SFSClientInterface;
@@ -52,20 +50,20 @@ class SFSClient
     /**
      * @brief Retrieve combined metadata & download URLs from the latest version of a specified product
      * @param productName The name or GUID of the product to retrieve
-     * @param responseContents A vector of Content that is populated with the result
+     * @param content A pointer to a Content instance that is populated with the result
      */
     [[nodiscard]] Result GetLatestDownloadInfo(const std::string& productName,
-                                               Contents& responseContents) const noexcept;
+                                               std::unique_ptr<Content>& content) const noexcept;
 
     /**
      * @brief Retrieve combined metadata & download URLs from the latest version of a specified product
      * @param productName The name or GUID of the product to retrieve
      * @param attributes Attributes to filter the search
-     * @param responseContents A vector of Content that is populated with the result
+     * @param content A pointer to a Content instance that is populated with the result
      */
     [[nodiscard]] Result GetLatestDownloadInfo(const std::string& productName,
                                                const SearchAttributes& attributes,
-                                               Contents& responseContents) const noexcept;
+                                               std::unique_ptr<Content>& content) const noexcept;
 
     //
     // API to retrieve optional extra download information from the SFS Service
