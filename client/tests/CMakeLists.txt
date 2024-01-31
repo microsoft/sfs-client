@@ -24,6 +24,7 @@ target_sources(
             unit/details/CurlConnectionManagerTests.cpp
             unit/details/ReportingHandlerTests.cpp
             unit/details/SFSClientImplTests.cpp
+            unit/details/TestOverridesTests.cpp
             unit/ResultTests.cpp
             unit/SFSClientTests.cpp
             util/TestHelper.cpp)
@@ -41,3 +42,8 @@ catch_discover_tests(${PROJECT_NAME})
 
 set_target_properties(${PROJECT_NAME} PROPERTIES RUNTIME_OUTPUT_DIRECTORY
                                                  ${CMAKE_BINARY_DIR}/tests/bin/)
+
+if(SFS_ENABLE_TEST_OVERRIDES)
+    target_compile_definitions(${PROJECT_NAME}
+                               PRIVATE SFS_ENABLE_TEST_OVERRIDES=1)
+endif()
