@@ -7,6 +7,7 @@
 #include "ReportingHandler.h"
 
 #include <cstdlib>
+#include <mutex>
 #include <string>
 
 using namespace SFS::details;
@@ -14,7 +15,8 @@ using namespace SFS::details;
 bool util::AreTestOverridesAllowed(const ReportingHandler& handler)
 {
 #ifdef SFS_ENABLE_TEST_OVERRIDES
-    LOG_INFO(handler, "Test overrides are enabled");
+    static std::once_flag s_loggedTestOverrides;
+    std::call_once(s_loggedTestOverrides, [&] { LOG_INFO(handler, "Test overrides are enabled"); });
     return true;
 #else
     return false;
