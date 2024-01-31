@@ -12,7 +12,7 @@
 
 using namespace SFS::details;
 
-bool util::AreTestOverridesAllowed(const ReportingHandler& handler)
+bool util::AreTestOverridesAllowed([[maybe_unused]] const ReportingHandler& handler)
 {
 #ifdef SFS_ENABLE_TEST_OVERRIDES
     static std::once_flag s_loggedTestOverrides;
@@ -21,6 +21,26 @@ bool util::AreTestOverridesAllowed(const ReportingHandler& handler)
 #else
     return false;
 #endif
+}
+
+std::string util::GetEnvironmentVariableFromOverride(util::TestOverride override)
+{
+    switch (override)
+    {
+    case util::TestOverride::BaseUrl:
+        return "SFS_TEST_OVERRIDE_BASE_URL";
+    }
+    return "";
+}
+
+std::optional<std::string> util::GetTestOverride(util::TestOverride override, const ReportingHandler& handler)
+{
+    if (!util::AreTestOverridesAllowed(handler))
+    {
+        return std::nullopt;
+    }
+
+    return GetEnv(GetEnvironmentVariableFromOverride(override));
 }
 
 std::optional<std::string> util::GetEnv(const std::string& varName)
@@ -94,4 +114,9 @@ util::ScopedEnv::~ScopedEnv()
     {
         UnsetEnv(m_varName);
     }
+}
+
+util::ScopedTestOverride::ScopedTestOverride(TestOverride override, const std::string& value)
+    : m_scopedEnv(GetEnvironmentVariableFromOverride(override), value)
+{
 }

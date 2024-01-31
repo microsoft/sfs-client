@@ -229,8 +229,15 @@ TEST("Testing test override SFS_TEST_OVERRIDE_BASE_URL")
 
     {
         INFO("Can override the base url with the test key");
-        util::ScopedEnv env("SFS_TEST_OVERRIDE_BASE_URL", "override");
-        REQUIRE(sfsClient.GetBaseUrl() == "override");
+        util::ScopedTestOverride override(util::TestOverride::BaseUrl, "override");
+        if (util::AreTestOverridesAllowed(sfsClient.GetReportingHandler()))
+        {
+            REQUIRE(sfsClient.GetBaseUrl() == "override");
+        }
+        else
+        {
+            REQUIRE(sfsClient.GetBaseUrl() == "https://testAccountId.api.cdp.microsoft.com");
+        }
     }
 
     INFO("Override is unset after ScopedEnv goes out of scope");
@@ -241,8 +248,15 @@ TEST("Testing test override SFS_TEST_OVERRIDE_BASE_URL")
 
     {
         INFO("Can also override a custom base base url with the test key");
-        util::ScopedEnv env("SFS_TEST_OVERRIDE_BASE_URL", "override");
-        REQUIRE(sfsClient.GetBaseUrl() == "override");
+        util::ScopedTestOverride override(util::TestOverride::BaseUrl, "override");
+        if (util::AreTestOverridesAllowed(sfsClient.GetReportingHandler()))
+        {
+            REQUIRE(sfsClient.GetBaseUrl() == "override");
+        }
+        else
+        {
+            REQUIRE(sfsClient.GetBaseUrl() == "customUrl");
+        }
     }
 
     REQUIRE(sfsClient.GetBaseUrl() == "customUrl");

@@ -19,6 +19,23 @@ namespace SFS::details::util
  */
 bool AreTestOverridesAllowed(const ReportingHandler& handler);
 
+enum class TestOverride
+{
+    BaseUrl
+};
+
+/**
+ * @brief Get the environment variable name for a given test override
+ */
+std::string GetEnvironmentVariableFromOverride(util::TestOverride override);
+
+/**
+ * @brief Get the value of a test override
+ * @details std::nullopt is returned if the environment variable is not set or in case of failure.
+ * The returned string may be different in Win32 due to the encoding of the environment variables.
+ */
+std::optional<std::string> GetTestOverride(TestOverride override, const ReportingHandler& handler);
+
 /**
  * @brief Get the value of an environment variable.
  * @details std::nullopt is returned if the environment variable is not set or in case of failure.
@@ -47,5 +64,14 @@ class ScopedEnv
   private:
     std::string m_varName;
     std::optional<std::string> m_oldValue;
+};
+
+class ScopedTestOverride
+{
+  public:
+    ScopedTestOverride(TestOverride override, const std::string& value);
+
+  private:
+    ScopedEnv m_scopedEnv;
 };
 } // namespace SFS::details::util
