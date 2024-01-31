@@ -23,9 +23,15 @@ TEST("Testing AreTestOverridesAllowed()")
 
 TEST("Testing GetEnv()")
 {
-    SECTION("Testing GetEnv() on the existing environment variable LANG, which should exist in all platforms")
+    SECTION("Testing GetEnv() on an existing environment variable")
     {
-        auto env = util::GetEnv("LANG");
+        // Get the value of an existing environment variable per platform
+#ifdef _WIN32
+        const std::string varName = "COMPUTERNAME";
+#else
+        const std::string varName = "LANG";
+#endif
+        auto env = util::GetEnv(varName);
         REQUIRE(env.has_value());
         REQUIRE(env.value().size() > 0);
     }

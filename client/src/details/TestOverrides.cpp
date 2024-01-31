@@ -26,7 +26,7 @@ std::optional<std::string> util::GetEnv(const std::string& varName)
     {
         return std::nullopt;
     }
-#ifdef WIN32
+#ifdef _WIN32
     size_t len;
     char* buf;
     if (_dupenv_s(&buf, &len, varName.c_str()) == 0 && buf != nullptr)
@@ -49,7 +49,7 @@ bool util::SetEnv(const std::string& varName, const std::string& value)
     {
         return false;
     }
-#ifdef WIN32
+#ifdef _WIN32
     return _putenv_s(varName.c_str(), value.c_str()) == 0;
 #else
     return setenv(varName.c_str(), value.c_str(), 1) == 0;
@@ -62,7 +62,7 @@ bool util::UnsetEnv(const std::string& varName)
     {
         return false;
     }
-#ifdef WIN32
+#ifdef _WIN32
     // On Windows, setting the value to an empty string is equivalent to unsetting the variable
     return _putenv_s(varName.c_str(), "") == 0;
 #else
