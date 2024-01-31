@@ -57,5 +57,6 @@ std::optional<std::string> util::GetEnv(const char* varName)
         return std::string(envValue);
     }
 #endif
+    // Return std::nullopt if the environment variable is not set or in case of failure
     return std::nullopt;
 }
