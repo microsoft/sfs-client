@@ -26,6 +26,7 @@ target_sources(
             src/details/SFSClientImpl.cpp
             src/details/SFSException.cpp
             src/details/SFSUrlComponents.cpp
+            src/details/TestOverrides.cpp
             src/details/Util.cpp
             src/Logging.cpp
             src/Result.cpp

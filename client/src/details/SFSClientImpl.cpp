@@ -7,7 +7,7 @@
 #include "Logging.h"
 #include "Responses.h"
 #include "SFSUrlComponents.h"
-#include "Util.h"
+#include "TestOverrides.h"
 #include "connection/Connection.h"
 #include "connection/ConnectionManager.h"
 #include "connection/CurlConnectionManager.h"
