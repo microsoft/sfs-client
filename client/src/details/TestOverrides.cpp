@@ -3,6 +3,7 @@
 
 #include "TestOverrides.h"
 
+#include "ErrorHandling.h"
 #include "ReportingHandler.h"
 
 #include <cstdlib>
@@ -75,7 +76,7 @@ util::ScopedEnv::ScopedEnv(std::string varName, const std::string& value) : m_va
     m_oldValue = GetEnv(m_varName);
     if (!SetEnv(m_varName, value))
     {
-        m_oldValue.reset();
+        throw SFSException(Result::Unexpected, "Failed to set environment variable");
     }
 }
 
