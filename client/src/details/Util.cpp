@@ -45,10 +45,9 @@ bool util::AreTestOverridesAllowed(const ReportingHandler& handler)
 std::optional<std::string> util::GetEnv(const char* varName)
 {
 #ifdef WIN32
-    static constexpr size_t s_maxEnvValueLength = 200;
-    size_t len = 0;
-    char buf[s_maxEnvValueLength];
-    if (getenv_s(&len, buf, sizeof(buf), varName) == 0)
+    size_t len;
+    char* buf;
+    if (_dupenv_s(&buf, &len, varName) == 0 && buf != nullptr)
     {
         return std::string(buf);
     }
