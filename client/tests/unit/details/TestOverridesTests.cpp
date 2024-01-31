@@ -1,7 +1,6 @@
 // Copyright (c) Microsoft Corporation.
 // Licensed under the MIT License.
 
-#include "ReportingHandler.h"
 #include "TestOverrides.h"
 
 #include <catch2/catch_test_macros.hpp>
@@ -12,8 +11,7 @@ using namespace SFS::details;
 
 TEST("Testing AreTestOverridesAllowed()")
 {
-    ReportingHandler handler;
-    bool areTestOverridesAllowed = util::AreTestOverridesAllowed(handler);
+    bool areTestOverridesAllowed = util::AreTestOverridesAllowed();
 #ifdef SFS_ENABLE_TEST_OVERRIDES
     REQUIRE(areTestOverridesAllowed);
 #else
@@ -137,12 +135,11 @@ TEST("Testing GetEnvironmentVariableFromOverride")
 
 TEST("Testing GetTestOverride()")
 {
-    ReportingHandler handler;
-    if (util::AreTestOverridesAllowed(handler))
+    if (util::AreTestOverridesAllowed())
     {
         SECTION("Testing GetTestOverride() on a non-existing environment variable")
         {
-            auto env = util::GetTestOverride(util::TestOverride::BaseUrl, handler);
+            auto env = util::GetTestOverride(util::TestOverride::BaseUrl);
             REQUIRE(!env.has_value());
 
             SECTION("Testing GetTestOverride() on an existing environment variable")
@@ -150,7 +147,7 @@ TEST("Testing GetTestOverride()")
                 const std::string varName = util::GetEnvironmentVariableFromOverride(util::TestOverride::BaseUrl);
                 REQUIRE(util::SetEnv(varName, "override"));
 
-                env = util::GetTestOverride(util::TestOverride::BaseUrl, handler);
+                env = util::GetTestOverride(util::TestOverride::BaseUrl);
                 REQUIRE(env.has_value());
                 REQUIRE(*env == "override");
 
@@ -163,7 +160,7 @@ TEST("Testing GetTestOverride()")
     {
         SECTION("GetTestOverride() returns std::nullopt when test overrides are not allowed")
         {
-            auto env = util::GetTestOverride(util::TestOverride::BaseUrl, handler);
+            auto env = util::GetTestOverride(util::TestOverride::BaseUrl);
             REQUIRE(!env.has_value());
         }
     }
@@ -171,11 +168,10 @@ TEST("Testing GetTestOverride()")
 
 TEST("Testing ScopedTestOverride")
 {
-    ReportingHandler handler;
     SECTION("Testing ScopedTestOverride on a non-existing override")
     {
         const std::string varName = util::GetEnvironmentVariableFromOverride(util::TestOverride::BaseUrl);
-        auto env = util::GetTestOverride(util::TestOverride::BaseUrl, handler);
+        auto env = util::GetTestOverride(util::TestOverride::BaseUrl);
         REQUIRE(!env.has_value());
 
         {
@@ -186,10 +182,10 @@ TEST("Testing ScopedTestOverride")
             REQUIRE(env.has_value());
             REQUIRE(*env == "dummyValue");
 
-            if (util::AreTestOverridesAllowed(handler))
+            if (util::AreTestOverridesAllowed())
             {
                 INFO("Checking test override within scope");
-                env = util::GetTestOverride(util::TestOverride::BaseUrl, handler);
+                env = util::GetTestOverride(util::TestOverride::BaseUrl);
                 REQUIRE(env.has_value());
                 REQUIRE(*env == "dummyValue");
             }
@@ -204,10 +200,10 @@ TEST("Testing ScopedTestOverride")
                     REQUIRE(env.has_value());
                     REQUIRE(*env == "dummyValue2");
 
-                    if (util::AreTestOverridesAllowed(handler))
+                    if (util::AreTestOverridesAllowed())
                     {
                         INFO("Checking test override has been overwritten within scope");
-                        env = util::GetTestOverride(util::TestOverride::BaseUrl, handler);
+                        env = util::GetTestOverride(util::TestOverride::BaseUrl);
                         REQUIRE(env.has_value());
                         REQUIRE(*env == "dummyValue2");
                     }
@@ -218,10 +214,10 @@ TEST("Testing ScopedTestOverride")
                 REQUIRE(env.has_value());
                 REQUIRE(*env == "dummyValue");
 
-                if (util::AreTestOverridesAllowed(handler))
+                if (util::AreTestOverridesAllowed())
                 {
                     INFO("Checking test override has gone back to previous value");
-                    env = util::GetTestOverride(util::TestOverride::BaseUrl, handler);
+                    env = util::GetTestOverride(util::TestOverride::BaseUrl);
                     REQUIRE(env.has_value());
                     REQUIRE(*env == "dummyValue");
                 }
@@ -232,10 +228,10 @@ TEST("Testing ScopedTestOverride")
         env = util::GetEnv(varName);
         REQUIRE(!env.has_value());
 
-        if (util::AreTestOverridesAllowed(handler))
+        if (util::AreTestOverridesAllowed())
         {
             INFO("Test override should be unset after the scope ends");
-            env = util::GetTestOverride(util::TestOverride::BaseUrl, handler);
+            env = util::GetTestOverride(util::TestOverride::BaseUrl);
             REQUIRE(!env.has_value());
         }
     }

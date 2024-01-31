@@ -230,7 +230,7 @@ TEST("Testing test override SFS_TEST_OVERRIDE_BASE_URL")
     {
         INFO("Can override the base url with the test key");
         util::ScopedTestOverride override(util::TestOverride::BaseUrl, "override");
-        if (util::AreTestOverridesAllowed(sfsClient.GetReportingHandler()))
+        if (util::AreTestOverridesAllowed())
         {
             REQUIRE(sfsClient.GetBaseUrl() == "override");
         }
@@ -249,7 +249,7 @@ TEST("Testing test override SFS_TEST_OVERRIDE_BASE_URL")
     {
         INFO("Can also override a custom base base url with the test key");
         util::ScopedTestOverride override(util::TestOverride::BaseUrl, "override");
-        if (util::AreTestOverridesAllowed(sfsClient.GetReportingHandler()))
+        if (util::AreTestOverridesAllowed())
         {
             REQUIRE(sfsClient.GetBaseUrl() == "override");
         }

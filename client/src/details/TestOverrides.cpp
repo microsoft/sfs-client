@@ -4,7 +4,6 @@
 #include "TestOverrides.h"
 
 #include "ErrorHandling.h"
-#include "ReportingHandler.h"
 
 #include <cstdlib>
 #include <mutex>
@@ -12,11 +11,9 @@
 
 using namespace SFS::details;
 
-bool util::AreTestOverridesAllowed([[maybe_unused]] const ReportingHandler& handler)
+bool util::AreTestOverridesAllowed()
 {
 #ifdef SFS_ENABLE_TEST_OVERRIDES
-    static std::once_flag s_loggedTestOverrides;
-    std::call_once(s_loggedTestOverrides, [&] { LOG_INFO(handler, "Test overrides are enabled"); });
     return true;
 #else
     return false;
@@ -33,9 +30,9 @@ std::string util::GetEnvironmentVariableFromOverride(util::TestOverride override
     return "";
 }
 
-std::optional<std::string> util::GetTestOverride(util::TestOverride override, const ReportingHandler& handler)
+std::optional<std::string> util::GetTestOverride(util::TestOverride override)
 {
-    if (!util::AreTestOverridesAllowed(handler))
+    if (!util::AreTestOverridesAllowed())
     {
         return std::nullopt;
     }

@@ -6,18 +6,13 @@
 #include <optional>
 #include <string>
 
-namespace SFS::details
-{
-class ReportingHandler;
-}
-
 namespace SFS::details::util
 {
 /**
  * @brief Check if test overrides are allowed and logs if so.
  * @details Test overrides are allowed if the SFS_ENABLE_TEST_OVERRIDES macro is defined.
  */
-bool AreTestOverridesAllowed(const ReportingHandler& handler);
+bool AreTestOverridesAllowed();
 
 enum class TestOverride
 {
@@ -34,7 +29,7 @@ std::string GetEnvironmentVariableFromOverride(util::TestOverride override);
  * @details std::nullopt is returned if the environment variable is not set or in case of failure.
  * The returned string may be different in Win32 due to the encoding of the environment variables.
  */
-std::optional<std::string> GetTestOverride(TestOverride override, const ReportingHandler& handler);
+std::optional<std::string> GetTestOverride(TestOverride override);
 
 /**
  * @brief Get the value of an environment variable.
