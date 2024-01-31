@@ -133,12 +133,13 @@ void SFSClientImpl<ConnectionManagerT>::SetCustomBaseUrl(std::string customBaseU
 template <typename ConnectionManagerT>
 std::string SFSClientImpl<ConnectionManagerT>::GetBaseUrl() const
 {
-#ifdef SFS_ENABLE_TEST_OVERRIDES
-    if (auto envVar = util::GetEnv("SFS_TEST_OVERRIDE_BASE_URL"))
+    if (util::AreTestOverridesAllowed(m_reportingHandler))
     {
-        return *envVar;
+        if (auto envVar = util::GetEnv("SFS_TEST_OVERRIDE_BASE_URL"))
+        {
+            return *envVar;
+        }
     }
-#endif
 
     if (m_customBaseUrl)
     {

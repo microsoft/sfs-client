@@ -3,6 +3,8 @@
 
 #include "Util.h"
 
+#include "ReportingHandler.h"
+
 #include <cstdlib>
 #include <string>
 
@@ -30,6 +32,16 @@ bool util::AreEqualI(std::string_view a, std::string_view b)
 bool util::AreNotEqualI(std::string_view a, std::string_view b)
 {
     return !AreEqualI(a, b);
+}
+
+bool util::AreTestOverridesAllowed(const ReportingHandler& handler)
+{
+#ifdef SFS_ENABLE_TEST_OVERRIDES
+    LOG_INFO(handler, "Test overrides are enabled");
+    return true;
+#else
+    return false;
+#endif
 }
 
 std::optional<std::string> util::GetEnv(const char* varName)
