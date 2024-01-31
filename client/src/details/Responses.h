@@ -3,36 +3,43 @@
 
 #pragma once
 
-// Replace with chosen JSON library, either nlohmann or Parson
-class Json
-{
-};
+#include <nlohmann/json.hpp>
 
 namespace SFS::details
 {
 class VersionResponse
 {
   public:
-    VersionResponse() = default;
+    VersionResponse(nlohmann::json data) : m_responseData(data)
+    {
+    }
 
-    // Placeholder for now
+    // TODO: Placeholder for now
 
-    Json GetResponseData() const;
+    const nlohmann::json& GetResponseData() const
+    {
+        return m_responseData;
+    }
 
   private:
-    Json m_responseData;
+    nlohmann::json m_responseData;
 };
 
 class DownloadInfoResponse
 {
   public:
-    DownloadInfoResponse() = default;
+    DownloadInfoResponse(nlohmann::json data) : m_responseData(data)
+    {
+    }
 
-    // Placeholder for now
+    // TODO: Placeholder for now
 
-    Json GetResponseData() const;
+    const nlohmann::json& GetResponseData() const
+    {
+        return m_responseData;
+    }
 
   private:
-    Json m_responseData;
+    nlohmann::json m_responseData;
 };
 } // namespace SFS::details

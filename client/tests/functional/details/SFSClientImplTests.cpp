@@ -69,7 +69,7 @@ TEST("Testing class SFSClientImpl()")
         SECTION("No attributes")
         {
             std::unique_ptr<VersionResponse> response;
-            REQUIRE(sfsClient.GetLatestVersion("productName", std::nullopt, *connection, response) == Result::Success);
+            REQUIRE(sfsClient.GetLatestVersion("productName", {}, *connection, response) == Result::Success);
             CheckProductArray(response->GetResponseData(), "productName", "0.0.0.2");
         }
 
@@ -84,7 +84,7 @@ TEST("Testing class SFSClientImpl()")
         SECTION("Wrong product name")
         {
             std::unique_ptr<VersionResponse> response;
-            REQUIRE(sfsClient.GetLatestVersion("badName", std::nullopt, *connection, response) == Result::HttpNotFound);
+            REQUIRE(sfsClient.GetLatestVersion("badName", {}, *connection, response) == Result::HttpNotFound);
 
             const SearchAttributes attributes{{"attr1", "value"}};
             REQUIRE(sfsClient.GetLatestVersion("badName", attributes, *connection, response) == Result::HttpNotFound);

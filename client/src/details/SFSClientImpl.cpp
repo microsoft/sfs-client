@@ -6,13 +6,20 @@
 #include "ErrorHandling.h"
 #include "Logging.h"
 #include "Responses.h"
+#include "SFSUrlComponents.h"
 #include "connection/Connection.h"
 #include "connection/ConnectionManager.h"
 #include "connection/CurlConnectionManager.h"
 #include "connection/mock/MockConnectionManager.h"
 
+#include <nlohmann/json.hpp>
+
+#define SFS_INFO(...) LOG_INFO(m_reportingHandler, __VA_ARGS__)
+#define SFS_RETURN_IF_FAILED(result) RETURN_IF_FAILED_LOG(result, m_reportingHandler)
+
 using namespace SFS;
 using namespace SFS::details;
+using json = nlohmann::json;
 
 constexpr const char* c_apiDomain = "api.cdp.microsoft.com";
 constexpr const char* c_defaultInstanceId = "default";
@@ -36,36 +43,78 @@ SFSClientImpl<ConnectionManagerT>::SFSClientImpl(ClientConfig&& config)
 }
 
 template <typename ConnectionManagerT>
-Result SFSClientImpl<ConnectionManagerT>::GetLatestVersion(
-    [[maybe_unused]] std::string_view productName,
-    [[maybe_unused]] const std::optional<SearchAttributes>& attributes,
-    [[maybe_unused]] Connection& connection,
-    [[maybe_unused]] std::unique_ptr<VersionResponse>& response) const
+Result SFSClientImpl<ConnectionManagerT>::GetLatestVersion(const std::string& productName,
+                                                           const SearchAttributes& attributes,
+                                                           Connection& connection,
+                                                           std::unique_ptr<VersionResponse>& response) const
 {
-    LOG_INFO(m_reportingHandler, "GetLatestVersion not implemented");
-    return Result::NotImpl;
+    const std::string url{SFSUrlComponents::GetLatestVersionUrl(GetBaseUrl(), m_instanceId, m_nameSpace)};
+
+    SFS_INFO("Requesting latest version of [%s] from URL [%s]", productName.c_str(), url.c_str());
+
+    json targettingAttributes = json::object();
+    for (const auto& [key, value] : attributes)
+    {
+        targettingAttributes[key] = value;
+    }
+    json body = json::array();
+    body.push_back({{"TargetingAttributes", targettingAttributes}, {"Product", productName}});
+
+    SFS_INFO("Request body [%s]", body.dump().c_str());
+
+    std::string out;
+    SFS_RETURN_IF_FAILED(connection.Post(url, body.dump(), out));
+
+    // TODO: currently the response is just being sent as is, we have to parse it and check the return values
+    // TODO: Check for json::parse exceptions
+    response = std::make_unique<VersionResponse>(json::parse(out));
+
+    return Result::Success;
 }
 
 template <typename ConnectionManagerT>
-Result SFSClientImpl<ConnectionManagerT>::GetSpecificVersion(
-    [[maybe_unused]] std::string_view productName,
-    [[maybe_unused]] std::string_view version,
-    [[maybe_unused]] const std::optional<SearchAttributes>& attributes,
-    [[maybe_unused]] Connection& connection,
-    [[maybe_unused]] std::unique_ptr<VersionResponse>& content) const
+Result SFSClientImpl<ConnectionManagerT>::GetSpecificVersion(const std::string& productName,
+                                                             const std::string& version,
+                                                             Connection& connection,
+                                                             std::unique_ptr<VersionResponse>& response) const
 {
-    return Result::NotImpl;
+    const std::string url{
+        SFSUrlComponents::GetSpecificVersionUrl(GetBaseUrl(), m_instanceId, m_nameSpace, productName, version)};
+
+    SFS_INFO("Requesting version [%s] of [%s] from URL [%s]", version.c_str(), productName.c_str(), url.c_str());
+
+    std::string out;
+    SFS_RETURN_IF_FAILED(connection.Get(url, out));
+
+    // TODO: currently the response is just being sent as is, we have to parse it and check the return values
+    // TODO: Check for json::parse exceptions
+    response = std::make_unique<VersionResponse>(json::parse(out));
+
+    return Result::Success;
 }
 
 template <typename ConnectionManagerT>
-Result SFSClientImpl<ConnectionManagerT>::GetDownloadInfo(
-    [[maybe_unused]] std::string_view productName,
-    [[maybe_unused]] std::string_view version,
-    [[maybe_unused]] const std::optional<SearchAttributes>& attributes,
-    [[maybe_unused]] Connection& connection,
-    [[maybe_unused]] std::unique_ptr<DownloadInfoResponse>& content) const
+Result SFSClientImpl<ConnectionManagerT>::GetDownloadInfo(const std::string& productName,
+                                                          const std::string& version,
+                                                          Connection& connection,
+                                                          std::unique_ptr<DownloadInfoResponse>& response) const
 {
-    return Result::NotImpl;
+    const std::string url{
+        SFSUrlComponents::GetDownloadInfoUrl(GetBaseUrl(), m_instanceId, m_nameSpace, productName, version)};
+
+    SFS_INFO("Requesting download info of version [%s] of [%s] from URL [%s]",
+             version.c_str(),
+             productName.c_str(),
+             url.c_str());
+
+    std::string out;
+    SFS_RETURN_IF_FAILED(connection.Post(url, out));
+
+    // TODO: currently the response is just being sent as is, we have to parse it and check the return values
+    // TODO: Check for json::parse exceptions
+    response = std::make_unique<DownloadInfoResponse>(json::parse(out));
+
+    return Result::Success;
 }
 
 template <typename ConnectionManagerT>

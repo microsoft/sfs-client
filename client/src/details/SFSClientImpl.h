@@ -31,28 +31,26 @@ class SFSClientImpl : public SFSClientInterface
      * @brief Gets the metadata for the latest available version for the specified product that matches the optional
      * request attributes
      */
-    [[nodiscard]] Result GetLatestVersion(std::string_view productName,
-                                          const std::optional<SearchAttributes>& attributes,
+    [[nodiscard]] Result GetLatestVersion(const std::string& productName,
+                                          const SearchAttributes& attributes,
                                           Connection& connection,
                                           std::unique_ptr<VersionResponse>& response) const override;
 
     /**
      * @brief Gets the metadata for a specific version of the specified product
      */
-    [[nodiscard]] Result GetSpecificVersion(std::string_view productName,
-                                            std::string_view version,
-                                            const std::optional<SearchAttributes>& attributes,
+    [[nodiscard]] Result GetSpecificVersion(const std::string& productName,
+                                            const std::string& version,
                                             Connection& connection,
-                                            std::unique_ptr<VersionResponse>& content) const override;
+                                            std::unique_ptr<VersionResponse>& response) const override;
 
     /**
      * @brief Gets the files metadata for a specific version of the specified product
      */
-    [[nodiscard]] Result GetDownloadInfo(std::string_view productName,
-                                         std::string_view version,
-                                         const std::optional<SearchAttributes>& attributes,
+    [[nodiscard]] Result GetDownloadInfo(const std::string& productName,
+                                         const std::string& version,
                                          Connection& connection,
-                                         std::unique_ptr<DownloadInfoResponse>& content) const override;
+                                         std::unique_ptr<DownloadInfoResponse>& response) const override;
 
     /**
      * @brief Returns the ConnectionManager to be used by the SFSClient to create Connection objects
