@@ -34,7 +34,9 @@ std::optional<std::string> util::GetEnv(const std::string& varName)
     char* buf;
     if (_dupenv_s(&buf, &len, varName.c_str()) == 0 && buf != nullptr)
     {
-        return std::string(buf);
+        std::string result{buf};
+        free(buf);
+        return result;
     }
 #else
     if (const char* envValue = std::getenv(varName.c_str()))
