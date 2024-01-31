@@ -8,8 +8,6 @@
 #include <cstdlib>
 #include <string>
 
-#define MAX_ENV_VALUE_LENGTH 200
-
 using namespace SFS::details;
 
 bool util::AreEqualI(std::string_view a, std::string_view b)
@@ -47,8 +45,9 @@ bool util::AreTestOverridesAllowed(const ReportingHandler& handler)
 std::optional<std::string> util::GetEnv(const char* varName)
 {
 #ifdef WIN32
+    static constexpr size_t s_maxEnvValueLength = 200;
     size_t len = 0;
-    char buf[MAX_ENV_VALUE_LENGTH];
+    char buf[s_maxEnvValueLength];
     if (getenv_s(&len, buf, sizeof(buf), varName) == 0)
     {
         return std::string(buf);
