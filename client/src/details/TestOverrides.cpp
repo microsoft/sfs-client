@@ -20,17 +20,21 @@ bool util::AreTestOverridesAllowed(const ReportingHandler& handler)
 #endif
 }
 
-std::optional<std::string> util::GetEnv(const char* varName)
+std::optional<std::string> util::GetEnv(const std::string& varName)
 {
+    if (varName.empty())
+    {
+        return std::nullopt;
+    }
 #ifdef WIN32
     size_t len;
     char* buf;
-    if (_dupenv_s(&buf, &len, varName) == 0 && buf != nullptr)
+    if (_dupenv_s(&buf, &len, varName.c_str()) == 0 && buf != nullptr)
     {
         return std::string(buf);
     }
 #else
-    if (const char* envValue = std::getenv(varName))
+    if (const char* envValue = std::getenv(varName.c_str()))
     {
         return std::string(envValue);
     }
@@ -39,29 +43,37 @@ std::optional<std::string> util::GetEnv(const char* varName)
     return std::nullopt;
 }
 
-bool util::SetEnv(const char* varName, const char* value)
+bool util::SetEnv(const std::string& varName, const std::string& value)
 {
+    if (varName.empty() || value.empty())
+    {
+        return false;
+    }
 #ifdef WIN32
-    return _putenv_s(varName, value) == 0;
+    return _putenv_s(varName.c_str(), value.c_str()) == 0;
 #else
-    return setenv(varName, value, 1) == 0;
+    return setenv(varName.c_str(), value.c_str(), 1) == 0;
 #endif
 }
 
-bool util::UnsetEnv(const char* varName)
+bool util::UnsetEnv(const std::string& varName)
 {
+    if (varName.empty())
+    {
+        return false;
+    }
 #ifdef WIN32
     // On Windows, setting the value to an empty string is equivalent to unsetting the variable
-    return _putenv_s(varName, "") == 0;
+    return _putenv_s(varName.c_str(), "") == 0;
 #else
-    return unsetenv(varName) == 0;
+    return unsetenv(varName.c_str()) == 0;
 #endif
 }
 
-util::ScopedEnv::ScopedEnv(std::string varName, const char* value) : m_varName(std::move(varName))
+util::ScopedEnv::ScopedEnv(std::string varName, const std::string& value) : m_varName(std::move(varName))
 {
-    m_oldValue = GetEnv(m_varName.c_str());
-    if (!SetEnv(m_varName.c_str(), value))
+    m_oldValue = GetEnv(m_varName);
+    if (!SetEnv(m_varName, value))
     {
         m_oldValue.reset();
     }
@@ -71,10 +83,10 @@ util::ScopedEnv::~ScopedEnv()
 {
     if (m_oldValue)
     {
-        SetEnv(m_varName.c_str(), m_oldValue->c_str());
+        SetEnv(m_varName, *m_oldValue);
     }
     else
     {
-        UnsetEnv(m_varName.c_str());
+        UnsetEnv(m_varName);
     }
 }
