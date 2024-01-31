@@ -28,12 +28,11 @@ constexpr const char* c_defaultNameSpace = "default";
 
 namespace
 {
-void LogOnceTestOverrides(const ReportingHandler& handler)
+void LogIfTestOverridesAllowed(const ReportingHandler& handler)
 {
     if (util::AreTestOverridesAllowed())
     {
-        static std::once_flag s_loggedTestOverrides;
-        std::call_once(s_loggedTestOverrides, [&] { LOG_INFO(handler, "Test overrides are enabled"); });
+        LOG_INFO(handler, "Test overrides are allowed");
     }
 }
 } // namespace
@@ -54,7 +53,7 @@ SFSClientImpl<ConnectionManagerT>::SFSClientImpl(ClientConfig&& config)
                   "ConnectionManagerT not derived from ConnectionManager");
     m_connectionManager = std::make_unique<ConnectionManagerT>(m_reportingHandler);
 
-    LogOnceTestOverrides(m_reportingHandler);
+    LogIfTestOverridesAllowed(m_reportingHandler);
 }
 
 template <typename ConnectionManagerT>
