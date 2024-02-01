@@ -17,7 +17,8 @@
 
 #define SFS_INFO(...) LOG_INFO(m_reportingHandler, __VA_ARGS__)
 #define SFS_RETURN_IF_FAILED(result) RETURN_IF_FAILED_LOG(result, m_reportingHandler)
-#define RETURN_INVALID_RESPONSE_IF_FALSE(condition, message) RETURN_CODE_IF(ServiceInvalidResponse, !condition, message)
+#define RETURN_INVALID_RESPONSE_IF_FALSE(condition, message)                                                           \
+    RETURN_CODE_IF(ServiceInvalidResponse, !(condition), message)
 
 using namespace SFS;
 using namespace SFS::details;
