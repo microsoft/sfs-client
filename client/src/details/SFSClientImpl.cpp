@@ -17,7 +17,7 @@
 
 #define SFS_INFO(...) LOG_INFO(m_reportingHandler, __VA_ARGS__)
 #define SFS_RETURN_IF_FAILED(result) RETURN_IF_FAILED_LOG(result, m_reportingHandler)
-#define CHECK_JSON(condition, message) RETURN_CODE_IF_LOG(ServiceInvalidResponse, condition, handler, message)
+#define RETURN_INVALID_RESPONSE_IF_FALSE(condition, message) RETURN_CODE_IF(ServiceInvalidResponse, !condition, message)
 
 using namespace SFS;
 using namespace SFS::details;
@@ -51,30 +51,26 @@ Result ParseStringToJson(const std::string& data, const std::string& method, jso
     return Result::Success;
 }
 
-Result ContentIdJsonToObj(const nlohmann::json& contentId,
-                          const ReportingHandler& handler,
-                          std::unique_ptr<ContentId>& out)
+Result ContentIdJsonToObj(const nlohmann::json& contentId, std::unique_ptr<ContentId>& out)
 {
-    CHECK_JSON(!contentId.is_object(), "ContentId is not a JSON object");
+    RETURN_INVALID_RESPONSE_IF_FALSE(contentId.is_object(), "ContentId is not a JSON object");
 
-    CHECK_JSON(!contentId.contains("Namespace"), "Missing ContentId.Namespace in response");
-    CHECK_JSON(!contentId["Namespace"].is_string(), "ContentId.Namespace is not a string");
+    RETURN_INVALID_RESPONSE_IF_FALSE(contentId.contains("Namespace"), "Missing ContentId.Namespace in response");
+    RETURN_INVALID_RESPONSE_IF_FALSE(contentId["Namespace"].is_string(), "ContentId.Namespace is not a string");
     std::string nameSpace = contentId["Namespace"].get<std::string>();
 
-    CHECK_JSON(!contentId.contains("Name"), "Missing ContentId.Name in response");
-    CHECK_JSON(!contentId["Name"].is_string(), "ContentId.Name is not a string");
+    RETURN_INVALID_RESPONSE_IF_FALSE(contentId.contains("Name"), "Missing ContentId.Name in response");
+    RETURN_INVALID_RESPONSE_IF_FALSE(contentId["Name"].is_string(), "ContentId.Name is not a string");
     std::string name = contentId["Name"].get<std::string>();
 
-    CHECK_JSON(!contentId.contains("Version"), "Missing ContentId.Version in response");
-    CHECK_JSON(!contentId["Version"].is_string(), "ContentId.Version is not a string");
+    RETURN_INVALID_RESPONSE_IF_FALSE(contentId.contains("Version"), "Missing ContentId.Version in response");
+    RETURN_INVALID_RESPONSE_IF_FALSE(contentId["Version"].is_string(), "ContentId.Version is not a string");
     std::string version = contentId["Version"].get<std::string>();
 
     return ContentId::Make(std::move(nameSpace), std::move(name), std::move(version), out);
 }
 
-Result GetLatestVersionResponseToContentId(const nlohmann::json& data,
-                                           const ReportingHandler& handler,
-                                           std::unique_ptr<ContentId>& out)
+Result GetLatestVersionResponseToContentId(const nlohmann::json& data, std::unique_ptr<ContentId>& out)
 {
     // Expected format:
     // [
@@ -90,19 +86,17 @@ Result GetLatestVersionResponseToContentId(const nlohmann::json& data,
     //
     // We only query for one product at a time, so we expect only one result
 
-    CHECK_JSON(!data.is_array(), "Response is not a JSON array");
-    CHECK_JSON(data.size() != 1, "Response does not have the expected size");
+    RETURN_INVALID_RESPONSE_IF_FALSE(data.is_array(), "Response is not a JSON array");
+    RETURN_INVALID_RESPONSE_IF_FALSE(data.size() == 1, "Response does not have the expected size");
 
     const json& firstObj = data[0];
-    CHECK_JSON(!firstObj.is_object(), "Response is not a JSON object");
-    CHECK_JSON(!firstObj.contains("ContentId"), "Missing ContentId in response");
+    RETURN_INVALID_RESPONSE_IF_FALSE(firstObj.is_object(), "Response is not a JSON object");
+    RETURN_INVALID_RESPONSE_IF_FALSE(firstObj.contains("ContentId"), "Missing ContentId in response");
 
-    return ContentIdJsonToObj(firstObj["ContentId"], handler, out);
+    return ContentIdJsonToObj(firstObj["ContentId"], out);
 }
 
-Result GetSpecificVersionResponseToContentId(const nlohmann::json& data,
-                                             const ReportingHandler& handler,
-                                             std::unique_ptr<ContentId>& out)
+Result GetSpecificVersionResponseToContentId(const nlohmann::json& data, std::unique_ptr<ContentId>& out)
 {
     // Expected format:
     // {
@@ -119,9 +113,9 @@ Result GetSpecificVersionResponseToContentId(const nlohmann::json& data,
     //
     // We don't care about Files in this response, so we just ignore them
 
-    CHECK_JSON(!data.is_object(), "Response is not a JSON object");
+    RETURN_INVALID_RESPONSE_IF_FALSE(data.is_object(), "Response is not a JSON object");
 
-    return ContentIdJsonToObj(data["ContentId"], handler, out);
+    return ContentIdJsonToObj(data["ContentId"], out);
 }
 
 Result HashTypeFromString(const std::string& hashType, HashType& out)
@@ -141,40 +135,39 @@ Result HashTypeFromString(const std::string& hashType, HashType& out)
     return Result::Success;
 }
 
-Result FileJsonToObj(const nlohmann::json& file, const ReportingHandler& handler, std::unique_ptr<File>& out)
+Result FileJsonToObj(const nlohmann::json& file, std::unique_ptr<File>& out)
 {
-    CHECK_JSON(!file.is_object(), "File is not a JSON object");
+    RETURN_INVALID_RESPONSE_IF_FALSE(file.is_object(), "File is not a JSON object");
 
-    CHECK_JSON(!file.contains("FileId"), "Missing File.FileId in response");
-    CHECK_JSON(!file["FileId"].is_string(), "File.FileId is not a string");
+    RETURN_INVALID_RESPONSE_IF_FALSE(file.contains("FileId"), "Missing File.FileId in response");
+    RETURN_INVALID_RESPONSE_IF_FALSE(file["FileId"].is_string(), "File.FileId is not a string");
     std::string fileId = file["FileId"].get<std::string>();
 
-    CHECK_JSON(!file.contains("Url"), "Missing File.Url in response");
-    CHECK_JSON(!file["Url"].is_string(), "File.Url is not a string");
+    RETURN_INVALID_RESPONSE_IF_FALSE(file.contains("Url"), "Missing File.Url in response");
+    RETURN_INVALID_RESPONSE_IF_FALSE(file["Url"].is_string(), "File.Url is not a string");
     std::string url = file["Url"].get<std::string>();
 
-    CHECK_JSON(!file.contains("SizeInBytes"), "Missing File.SizeInBytes in response");
-    CHECK_JSON(!file["SizeInBytes"].is_number_unsigned(), "File.SizeInBytes is not an unsigned number");
+    RETURN_INVALID_RESPONSE_IF_FALSE(file.contains("SizeInBytes"), "Missing File.SizeInBytes in response");
+    RETURN_INVALID_RESPONSE_IF_FALSE(file["SizeInBytes"].is_number_unsigned(),
+                                     "File.SizeInBytes is not an unsigned number");
     uint64_t sizeInBytes = file["SizeInBytes"].get<uint64_t>();
 
-    CHECK_JSON(!file.contains("Hashes"), "Missing File.Hashes in response");
-    CHECK_JSON(!file["Hashes"].is_object(), "File.Hashes is not an object");
+    RETURN_INVALID_RESPONSE_IF_FALSE(file.contains("Hashes"), "Missing File.Hashes in response");
+    RETURN_INVALID_RESPONSE_IF_FALSE(file["Hashes"].is_object(), "File.Hashes is not an object");
     std::unordered_map<HashType, std::string> hashes;
     for (const auto& [hashType, hashValue] : file["Hashes"].items())
     {
-        CHECK_JSON(!hashValue.is_string(), "File.Hashes object value is not a string");
+        RETURN_INVALID_RESPONSE_IF_FALSE(hashValue.is_string(), "File.Hashes object value is not a string");
 
         HashType type;
-        RETURN_IF_FAILED_LOG(HashTypeFromString(hashType, type), handler);
+        RETURN_IF_FAILED(HashTypeFromString(hashType, type));
         hashes[type] = hashValue.get<std::string>();
     }
 
     return File::Make(std::move(fileId), std::move(url), sizeInBytes, std::move(hashes), out);
 }
 
-Result GetDownloadInfoResponseToFileVector(const nlohmann::json& data,
-                                           const ReportingHandler& handler,
-                                           std::vector<std::unique_ptr<File>>& out)
+Result GetDownloadInfoResponseToFileVector(const nlohmann::json& data, std::vector<std::unique_ptr<File>>& out)
 {
     // Expected format:
     // [
@@ -196,17 +189,17 @@ Result GetDownloadInfoResponseToFileVector(const nlohmann::json& data,
     //   ...
     // ]
 
-    CHECK_JSON(!data.is_array(), "Response is not a JSON array");
+    RETURN_INVALID_RESPONSE_IF_FALSE(data.is_array(), "Response is not a JSON array");
 
     // TODO #48: For now ignore DeliveryOptimization data. Will implement its separate parsing later
 
     std::vector<std::unique_ptr<File>> tmp;
     for (const auto& fileData : data)
     {
-        CHECK_JSON(!fileData.is_object(), "Array element is not a JSON object");
+        RETURN_INVALID_RESPONSE_IF_FALSE(fileData.is_object(), "Array element is not a JSON object");
 
         std::unique_ptr<File> file;
-        RETURN_IF_FAILED_LOG(FileJsonToObj(fileData, handler, file), handler);
+        RETURN_IF_FAILED(FileJsonToObj(fileData, file));
         tmp.push_back(std::move(file));
     }
 
@@ -267,7 +260,7 @@ Result SFSClientImpl<ConnectionManagerT>::GetLatestVersion(const std::string& pr
     SFS_RETURN_IF_FAILED(ParseStringToJson(out, "GetLatestVersion", response));
 
     std::unique_ptr<ContentId> tmp;
-    SFS_RETURN_IF_FAILED(GetLatestVersionResponseToContentId(response, m_reportingHandler, tmp));
+    SFS_RETURN_IF_FAILED(GetLatestVersionResponseToContentId(response, tmp));
     RETURN_CODE_IF_LOG(ServiceInvalidResponse,
                        !IsVersionResponseValid(*tmp, m_nameSpace, productName),
                        m_reportingHandler,
@@ -296,7 +289,7 @@ Result SFSClientImpl<ConnectionManagerT>::GetSpecificVersion(const std::string& 
     SFS_RETURN_IF_FAILED(ParseStringToJson(out, "GetSpecificVersion", response));
 
     std::unique_ptr<ContentId> tmp;
-    SFS_RETURN_IF_FAILED(GetSpecificVersionResponseToContentId(response, m_reportingHandler, tmp));
+    SFS_RETURN_IF_FAILED(GetSpecificVersionResponseToContentId(response, tmp));
     RETURN_CODE_IF_LOG(ServiceInvalidResponse,
                        !IsVersionResponseValid(*tmp, m_nameSpace, productName),
                        m_reportingHandler,
@@ -328,7 +321,7 @@ Result SFSClientImpl<ConnectionManagerT>::GetDownloadInfo(const std::string& pro
     SFS_RETURN_IF_FAILED(ParseStringToJson(out, "GetDownloadInfo", response));
 
     std::vector<std::unique_ptr<File>> tmp;
-    SFS_RETURN_IF_FAILED(GetDownloadInfoResponseToFileVector(response, m_reportingHandler, tmp));
+    SFS_RETURN_IF_FAILED(GetDownloadInfoResponseToFileVector(response, tmp));
 
     files = std::move(tmp);
 
