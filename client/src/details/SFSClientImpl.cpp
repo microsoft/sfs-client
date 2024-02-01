@@ -7,7 +7,7 @@
 #include "Logging.h"
 #include "Responses.h"
 #include "SFSUrlComponents.h"
-#include "TestOverrides.h"
+#include "TestOverride.h"
 #include "connection/Connection.h"
 #include "connection/ConnectionManager.h"
 #include "connection/CurlConnectionManager.h"
@@ -30,7 +30,7 @@ namespace
 {
 void LogIfTestOverridesAllowed(const ReportingHandler& handler)
 {
-    if (util::AreTestOverridesAllowed())
+    if (test::AreTestOverridesAllowed())
     {
         LOG_INFO(handler, "Test overrides are allowed");
     }
@@ -146,7 +146,7 @@ void SFSClientImpl<ConnectionManagerT>::SetCustomBaseUrl(std::string customBaseU
 template <typename ConnectionManagerT>
 std::string SFSClientImpl<ConnectionManagerT>::GetBaseUrl() const
 {
-    if (auto envVar = util::GetTestOverride(util::TestOverride::BaseUrl))
+    if (auto envVar = test::GetTestOverride(test::TestOverride::BaseUrl))
     {
         return *envVar;
     }

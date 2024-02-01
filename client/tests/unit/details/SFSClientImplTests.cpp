@@ -4,7 +4,7 @@
 #include "../../util/TestHelper.h"
 #include "Responses.h"
 #include "SFSClientImpl.h"
-#include "TestOverrides.h"
+#include "TestOverride.h"
 #include "connection/Connection.h"
 #include "connection/ConnectionManager.h"
 #include "connection/CurlConnection.h"
@@ -229,8 +229,8 @@ TEST("Testing test override SFS_TEST_OVERRIDE_BASE_URL")
 
     {
         INFO("Can override the base url with the test key");
-        util::ScopedTestOverride override(util::TestOverride::BaseUrl, "override");
-        if (util::AreTestOverridesAllowed())
+        ScopedTestOverride override(TestOverride::BaseUrl, "override");
+        if (AreTestOverridesAllowed())
         {
             REQUIRE(sfsClient.GetBaseUrl() == "override");
         }
@@ -248,8 +248,8 @@ TEST("Testing test override SFS_TEST_OVERRIDE_BASE_URL")
 
     {
         INFO("Can also override a custom base base url with the test key");
-        util::ScopedTestOverride override(util::TestOverride::BaseUrl, "override");
-        if (util::AreTestOverridesAllowed())
+        ScopedTestOverride override(TestOverride::BaseUrl, "override");
+        if (AreTestOverridesAllowed())
         {
             REQUIRE(sfsClient.GetBaseUrl() == "override");
         }

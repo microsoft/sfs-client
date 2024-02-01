@@ -1,46 +1,16 @@
 // Copyright (c) Microsoft Corporation.
 // Licensed under the MIT License.
 
-#include "TestOverrides.h"
+#include "Env.h"
 
 #include "ErrorHandling.h"
 
 #include <cstdlib>
-#include <mutex>
-#include <string>
 
 using namespace SFS::details;
+using SFS::details::env::ScopedEnv;
 
-bool util::AreTestOverridesAllowed()
-{
-#ifdef SFS_ENABLE_TEST_OVERRIDES
-    return true;
-#else
-    return false;
-#endif
-}
-
-std::string util::GetEnvironmentVariableFromOverride(util::TestOverride override)
-{
-    switch (override)
-    {
-    case util::TestOverride::BaseUrl:
-        return "SFS_TEST_OVERRIDE_BASE_URL";
-    }
-    return "";
-}
-
-std::optional<std::string> util::GetTestOverride(util::TestOverride override)
-{
-    if (!util::AreTestOverridesAllowed())
-    {
-        return std::nullopt;
-    }
-
-    return GetEnv(GetEnvironmentVariableFromOverride(override));
-}
-
-std::optional<std::string> util::GetEnv(const std::string& varName)
+std::optional<std::string> env::GetEnv(const std::string& varName)
 {
     if (varName.empty())
     {
@@ -65,7 +35,7 @@ std::optional<std::string> util::GetEnv(const std::string& varName)
     return std::nullopt;
 }
 
-bool util::SetEnv(const std::string& varName, const std::string& value)
+bool env::SetEnv(const std::string& varName, const std::string& value)
 {
     if (varName.empty() || value.empty())
     {
@@ -78,7 +48,7 @@ bool util::SetEnv(const std::string& varName, const std::string& value)
 #endif
 }
 
-bool util::UnsetEnv(const std::string& varName)
+bool env::UnsetEnv(const std::string& varName)
 {
     if (varName.empty())
     {
@@ -92,7 +62,7 @@ bool util::UnsetEnv(const std::string& varName)
 #endif
 }
 
-util::ScopedEnv::ScopedEnv(std::string varName, const std::string& value) : m_varName(std::move(varName))
+ScopedEnv::ScopedEnv(std::string varName, const std::string& value) : m_varName(std::move(varName))
 {
     m_oldValue = GetEnv(m_varName);
     if (!SetEnv(m_varName, value))
@@ -101,7 +71,7 @@ util::ScopedEnv::ScopedEnv(std::string varName, const std::string& value) : m_va
     }
 }
 
-util::ScopedEnv::~ScopedEnv()
+ScopedEnv::~ScopedEnv()
 {
     if (m_oldValue)
     {
@@ -111,9 +81,4 @@ util::ScopedEnv::~ScopedEnv()
     {
         UnsetEnv(m_varName);
     }
-}
-
-util::ScopedTestOverride::ScopedTestOverride(TestOverride override, const std::string& value)
-    : m_scopedEnv(GetEnvironmentVariableFromOverride(override), value)
-{
 }

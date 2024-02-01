@@ -19,12 +19,13 @@ target_sources(
             unit/ApplicabilityDetailsTests.cpp
             unit/ContentTests.cpp
             unit/DeliveryOptimizationDataTests.cpp
+            unit/details/EnvTests.cpp
             unit/details/ErrorHandlingTests.cpp
             unit/details/CurlConnectionTests.cpp
             unit/details/CurlConnectionManagerTests.cpp
             unit/details/ReportingHandlerTests.cpp
             unit/details/SFSClientImplTests.cpp
-            unit/details/TestOverridesTests.cpp
+            unit/details/TestOverrideTests.cpp
             unit/ResultTests.cpp
             unit/SFSClientTests.cpp
             util/TestHelper.cpp)

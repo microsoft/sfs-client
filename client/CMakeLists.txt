@@ -21,12 +21,13 @@ target_sources(
             src/details/connection/CurlConnectionManager.cpp
             src/details/connection/mock/MockConnection.cpp
             src/details/connection/mock/MockConnectionManager.cpp
+            src/details/Env.cpp
             src/details/ErrorHandling.cpp
             src/details/ReportingHandler.cpp
             src/details/SFSClientImpl.cpp
             src/details/SFSException.cpp
             src/details/SFSUrlComponents.cpp
-            src/details/TestOverrides.cpp
+            src/details/TestOverride.cpp
             src/details/Util.cpp
             src/Logging.cpp
             src/Result.cpp
