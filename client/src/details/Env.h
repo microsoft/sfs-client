@@ -11,7 +11,7 @@ namespace SFS::details::env
 /**
  * @brief Get the value of an environment variable.
  * @details std::nullopt is returned if the environment variable is not set or in case of failure.
- * The returned string may be different in Win32 due to the encoding of the environment variables.
+ * The returned string is encoded in ASCII in Windows, not UTF-8.
  */
 std::optional<std::string> GetEnv(const std::string& varName);
 
