@@ -38,7 +38,7 @@ void LogIfTestOverridesAllowed(const ReportingHandler& handler)
     }
 }
 
-Result ParseStringToJson(const std::string& data, const std::string& method, json& out)
+Result ParseServerMethodStringToJson(const std::string& data, const std::string& method, json& out)
 {
     try
     {
@@ -208,7 +208,7 @@ Result GetDownloadInfoResponseToFileVector(const nlohmann::json& data, std::vect
     return Result::Success;
 }
 
-bool IsVersionResponseValid(const ContentId& contentId, std::string_view nameSpace, std::string_view name)
+bool DoesGetVersionResponseMatchProduct(const ContentId& contentId, std::string_view nameSpace, std::string_view name)
 {
     return AreEqualI(contentId.GetNameSpace(), nameSpace) && AreEqualI(contentId.GetName(), name);
 }
@@ -257,12 +257,12 @@ Result SFSClientImpl<ConnectionManagerT>::GetLatestVersion(const std::string& pr
     SFS_RETURN_IF_FAILED(connection.Post(url, body.dump(), out));
 
     json response;
-    SFS_RETURN_IF_FAILED(ParseStringToJson(out, "GetLatestVersion", response));
+    SFS_RETURN_IF_FAILED(ParseServerMethodStringToJson(out, "GetLatestVersion", response));
 
     std::unique_ptr<ContentId> tmp;
     SFS_RETURN_IF_FAILED(GetLatestVersionResponseToContentId(response, tmp));
     RETURN_CODE_IF_LOG(ServiceInvalidResponse,
-                       !IsVersionResponseValid(*tmp, m_nameSpace, productName),
+                       !DoesGetVersionResponseMatchProduct(*tmp, m_nameSpace, productName),
                        m_reportingHandler,
                        "(GetLatestVersion) Response does not match the requested product");
 
@@ -286,12 +286,12 @@ Result SFSClientImpl<ConnectionManagerT>::GetSpecificVersion(const std::string& 
     SFS_RETURN_IF_FAILED(connection.Get(url, out));
 
     json response;
-    SFS_RETURN_IF_FAILED(ParseStringToJson(out, "GetSpecificVersion", response));
+    SFS_RETURN_IF_FAILED(ParseServerMethodStringToJson(out, "GetSpecificVersion", response));
 
     std::unique_ptr<ContentId> tmp;
     SFS_RETURN_IF_FAILED(GetSpecificVersionResponseToContentId(response, tmp));
     RETURN_CODE_IF_LOG(ServiceInvalidResponse,
-                       !IsVersionResponseValid(*tmp, m_nameSpace, productName),
+                       !DoesGetVersionResponseMatchProduct(*tmp, m_nameSpace, productName),
                        m_reportingHandler,
                        "(GetSpecificVersion) Response does not match the requested product");
 
@@ -318,7 +318,7 @@ Result SFSClientImpl<ConnectionManagerT>::GetDownloadInfo(const std::string& pro
     SFS_RETURN_IF_FAILED(connection.Post(url, out));
 
     json response;
-    SFS_RETURN_IF_FAILED(ParseStringToJson(out, "GetDownloadInfo", response));
+    SFS_RETURN_IF_FAILED(ParseServerMethodStringToJson(out, "GetDownloadInfo", response));
 
     std::vector<std::unique_ptr<File>> tmp;
     SFS_RETURN_IF_FAILED(GetDownloadInfoResponseToFileVector(response, tmp));
