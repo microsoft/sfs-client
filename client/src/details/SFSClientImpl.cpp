@@ -58,15 +58,15 @@ Result ContentIdJsonToObj(const nlohmann::json& contentId, std::unique_ptr<Conte
 
     RETURN_INVALID_RESPONSE_IF_FALSE(contentId.contains("Namespace"), "Missing ContentId.Namespace in response");
     RETURN_INVALID_RESPONSE_IF_FALSE(contentId["Namespace"].is_string(), "ContentId.Namespace is not a string");
-    std::string nameSpace = contentId["Namespace"].get<std::string>();
+    std::string nameSpace = contentId["Namespace"];
 
     RETURN_INVALID_RESPONSE_IF_FALSE(contentId.contains("Name"), "Missing ContentId.Name in response");
     RETURN_INVALID_RESPONSE_IF_FALSE(contentId["Name"].is_string(), "ContentId.Name is not a string");
-    std::string name = contentId["Name"].get<std::string>();
+    std::string name = contentId["Name"];
 
     RETURN_INVALID_RESPONSE_IF_FALSE(contentId.contains("Version"), "Missing ContentId.Version in response");
     RETURN_INVALID_RESPONSE_IF_FALSE(contentId["Version"].is_string(), "ContentId.Version is not a string");
-    std::string version = contentId["Version"].get<std::string>();
+    std::string version = contentId["Version"];
 
     return ContentId::Make(std::move(nameSpace), std::move(name), std::move(version), out);
 }
@@ -142,16 +142,16 @@ Result FileJsonToObj(const nlohmann::json& file, std::unique_ptr<File>& out)
 
     RETURN_INVALID_RESPONSE_IF_FALSE(file.contains("FileId"), "Missing File.FileId in response");
     RETURN_INVALID_RESPONSE_IF_FALSE(file["FileId"].is_string(), "File.FileId is not a string");
-    std::string fileId = file["FileId"].get<std::string>();
+    std::string fileId = file["FileId"];
 
     RETURN_INVALID_RESPONSE_IF_FALSE(file.contains("Url"), "Missing File.Url in response");
     RETURN_INVALID_RESPONSE_IF_FALSE(file["Url"].is_string(), "File.Url is not a string");
-    std::string url = file["Url"].get<std::string>();
+    std::string url = file["Url"];
 
     RETURN_INVALID_RESPONSE_IF_FALSE(file.contains("SizeInBytes"), "Missing File.SizeInBytes in response");
     RETURN_INVALID_RESPONSE_IF_FALSE(file["SizeInBytes"].is_number_unsigned(),
                                      "File.SizeInBytes is not an unsigned number");
-    uint64_t sizeInBytes = file["SizeInBytes"].get<uint64_t>();
+    uint64_t sizeInBytes = file["SizeInBytes"];
 
     RETURN_INVALID_RESPONSE_IF_FALSE(file.contains("Hashes"), "Missing File.Hashes in response");
     RETURN_INVALID_RESPONSE_IF_FALSE(file["Hashes"].is_object(), "File.Hashes is not an object");
@@ -162,7 +162,7 @@ Result FileJsonToObj(const nlohmann::json& file, std::unique_ptr<File>& out)
 
         HashType type;
         RETURN_IF_FAILED(HashTypeFromString(hashType, type));
-        hashes[type] = hashValue.get<std::string>();
+        hashes[type] = hashValue;
     }
 
     return File::Make(std::move(fileId), std::move(url), sizeInBytes, std::move(hashes), out);
