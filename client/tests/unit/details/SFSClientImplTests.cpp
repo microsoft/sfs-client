@@ -4,6 +4,9 @@
 #include "../../util/TestHelper.h"
 #include "Responses.h"
 #include "SFSClientImpl.h"
+#include "TestOverride.h"
+#include "connection/Connection.h"
+#include "connection/ConnectionManager.h"
 #include "connection/CurlConnection.h"
 #include "connection/CurlConnectionManager.h"
 #include "connection/mock/MockConnectionManager.h"
@@ -215,6 +218,47 @@ TEST("Testing SFSClientImpl::SetCustomBaseUrl()")
     REQUIRE(sfsClient.GetBaseUrl() == "https://testAccountId.api.cdp.microsoft.com");
 
     sfsClient.SetCustomBaseUrl("customUrl");
+    REQUIRE(sfsClient.GetBaseUrl() == "customUrl");
+}
+
+TEST("Testing test override SFS_TEST_OVERRIDE_BASE_URL")
+{
+    SFSClientImpl<MockConnectionManager> sfsClient({"testAccountId", "testInstanceId", "testNameSpace", std::nullopt});
+
+    REQUIRE(sfsClient.GetBaseUrl() == "https://testAccountId.api.cdp.microsoft.com");
+
+    {
+        INFO("Can override the base url with the test key");
+        ScopedTestOverride override(TestOverride::BaseUrl, "override");
+        if (AreTestOverridesAllowed())
+        {
+            REQUIRE(sfsClient.GetBaseUrl() == "override");
+        }
+        else
+        {
+            REQUIRE(sfsClient.GetBaseUrl() == "https://testAccountId.api.cdp.microsoft.com");
+        }
+    }
+
+    INFO("Override is unset after ScopedEnv goes out of scope");
+    REQUIRE(sfsClient.GetBaseUrl() == "https://testAccountId.api.cdp.microsoft.com");
+
+    sfsClient.SetCustomBaseUrl("customUrl");
+    REQUIRE(sfsClient.GetBaseUrl() == "customUrl");
+
+    {
+        INFO("Can also override a custom base base url with the test key");
+        ScopedTestOverride override(TestOverride::BaseUrl, "override");
+        if (AreTestOverridesAllowed())
+        {
+            REQUIRE(sfsClient.GetBaseUrl() == "override");
+        }
+        else
+        {
+            REQUIRE(sfsClient.GetBaseUrl() == "customUrl");
+        }
+    }
+
     REQUIRE(sfsClient.GetBaseUrl() == "customUrl");
 }
 

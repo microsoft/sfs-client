@@ -21,11 +21,13 @@ target_sources(
             src/details/connection/CurlConnectionManager.cpp
             src/details/connection/mock/MockConnection.cpp
             src/details/connection/mock/MockConnectionManager.cpp
+            src/details/Env.cpp
             src/details/ErrorHandling.cpp
             src/details/ReportingHandler.cpp
             src/details/SFSClientImpl.cpp
             src/details/SFSException.cpp
             src/details/SFSUrlComponents.cpp
+            src/details/TestOverride.cpp
             src/details/Util.cpp
             src/Logging.cpp
             src/Result.cpp
@@ -35,6 +37,11 @@ target_include_directories(${PROJECT_NAME} PUBLIC include/sfsclient)
 
 target_link_libraries(${PROJECT_NAME} PRIVATE CURL::libcurl)
 target_link_libraries(${PROJECT_NAME} PRIVATE nlohmann_json::nlohmann_json)
+
+if(SFS_ENABLE_TEST_OVERRIDES)
+    target_compile_definitions(${PROJECT_NAME}
+                               PRIVATE SFS_ENABLE_TEST_OVERRIDES=1)
+endif()
 
 # Enables one to run tests through "ctest --test-dir .\build\client"
 enable_testing()

@@ -138,6 +138,8 @@ Linux:
 ./build/tests/bin/SFSClientTests -s
 ```
 
+Follow the [TEST](TEST.md) document for more information regarding testing.
+
 ## Contributing
 
 This project welcomes contributions and suggestions.  Most contributions require you to agree to a

@@ -7,6 +7,7 @@
 #include "Logging.h"
 #include "Responses.h"
 #include "SFSUrlComponents.h"
+#include "TestOverride.h"
 #include "connection/Connection.h"
 #include "connection/ConnectionManager.h"
 #include "connection/CurlConnectionManager.h"
@@ -25,6 +26,17 @@ constexpr const char* c_apiDomain = "api.cdp.microsoft.com";
 constexpr const char* c_defaultInstanceId = "default";
 constexpr const char* c_defaultNameSpace = "default";
 
+namespace
+{
+void LogIfTestOverridesAllowed(const ReportingHandler& handler)
+{
+    if (test::AreTestOverridesAllowed())
+    {
+        LOG_INFO(handler, "Test overrides are allowed");
+    }
+}
+} // namespace
+
 template <typename ConnectionManagerT>
 SFSClientImpl<ConnectionManagerT>::SFSClientImpl(ClientConfig&& config)
     : m_accountId(std::move(config.accountId))
@@ -40,6 +52,8 @@ SFSClientImpl<ConnectionManagerT>::SFSClientImpl(ClientConfig&& config)
     static_assert(std::is_base_of<ConnectionManager, ConnectionManagerT>::value,
                   "ConnectionManagerT not derived from ConnectionManager");
     m_connectionManager = std::make_unique<ConnectionManagerT>(m_reportingHandler);
+
+    LogIfTestOverridesAllowed(m_reportingHandler);
 }
 
 template <typename ConnectionManagerT>
@@ -132,6 +146,11 @@ void SFSClientImpl<ConnectionManagerT>::SetCustomBaseUrl(std::string customBaseU
 template <typename ConnectionManagerT>
 std::string SFSClientImpl<ConnectionManagerT>::GetBaseUrl() const
 {
+    if (auto envVar = test::GetTestOverride(test::TestOverride::BaseUrl))
+    {
+        return *envVar;
+    }
+
     if (m_customBaseUrl)
     {
         return *m_customBaseUrl;

@@ -28,13 +28,15 @@ error() { echo -e "${COLOR_RED}$*${NO_COLOR}" >&2; exit 1; }
 warn() { echo -e "${COLOR_YELLOW}$*${NO_COLOR}"; }
 
 clean=false
+enable_test_overrides="OFF"
+regenerate=false
 
-usage() { echo "Usage: $0 [-c|--clean]" 1>&2; exit 1; }
+usage() { echo "Usage: $0 [-c|--clean, -t|--enable-test-overrides, -r|--regenerate]" 1>&2; exit 1; }
 
 if ! opts=$(getopt \
-  --longoptions "clean" \
+  --longoptions "clean,enable-test-overrides,regenerate" \
   --name "$(basename "$0")" \
-  --options "c" \
+  --options "ctr" \
   -- "$@"
 ); then
     usage
@@ -46,6 +48,14 @@ while [ $# -gt 0 ]; do
     case "$1" in
         -c|--clean)
             clean=true
+            shift 1
+            ;;
+        -t|--enable-test-overrides)
+            enable_test_overrides="ON"
+            shift 1
+            ;;
+        -r|--regenerate)
+            regenerate=true
             shift 1
             ;;
         *)
@@ -68,9 +78,14 @@ if $clean && [ -d "$build_folder" ]; then
     rm -r -f "$build_folder"
 fi
 
-# Configure cmake if build folder doesn't exist. This creates build targets that will be used by the build command
-if [ ! -d "$build_folder" ]; then
-    cmake -S "$git_root" -B "$build_folder"
+if [ $enable_test_overrides == "ON" ] && ! $regenerate && ! $clean && [ -d "$build_folder" ]; then
+    warn "For --enable-test-overrides to work if the CMake build has already been generated, either --clean or --regenerate must be passed to force the reconfiguration of the build cache. Otherwise, the switch will have no effect and the value used during the last configuration will be preserved."
+fi
+
+# Configure cmake if build folder doesn't exist or if --regenerate switch is used.
+# This creates build targets that will be used by the build command
+if [ ! -d "$build_folder" ] || $regenerate ; then
+    cmake -S "$git_root" -B "$build_folder" -DSFS_ENABLE_TEST_OVERRIDES="$enable_test_overrides"
 fi
 
 # This is the build command. If any CMakeLists.txt files change, this will also reconfigure before building
