@@ -2,7 +2,6 @@
 // Licensed under the MIT License.
 
 #include "../../util/TestHelper.h"
-#include "Responses.h"
 #include "SFSClientImpl.h"
 #include "TestOverride.h"
 #include "connection/Connection.h"
@@ -12,6 +11,7 @@
 #include "connection/mock/MockConnectionManager.h"
 
 #include <catch2/catch_test_macros.hpp>
+#include <nlohmann/json.hpp>
 
 #define TEST(...) TEST_CASE("[SFSClientImplTests] " __VA_ARGS__)
 
@@ -68,47 +68,27 @@ class MockCurlConnection : public CurlConnection
     bool& m_expectEmptyPostBody;
 };
 
-void CheckProduct(const json& product, std::string_view name, std::string_view version)
+void CheckProduct(const ContentId& contentId, std::string_view ns, std::string_view name, std::string_view version)
 {
-    INFO("Product: " << product.dump());
-    REQUIRE(product.is_object());
-    REQUIRE((product.contains("ContentId") && product.contains("Files")));
-    REQUIRE((product["ContentId"].contains("Namespace") && product["ContentId"].contains("Name") &&
-             product["ContentId"].contains("Version")));
-    REQUIRE(product["Files"].is_array());
-    REQUIRE(product["ContentId"]["Name"].get<std::string>() == name);
-    REQUIRE(product["ContentId"]["Version"].get<std::string>() == version);
+    REQUIRE(contentId.GetNameSpace() == ns);
+    REQUIRE(contentId.GetName() == name);
+    REQUIRE(contentId.GetVersion() == version);
 }
 
-void CheckProductArray(const json& productArray, std::string_view name, std::string_view version)
+void CheckDownloadInfo(const std::vector<std::unique_ptr<File>>& files, const std::string& name)
 {
-    INFO("ProductArray: " << productArray.dump());
-    REQUIRE(productArray.is_array());
-    REQUIRE(productArray.size() == 1);
-
-    const auto& product = productArray[0];
-    REQUIRE((product.contains("ContentId")));
-    REQUIRE((product["ContentId"].contains("Namespace") && product["ContentId"].contains("Name") &&
-             product["ContentId"].contains("Version")));
-    REQUIRE(product["ContentId"]["Name"].get<std::string>() == name);
-    REQUIRE(product["ContentId"]["Version"].get<std::string>() == version);
-}
-
-void CheckDownloadInfo(const json& info, const std::string& name)
-{
-    INFO("DownloadInfo: " << info.dump());
-    REQUIRE(info.is_array());
-    REQUIRE(info.size() == 2);
-    REQUIRE((info[0].contains("FileId") && info[1].contains("FileId")));
-    REQUIRE(info[0]["FileId"].get<std::string>() == (name + ".json"));
-    REQUIRE(info[1]["FileId"].get<std::string>() == (name + ".bin"));
+    REQUIRE(files.size() == 2);
+    REQUIRE(files[0]->GetFileId() == (name + ".json"));
+    REQUIRE(files[0]->GetUrl() == ("http://localhost/1.json"));
+    REQUIRE(files[1]->GetFileId() == (name + ".bin"));
+    REQUIRE(files[1]->GetUrl() == ("http://localhost/2.bin"));
 }
 } // namespace
 
 TEST("Testing class SFSClientImpl()")
 {
-    SFSClientImpl<CurlConnectionManager> sfsClient(
-        {"testAccountId", "testInstanceId", "testNameSpace", LogCallbackToTest});
+    const std::string ns = "testNameSpace";
+    SFSClientImpl<CurlConnectionManager> sfsClient({"testAccountId", "testInstanceId", ns, LogCallbackToTest});
 
     Result::Code responseCode = Result::Success;
     std::string getResponse;
@@ -127,52 +107,53 @@ TEST("Testing class SFSClientImpl()")
         expectEmptyPostBody = false;
         json latestVersionResponse = json::array();
         latestVersionResponse.push_back(
-            {{"ContentId", {{"Namespace", "testNameSpace"}, {"Name", productName}, {"Version", expectedVersion}}}});
+            {{"ContentId", {{"Namespace", ns}, {"Name", productName}, {"Version", expectedVersion}}}});
         postResponse = latestVersionResponse.dump();
-        std::unique_ptr<VersionResponse> response;
+        std::unique_ptr<ContentId> contentId;
         SECTION("No attributes")
         {
-            REQUIRE(sfsClient.GetLatestVersion(productName, {}, *connection, response) == Result::Success);
-            CheckProductArray(response->GetResponseData(), productName, expectedVersion);
+            REQUIRE(sfsClient.GetLatestVersion(productName, {}, *connection, contentId) == Result::Success);
+            REQUIRE(contentId);
+            CheckProduct(*contentId, ns, productName, expectedVersion);
         }
 
         SECTION("With attributes")
         {
             const SearchAttributes attributes{{"attr1", "value"}};
-            REQUIRE(sfsClient.GetLatestVersion(productName, attributes, *connection, response) == Result::Success);
-            CheckProductArray(response->GetResponseData(), productName, expectedVersion);
+            REQUIRE(sfsClient.GetLatestVersion(productName, attributes, *connection, contentId) == Result::Success);
+            REQUIRE(contentId);
+            CheckProduct(*contentId, ns, productName, expectedVersion);
         }
 
         SECTION("Failing")
         {
             responseCode = Result::HttpNotFound;
-            REQUIRE(sfsClient.GetLatestVersion("badName", {}, *connection, response) == responseCode);
+            REQUIRE(sfsClient.GetLatestVersion("badName", {}, *connection, contentId) == responseCode);
 
             const SearchAttributes attributes{{"attr1", "value"}};
-            REQUIRE(sfsClient.GetLatestVersion("badName", attributes, *connection, response) == responseCode);
+            REQUIRE(sfsClient.GetLatestVersion("badName", attributes, *connection, contentId) == responseCode);
         }
     }
 
     SECTION("Testing SFSClientImpl::GetSpecificVersion()")
     {
         json specificVersionResponse;
-        specificVersionResponse["ContentId"] = {{"Namespace", "testNameSpace"},
-                                                {"Name", productName},
-                                                {"Version", expectedVersion}};
+        specificVersionResponse["ContentId"] = {{"Namespace", ns}, {"Name", productName}, {"Version", expectedVersion}};
         specificVersionResponse["Files"] = json::array({productName + ".json", productName + ".bin"});
         getResponse = specificVersionResponse.dump();
-        std::unique_ptr<VersionResponse> response;
+        std::unique_ptr<ContentId> contentId;
         SECTION("Getting version")
         {
-            REQUIRE(sfsClient.GetSpecificVersion(productName, expectedVersion, *connection, response) ==
+            REQUIRE(sfsClient.GetSpecificVersion(productName, expectedVersion, *connection, contentId) ==
                     Result::Success);
-            CheckProduct(response->GetResponseData(), productName, expectedVersion);
+            REQUIRE(contentId);
+            CheckProduct(*contentId, ns, productName, expectedVersion);
         }
 
         SECTION("Failing")
         {
             responseCode = Result::HttpNotFound;
-            REQUIRE(sfsClient.GetSpecificVersion(productName, expectedVersion, *connection, response) == responseCode);
+            REQUIRE(sfsClient.GetSpecificVersion(productName, expectedVersion, *connection, contentId) == responseCode);
         }
     }
 
@@ -196,17 +177,19 @@ TEST("Testing class SFSClientImpl()")
         downloadInfoResponse[1]["DeliveryOptimization"] = downloadInfoResponse[0]["DeliveryOptimization"];
         postResponse = downloadInfoResponse.dump();
 
-        std::unique_ptr<DownloadInfoResponse> response;
+        std::vector<std::unique_ptr<File>> files;
         SECTION("Getting version")
         {
-            REQUIRE(sfsClient.GetDownloadInfo(productName, expectedVersion, *connection, response) == Result::Success);
-            CheckDownloadInfo(response->GetResponseData(), productName);
+            REQUIRE(sfsClient.GetDownloadInfo(productName, expectedVersion, *connection, files) == Result::Success);
+            REQUIRE(!files.empty());
+            CheckDownloadInfo(files, productName);
         }
 
         SECTION("Failing")
         {
             responseCode = Result::HttpNotFound;
-            REQUIRE(sfsClient.GetDownloadInfo(productName, expectedVersion, *connection, response) == responseCode);
+            REQUIRE(sfsClient.GetDownloadInfo(productName, expectedVersion, *connection, files) == responseCode);
+            REQUIRE(files.empty());
         }
     }
 }

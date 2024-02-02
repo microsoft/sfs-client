@@ -88,6 +88,8 @@ std::string_view SFS::ToString(Result::Code code) noexcept
         return "NotSet";
     case Result::OutOfMemory:
         return "OutOfMemory";
+    case Result::ServiceInvalidResponse:
+        return "ServiceInvalidResponse";
     case Result::Unexpected:
         return "Unexpected";
     }

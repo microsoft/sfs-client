@@ -3,7 +3,6 @@
 
 #include "../../mock/MockWebServer.h"
 #include "../../util/TestHelper.h"
-#include "Responses.h"
 #include "SFSClientImpl.h"
 #include "connection/Connection.h"
 #include "connection/CurlConnectionManager.h"
@@ -18,45 +17,28 @@ using namespace SFS::test;
 
 namespace
 {
-void CheckProduct(const nlohmann::json& product, std::string_view name, std::string_view version)
+void CheckProduct(const ContentId& contentId, std::string_view ns, std::string_view name, std::string_view version)
 {
-    REQUIRE(product.is_object());
-    REQUIRE((product.contains("ContentId") && product.contains("Files")));
-    REQUIRE((product["ContentId"].contains("Namespace") && product["ContentId"].contains("Name") &&
-             product["ContentId"].contains("Version")));
-    REQUIRE(product["Files"].is_array());
-    REQUIRE(product["ContentId"]["Name"].get<std::string>() == name);
-    REQUIRE(product["ContentId"]["Version"].get<std::string>() == version);
+    REQUIRE(contentId.GetNameSpace() == ns);
+    REQUIRE(contentId.GetName() == name);
+    REQUIRE(contentId.GetVersion() == version);
 }
 
-void CheckProductArray(const nlohmann::json& productArray, std::string_view name, std::string_view version)
+void CheckDownloadInfo(const std::vector<std::unique_ptr<File>>& files, const std::string& name)
 {
-    REQUIRE(productArray.is_array());
-    REQUIRE(productArray.size() == 1);
-
-    const auto& product = productArray[0];
-    REQUIRE((product.contains("ContentId")));
-    REQUIRE((product["ContentId"].contains("Namespace") && product["ContentId"].contains("Name") &&
-             product["ContentId"].contains("Version")));
-    REQUIRE(product["ContentId"]["Name"].get<std::string>() == name);
-    REQUIRE(product["ContentId"]["Version"].get<std::string>() == version);
-}
-
-void CheckDownloadInfo(const nlohmann::json& info, const std::string& name)
-{
-    REQUIRE(info.is_array());
-    REQUIRE(info.size() == 2);
-    REQUIRE((info[0].contains("FileId") && info[1].contains("FileId")));
-    REQUIRE(info[0]["FileId"].get<std::string>() == (name + ".json"));
-    REQUIRE(info[1]["FileId"].get<std::string>() == (name + ".bin"));
+    REQUIRE(files.size() == 2);
+    REQUIRE(files[0]->GetFileId() == (name + ".json"));
+    REQUIRE(files[0]->GetUrl() == ("http://localhost/1.json"));
+    REQUIRE(files[1]->GetFileId() == (name + ".bin"));
+    REQUIRE(files[1]->GetUrl() == ("http://localhost/2.bin"));
 }
 } // namespace
 
 TEST("Testing class SFSClientImpl()")
 {
     test::MockWebServer server;
-    SFSClientImpl<CurlConnectionManager> sfsClient(
-        {"testAccountId", "testInstanceId", "testNameSpace", LogCallbackToTest});
+    const std::string ns = "testNameSpace";
+    SFSClientImpl<CurlConnectionManager> sfsClient({"testAccountId", "testInstanceId", ns, LogCallbackToTest});
     sfsClient.SetCustomBaseUrl(server.GetBaseUrl());
 
     server.RegisterProduct("productName", "0.0.0.2");
@@ -66,87 +48,94 @@ TEST("Testing class SFSClientImpl()")
 
     SECTION("Testing SFSClientImpl::GetLatestVersion()")
     {
+        std::unique_ptr<ContentId> contentId;
+
         SECTION("No attributes")
         {
-            std::unique_ptr<VersionResponse> response;
-            REQUIRE(sfsClient.GetLatestVersion("productName", {}, *connection, response) == Result::Success);
-            CheckProductArray(response->GetResponseData(), "productName", "0.0.0.2");
+            REQUIRE(sfsClient.GetLatestVersion("productName", {}, *connection, contentId) == Result::Success);
+            REQUIRE(contentId);
+            CheckProduct(*contentId, ns, "productName", "0.0.0.2");
         }
 
         SECTION("With attributes")
         {
-            std::unique_ptr<VersionResponse> response;
             const SearchAttributes attributes{{"attr1", "value"}};
-            REQUIRE(sfsClient.GetLatestVersion("productName", attributes, *connection, response) == Result::Success);
-            CheckProductArray(response->GetResponseData(), "productName", "0.0.0.2");
+            REQUIRE(sfsClient.GetLatestVersion("productName", attributes, *connection, contentId) == Result::Success);
+            REQUIRE(contentId);
+            CheckProduct(*contentId, ns, "productName", "0.0.0.2");
         }
 
         SECTION("Wrong product name")
         {
-            std::unique_ptr<VersionResponse> response;
-            REQUIRE(sfsClient.GetLatestVersion("badName", {}, *connection, response) == Result::HttpNotFound);
+            REQUIRE(sfsClient.GetLatestVersion("badName", {}, *connection, contentId) == Result::HttpNotFound);
+            REQUIRE(!contentId);
 
             const SearchAttributes attributes{{"attr1", "value"}};
-            REQUIRE(sfsClient.GetLatestVersion("badName", attributes, *connection, response) == Result::HttpNotFound);
+            REQUIRE(sfsClient.GetLatestVersion("badName", attributes, *connection, contentId) == Result::HttpNotFound);
+            REQUIRE(!contentId);
         }
     }
 
     SECTION("Testing SFSClientImpl::GetSpecificVersion()")
     {
+        std::unique_ptr<ContentId> contentId;
+
         SECTION("Getting 0.0.0.1")
         {
-            std::unique_ptr<VersionResponse> response;
-            REQUIRE(sfsClient.GetSpecificVersion("productName", "0.0.0.1", *connection, response) == Result::Success);
-            CheckProduct(response->GetResponseData(), "productName", "0.0.0.1");
+            REQUIRE(sfsClient.GetSpecificVersion("productName", "0.0.0.1", *connection, contentId) == Result::Success);
+            REQUIRE(contentId);
+            CheckProduct(*contentId, ns, "productName", "0.0.0.1");
         }
 
         SECTION("Getting 0.0.0.2")
         {
-            std::unique_ptr<VersionResponse> response;
-            REQUIRE(sfsClient.GetSpecificVersion("productName", "0.0.0.2", *connection, response) == Result::Success);
-            CheckProduct(response->GetResponseData(), "productName", "0.0.0.2");
+            REQUIRE(sfsClient.GetSpecificVersion("productName", "0.0.0.2", *connection, contentId) == Result::Success);
+            REQUIRE(contentId);
+            CheckProduct(*contentId, ns, "productName", "0.0.0.2");
         }
 
         SECTION("Wrong product name")
         {
-            std::unique_ptr<VersionResponse> response;
-            REQUIRE(sfsClient.GetSpecificVersion("badName", "0.0.0.2", *connection, response) == Result::HttpNotFound);
+            REQUIRE(sfsClient.GetSpecificVersion("badName", "0.0.0.2", *connection, contentId) == Result::HttpNotFound);
+            REQUIRE(!contentId);
         }
 
         SECTION("Wrong version")
         {
-            std::unique_ptr<VersionResponse> response;
-            REQUIRE(sfsClient.GetSpecificVersion("productName", "0.0.0.3", *connection, response) ==
+            REQUIRE(sfsClient.GetSpecificVersion("productName", "0.0.0.3", *connection, contentId) ==
                     Result::HttpNotFound);
+            REQUIRE(!contentId);
         }
     }
 
     SECTION("Testing SFSClientImpl::GetDownloadInfo()")
     {
+        std::vector<std::unique_ptr<File>> files;
+
         SECTION("Getting 0.0.0.1")
         {
-            std::unique_ptr<DownloadInfoResponse> response;
-            REQUIRE(sfsClient.GetDownloadInfo("productName", "0.0.0.1", *connection, response) == Result::Success);
-            CheckDownloadInfo(response->GetResponseData(), "productName");
+            REQUIRE(sfsClient.GetDownloadInfo("productName", "0.0.0.1", *connection, files) == Result::Success);
+            REQUIRE(!files.empty());
+            CheckDownloadInfo(files, "productName");
         }
 
         SECTION("Getting 0.0.0.2")
         {
-            std::unique_ptr<DownloadInfoResponse> response;
-            REQUIRE(sfsClient.GetDownloadInfo("productName", "0.0.0.2", *connection, response) == Result::Success);
-            CheckDownloadInfo(response->GetResponseData(), "productName");
+            REQUIRE(sfsClient.GetDownloadInfo("productName", "0.0.0.2", *connection, files) == Result::Success);
+            REQUIRE(!files.empty());
+            CheckDownloadInfo(files, "productName");
         }
 
         SECTION("Wrong product name")
         {
-            std::unique_ptr<DownloadInfoResponse> response;
-            REQUIRE(sfsClient.GetDownloadInfo("badName", "0.0.0.2", *connection, response) == Result::HttpNotFound);
+            REQUIRE(sfsClient.GetDownloadInfo("badName", "0.0.0.2", *connection, files) == Result::HttpNotFound);
+            REQUIRE(files.empty());
         }
 
         SECTION("Wrong version")
         {
-            std::unique_ptr<DownloadInfoResponse> response;
-            REQUIRE(sfsClient.GetDownloadInfo("productName", "0.0.0.3", *connection, response) == Result::HttpNotFound);
+            REQUIRE(sfsClient.GetDownloadInfo("productName", "0.0.0.3", *connection, files) == Result::HttpNotFound);
+            REQUIRE(files.empty());
         }
     }
 

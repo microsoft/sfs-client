@@ -72,7 +72,7 @@ std::string ToString(StatusCode status)
     return "";
 }
 
-json GenerateGetSpecificVersionResponse(const std::string& name, const std::string& version)
+json GenerateGetSpecificVersionResponse(const std::string& name, const std::string& version, const std::string& ns)
 {
     // {
     //   "ContentId": {
@@ -87,12 +87,12 @@ json GenerateGetSpecificVersionResponse(const std::string& name, const std::stri
     // }
 
     json response;
-    response["ContentId"] = {{"Namespace", "default"}, {"Name", name}, {"Version", version}};
+    response["ContentId"] = {{"Namespace", ns}, {"Name", name}, {"Version", version}};
     response["Files"] = json::array({name + ".json", name + ".bin"});
     return response;
 }
 
-json GeneratePostLatestVersionResponse(const std::string& name, const std::string& latestVersion)
+json GeneratePostLatestVersionResponse(const std::string& name, const std::string& latestVersion, const std::string& ns)
 {
     // [
     //   {
@@ -107,7 +107,7 @@ json GeneratePostLatestVersionResponse(const std::string& name, const std::strin
 
     json response;
     response = json::array();
-    response.push_back({{"ContentId", {{"Namespace", "default"}, {"Name", name}, {"Version", latestVersion}}}});
+    response.push_back({{"ContentId", {{"Namespace", ns}, {"Name", name}, {"Version", latestVersion}}}});
     return response;
 }
 
@@ -302,7 +302,7 @@ void MockWebServerImpl::ConfigurePostLatestVersion()
             return;
         }
 
-        // TODO: Ignoring instanceId and ns for now
+        // TODO: Ignoring instanceId for now
 
         if (!req.has_param("action") || util::AreNotEqualI(req.get_param_value("action"), "BatchUpdates"))
         {
@@ -357,10 +357,11 @@ void MockWebServerImpl::ConfigurePostLatestVersion()
             return;
         }
 
+        const std::string ns = req.path_params.at("ns");
         const auto& latestVersion = *versions.rbegin();
 
         res.status = static_cast<int>(StatusCode::Ok);
-        res.set_content(GeneratePostLatestVersionResponse(name, latestVersion).dump(), "application/json");
+        res.set_content(GeneratePostLatestVersionResponse(name, latestVersion, ns).dump(), "application/json");
     });
 }
 
@@ -377,7 +378,7 @@ void MockWebServerImpl::ConfigureGetSpecificVersion()
             return;
         }
 
-        // TODO: Ignoring instanceId and ns for now
+        // TODO: Ignoring instanceId for now
 
         const std::string& name = req.path_params.at("name");
         auto it = m_products.find(name);
@@ -401,8 +402,10 @@ void MockWebServerImpl::ConfigureGetSpecificVersion()
             return;
         }
 
+        const std::string ns = req.path_params.at("ns");
+
         res.status = static_cast<int>(StatusCode::Ok);
-        res.set_content(GenerateGetSpecificVersionResponse(name, version).dump(), "application/json");
+        res.set_content(GenerateGetSpecificVersionResponse(name, version, ns).dump(), "application/json");
     });
 }
 
