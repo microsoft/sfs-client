@@ -21,9 +21,11 @@ void DisplayUsage()
         << "Options:" << std::endl
         << "  -h, --help\t\tDisplay this help message" << std::endl
         << "  --accountId\t\tThe account ID of the SFS service is used to identify the caller" << std::endl
+        << "  --productName\t\tThe name of the product to retrieve" << std::endl
         << "  --instanceId\t\tThe instance ID is usually \"Default\" (optional)" << std::endl
         << "  --nameSpace\t\tThe namespace is usually \"Default\" (optional)" << std::endl
-        << "  --productName\t\tThe name of the product to retrieve" << std::endl
+        << "  --customUrl\t\tA custom URL to use for the SFS service. Library must have been built with SFS_ENABLE_OVERRIDES. (optional)"
+        << std::endl
         << "Example:" << std::endl
         << "  SFSClientTool --accountId test --productName \"Microsoft.WindowsStore_12011.1001.1.0_x64__8wekyb3d8bbwe\""
         << std::endl;
@@ -54,6 +56,7 @@ struct Settings
     std::string instanceId;
     std::string nameSpace;
     std::string productName;
+    std::string customUrl;
 };
 
 int ParseArguments(const std::vector<std::string_view>& args, Settings& settings)
@@ -102,6 +105,15 @@ int ParseArguments(const std::vector<std::string_view>& args, Settings& settings
                 return 1;
             }
             settings.productName = args[++i];
+        }
+        else if (args[i].compare("--customUrl") == 0)
+        {
+            if (args.size() <= i + 1)
+            {
+                PrintError("Missing customUrl argument.");
+                return 1;
+            }
+            settings.customUrl = args[++i];
         }
         else
         {
@@ -161,7 +173,7 @@ void DisplayResults(const std::unique_ptr<Content>& content)
             for (const auto& hash : file->GetHashes())
             {
                 std::cout << "          \"" << ToString(hash.first) << R"(": ")" << hash.second << '"'
-                            << comma(hashCount++, file->GetHashes().size()) << std::endl;
+                          << comma(hashCount++, file->GetHashes().size()) << std::endl;
             }
             std::cout << R"(        })" << std::endl;
             std::cout << R"(      })" << comma(fileCount++, content->GetFiles().size()) << std::endl;
@@ -174,10 +186,10 @@ void DisplayResults(const std::unique_ptr<Content>& content)
 
 void LogResult(const SFS::Result& result)
 {
-    std::cout << "Result code: " << ToString(result.GetCode());
+    std::cout << "  Result code: " << ToString(result.GetCode());
     if (!result.GetMessage().empty())
     {
-        std::cout << " Message: " << result.GetMessage();
+        std::cout << ". Message: " << result.GetMessage();
     }
     std::cout << std::endl;
 }
@@ -211,6 +223,19 @@ void LoggingCallback(const SFS::LogData& logData)
               << " " << std::filesystem::path(logData.file).filename().string() << ":" << logData.line << " "
               << logData.message << std::endl;
 }
+
+bool SetEnv(const std::string& varName, const std::string& value)
+{
+    if (varName.empty() || value.empty())
+    {
+        return false;
+    }
+#ifdef _WIN32
+    return _putenv_s(varName.c_str(), value.c_str()) == 0;
+#else
+    return setenv(varName.c_str(), value.c_str(), 1 /*overwrite*/) == 0;
+#endif
+}
 } // namespace
 
 int main(int argc, char* argv[])
@@ -228,12 +253,20 @@ int main(int argc, char* argv[])
         return 0;
     }
 
+    if (!settings.customUrl.empty())
+    {
+        SetEnv("SFS_TEST_OVERRIDE_BASE_URL", settings.customUrl);
+        std::cout << "Using custom URL: " << settings.customUrl << std::endl;
+        std::cout << "Note that the library must have been built with SFS_ENABLE_OVERRIDES to use a custom URL." << std::endl;
+    }
+
     // Initialize SFSClient
     std::cout << "Initializing SFSClient with accountId: " << settings.accountId
               << ", instanceId: " << settings.instanceId << ", nameSpace: " << settings.nameSpace << std::endl
               << std::endl;
     std::unique_ptr<SFSClient> sfsClient;
-    auto result = SFSClient::Make({settings.accountId, settings.instanceId, settings.nameSpace, LoggingCallback}, sfsClient);
+    auto result =
+        SFSClient::Make({settings.accountId, settings.instanceId, settings.nameSpace, LoggingCallback}, sfsClient);
     if (!result)
     {
         std::cout << "Failed to initialize SFSClient.";
