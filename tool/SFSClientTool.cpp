@@ -17,17 +17,21 @@ namespace
 void DisplayUsage()
 {
     std::cout
-        << "Usage: SFSClientTool --productName name [options]" << std::endl
+        << "Usage: SFSClientTool --productName <name> [options]" << std::endl
+        << std::endl
+        << "Required:" << std::endl
+        << "  --productName <name>\t\tName of the product to be retrieved" << std::endl
+        << std::endl
         << "Options:" << std::endl
-        << "  -h, --help\t\tDisplay this help message" << std::endl
-        << "  --accountId\t\tThe account ID of the SFS service is used to identify the caller" << std::endl
-        << "  --productName\t\tThe name of the product to retrieve" << std::endl
-        << "  --instanceId\t\tThe instance ID is usually \"Default\" (optional)" << std::endl
-        << "  --nameSpace\t\tThe namespace is usually \"Default\" (optional)" << std::endl
-        << "  --customUrl\t\tA custom URL to use for the SFS service. Library must have been built with SFS_ENABLE_OVERRIDES. (optional)"
+        << "  -h, --help\t\t\tDisplay this help message" << std::endl
+        << "  --accountId <id>\t\tAccount ID of the SFS service, used to identify the caller" << std::endl
+        << "  --instanceId <id>\t\tA custom SFS instance ID" << std::endl
+        << "  --namespace <ns>\t\tA custom SFS namespace" << std::endl
+        << "  --customUrl <url>\t\tA custom URL for the SFS service. Library must have been built with SFS_ENABLE_OVERRIDES"
+        << std::endl
         << std::endl
         << "Example:" << std::endl
-        << "  SFSClientTool --accountId test --productName \"Microsoft.WindowsStore_12011.1001.1.0_x64__8wekyb3d8bbwe\""
+        << "  SFSClientTool --productName \"Microsoft.WindowsStore_12011.1001.1.0_x64__8wekyb3d8bbwe\" --accountId test"
         << std::endl;
 }
 
@@ -41,21 +45,28 @@ void DisplayHelp()
     DisplayUsage();
 }
 
-std::string redStart = "\033[1;31m";
-std::string redEnd = "\033[0m";
+const std::string c_boldRedStart = "\033[1;31m";
+const std::string c_cyanStart = "\033[0;36m";
+const std::string c_darkGreyStart = "\033[0;90m";
+const std::string c_colorEnd = "\033[0m";
 
 void PrintError(std::string_view message)
 {
-    std::cout << redStart << message << redEnd << std::endl;
+    std::cout << c_boldRedStart << message << c_colorEnd << std::endl;
+}
+
+void PrintLog(std::string_view message)
+{
+    std::cout << c_cyanStart << message << c_colorEnd << std::endl;
 }
 
 struct Settings
 {
     bool displayHelp{true};
+    std::string productName;
     std::string accountId;
     std::string instanceId;
     std::string nameSpace;
-    std::string productName;
     std::string customUrl;
 };
 
@@ -64,53 +75,64 @@ int ParseArguments(const std::vector<std::string_view>& args, Settings& settings
     settings = {};
     settings.displayHelp = args.size() == 1;
 
+    const size_t argsSize = args.size();
+    auto validateArg =
+        [&argsSize](const size_t index, const std::string& switchName, const std::string_view& argValue) -> bool {
+        if (argsSize <= index + 1)
+        {
+            PrintError("Missing argument of --" + switchName + ".");
+            return false;
+        }
+        if (!argValue.empty())
+        {
+            PrintError("--" + switchName + " can only be specified once.");
+            return false;
+        }
+        return true;
+    };
+
     for (size_t i = 1; i < args.size(); ++i)
     {
         if (args[i].compare("-h") == 0 || args[i].compare("--help") == 0)
         {
             settings.displayHelp = true;
         }
+        else if (args[i].compare("--productName") == 0)
+        {
+            if (!validateArg(i, "productName", settings.productName))
+            {
+                return 1;
+            }
+            settings.productName = args[++i];
+        }
         else if (args[i].compare("--accountId") == 0)
         {
-            if (args.size() <= i + 1)
+            if (!validateArg(i, "accountId", settings.accountId))
             {
-                PrintError("Missing accountId argument.");
                 return 1;
             }
             settings.accountId = args[++i];
         }
         else if (args[i].compare("--instanceId") == 0)
         {
-            if (args.size() <= i + 1)
+            if (!validateArg(i, "instanceId", settings.instanceId))
             {
-                PrintError("Missing instanceId argument.");
                 return 1;
             }
             settings.instanceId = args[++i];
         }
-        else if (args[i].compare("--nameSpace") == 0)
+        else if (args[i].compare("--namespace") == 0)
         {
-            if (args.size() <= i + 1)
+            if (!validateArg(i, "namespace", settings.nameSpace))
             {
-                PrintError("Missing nameSpace argument.");
                 return 1;
             }
             settings.nameSpace = args[++i];
         }
-        else if (args[i].compare("--productName") == 0)
-        {
-            if (args.size() <= i + 1)
-            {
-                PrintError("Missing productName argument.");
-                return 1;
-            }
-            settings.productName = args[++i];
-        }
         else if (args[i].compare("--customUrl") == 0)
         {
-            if (args.size() <= i + 1)
+            if (!validateArg(i, "customUrl", settings.customUrl))
             {
-                PrintError("Missing customUrl argument.");
                 return 1;
             }
             settings.customUrl = args[++i];
@@ -146,10 +168,10 @@ void DisplayResults(const std::unique_ptr<Content>& content)
 
     auto comma = [](size_t count, size_t size) -> std::string { return count == size - 1 ? "" : ","; };
 
-    std::cout << "Content found:" << std::endl;
+    PrintLog("Content found:");
     std::cout << "{" << std::endl;
     std::cout << R"(  "Content": {)" << std::endl;
-    std::cout << R"(    "NameSpace": ")" << content->GetContentId().GetNameSpace() << R"(",)" << std::endl;
+    std::cout << R"(    "Namespace": ")" << content->GetContentId().GetNameSpace() << R"(",)" << std::endl;
     std::cout << R"(    "Name": ")" << content->GetContentId().GetName() << R"(",)" << std::endl;
     std::cout << R"(    "Version": ")" << content->GetContentId().GetVersion() << R"(",)" << std::endl;
 
@@ -219,9 +241,10 @@ std::string TimestampToString(std::chrono::time_point<std::chrono::system_clock>
 
 void LoggingCallback(const SFS::LogData& logData)
 {
-    std::cout << "Log: " << TimestampToString(logData.time) << " [" << ToString(logData.severity) << "]"
+    std::cout << c_darkGreyStart << "Log: " << TimestampToString(logData.time) << " [" << ToString(logData.severity)
+              << "]"
               << " " << std::filesystem::path(logData.file).filename().string() << ":" << logData.line << " "
-              << logData.message << std::endl;
+              << logData.message << c_colorEnd << std::endl;
 }
 
 bool SetEnv(const std::string& varName, const std::string& value)
@@ -256,33 +279,33 @@ int main(int argc, char* argv[])
     if (!settings.customUrl.empty())
     {
         SetEnv("SFS_TEST_OVERRIDE_BASE_URL", settings.customUrl);
-        std::cout << "Using custom URL: " << settings.customUrl << std::endl;
-        std::cout << "Note that the library must have been built with SFS_ENABLE_OVERRIDES to use a custom URL." << std::endl;
+        PrintLog("Using custom URL: " + settings.customUrl);
+        PrintLog("Note that the library must have been built with SFS_ENABLE_OVERRIDES to use a custom URL.");
     }
 
     // Initialize SFSClient
-    std::cout << "Initializing SFSClient with accountId: " << settings.accountId
-              << ", instanceId: " << settings.instanceId << ", nameSpace: " << settings.nameSpace << std::endl
-              << std::endl;
+    PrintLog("Initializing SFSClient with accountId: " + settings.accountId +
+             (settings.instanceId.empty() ? "" : ", instanceId: " + settings.instanceId) +
+             (settings.nameSpace.empty() ? "" : ", namespace: " + settings.nameSpace));
     std::unique_ptr<SFSClient> sfsClient;
     auto result =
         SFSClient::Make({settings.accountId, settings.instanceId, settings.nameSpace, LoggingCallback}, sfsClient);
     if (!result)
     {
-        std::cout << "Failed to initialize SFSClient.";
+        PrintError("Failed to initialize SFSClient.");
         LogResult(result);
         return result.GetCode();
     }
 
     // Perform operations using SFSClient
-    std::cout << "Getting latest download info for product: " << settings.productName << std::endl;
+    PrintLog("Getting latest download info for product: " + settings.productName);
     std::unique_ptr<Content> content;
     result = sfsClient->GetLatestDownloadInfo(settings.productName, content);
     if (!result)
     {
-        std::cout << "Failed to get latest download info." << std::endl;
+        PrintError("Failed to get latest download info.");
         LogResult(result);
-        // return result.GetCode();
+        return result.GetCode();
     }
 
     // Display results
