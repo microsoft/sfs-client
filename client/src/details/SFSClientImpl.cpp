@@ -267,6 +267,8 @@ Result SFSClientImpl<ConnectionManagerT>::GetLatestVersion(const std::string& pr
                        m_reportingHandler,
                        "(GetLatestVersion) Response does not match the requested product");
 
+    SFS_INFO("Received a response with version %s", tmp->GetVersion().c_str());
+
     contentId = std::move(tmp);
 
     return Result::Success;
@@ -296,6 +298,8 @@ Result SFSClientImpl<ConnectionManagerT>::GetSpecificVersion(const std::string& 
                        m_reportingHandler,
                        "(GetSpecificVersion) Response does not match the requested product");
 
+    SFS_INFO("Received the expected response with version %s", tmp->GetVersion().c_str());
+
     contentId = std::move(tmp);
 
     return Result::Success;
@@ -323,6 +327,8 @@ Result SFSClientImpl<ConnectionManagerT>::GetDownloadInfo(const std::string& pro
 
     std::vector<std::unique_ptr<File>> tmp;
     SFS_RETURN_IF_FAILED(GetDownloadInfoResponseToFileVector(response, tmp));
+
+    SFS_INFO("Received a response with %zu files", tmp.size());
 
     files = std::move(tmp);
 
