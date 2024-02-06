@@ -8,6 +8,9 @@ Simplifies build commands for the SFS Client.
 .PARAMETER Clean
 Use this to clean the build folder before building.
 
+.PARAMETER BuildType
+Use this to define the build type between "Debug" and "Release". The default is "Debug".
+
 .PARAMETER EnableTestOverrides
 Use this to enable test overrides.
 
@@ -20,6 +23,9 @@ PS> ./scripts/Build.ps1
 #>
 param (
     [switch] $Clean = $false,
+    # BuildType is a build time parameter for Visual Studio generator in CMake
+    [ValidateSet("Debug", "Release")]
+    [string] $BuildType = "Debug",
     # Make sure when adding a new switch below to check if it requires CMake regeneration
     [switch] $EnableTestOverrides = $false
 )
@@ -65,4 +71,4 @@ if (!(Test-Path $BuildFolder) -or $Regenerate)
 }
 
 # This is the build command. If any CMakeLists.txt files change, this will also reconfigure before building
-cmake --build $BuildFolder
+cmake --build $BuildFolder --config $BuildType
