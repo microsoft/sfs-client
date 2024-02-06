@@ -15,6 +15,7 @@ target_sources(
     ${PROJECT_NAME}
     PRIVATE functional/details/CurlConnectionTests.cpp
             functional/details/SFSClientImplTests.cpp
+            functional/SFSClientTests.cpp
             mock/MockWebServer.cpp
             unit/ApplicabilityDetailsTests.cpp
             unit/ContentTests.cpp

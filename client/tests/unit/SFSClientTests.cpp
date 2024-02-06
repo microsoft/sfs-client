@@ -200,33 +200,28 @@ TEST("Testing SFSClient::Make()")
 #endif
 }
 
-TEST_SCENARIO("Testing SFSClient::GetLatestDownloadInfo()")
+TEST("Testing SFSClient::GetLatestDownloadInfo()")
 {
-    GIVEN("An SFSClient")
+    auto sfsClient = GetSFSClient();
+
+    SECTION("SFSClient::GetLatestDownloadInfo() does not allow an empty product")
     {
-        auto sfsClient = GetSFSClient();
+        std::unique_ptr<Content> content;
+        auto result = sfsClient->GetLatestDownloadInfo("", content);
+        REQUIRE(result.GetCode() == Result::InvalidArg);
+        REQUIRE(result.GetMessage() == "productName cannot be empty");
+        REQUIRE(content == nullptr);
 
-        THEN("SFSClient::GetLatestDownloadInfo() is not implemented")
-        {
-            Contents contents;
-            REQUIRE(sfsClient->GetLatestDownloadInfo("productName", contents) == Result::NotImpl);
-        }
-    }
-}
+        result = sfsClient->GetLatestDownloadInfo("", {}, content);
+        REQUIRE(result.GetCode() == Result::InvalidArg);
+        REQUIRE(result.GetMessage() == "productName cannot be empty");
+        REQUIRE(content == nullptr);
 
-TEST_SCENARIO("Testing SFSClient::GetLatestDownloadInfoWithAttributes()")
-{
-    GIVEN("An SFSClient")
-    {
-        auto sfsClient = GetSFSClient();
-
-        THEN("SFSClient::GetLatestDownloadInfo() is not implemented")
-        {
-            const SearchAttributes attributes{{"attr1", "value"}};
-
-            Contents contents;
-            REQUIRE(sfsClient->GetLatestDownloadInfo("productName", attributes, contents) == Result::NotImpl);
-        }
+        const SearchAttributes attributes{{"attr1", "value"}};
+        result = sfsClient->GetLatestDownloadInfo("", attributes, content);
+        REQUIRE(result.GetCode() == Result::InvalidArg);
+        REQUIRE(result.GetMessage() == "productName cannot be empty");
+        REQUIRE(content == nullptr);
     }
 }
 
@@ -239,9 +234,6 @@ TEST_SCENARIO("Testing SFSClient::GetDeliveryOptimizationData()")
         THEN("SFSClient::GetDeliveryOptimizationData() is not implemented")
         {
             const SearchAttributes attributes{{"attr1", "value"}};
-
-            Contents contents;
-            REQUIRE(sfsClient->GetLatestDownloadInfo("productName", attributes, contents) == Result::NotImpl);
 
             std::unique_ptr<Content> content;
             std::unique_ptr<DeliveryOptimizationData> data;
@@ -259,9 +251,6 @@ TEST_SCENARIO("Testing SFSClient::GetApplicabilityDetails()")
         THEN("SFSClient::GetApplicabilityDetails() is not implemented")
         {
             const SearchAttributes attributes{{"attr1", "value"}};
-
-            Contents contents;
-            REQUIRE(sfsClient->GetLatestDownloadInfo("productName", attributes, contents) == Result::NotImpl);
 
             std::unique_ptr<Content> content;
             std::unique_ptr<ApplicabilityDetails> details;

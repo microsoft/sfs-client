@@ -125,6 +125,13 @@ class Content
                                      std::vector<std::unique_ptr<File>>&& files,
                                      std::unique_ptr<Content>& out) noexcept;
 
+    /**
+     * @brief This Make() method should be used when the caller wants the @param contentId and @param files to be moved
+     */
+    [[nodiscard]] static Result Make(std::unique_ptr<ContentId>&& contentId,
+                                     std::vector<std::unique_ptr<File>>&& files,
+                                     std::unique_ptr<Content>& out) noexcept;
+
     Content(const Content&) = delete;
     Content& operator=(const Content&) = delete;
 
