@@ -1,0 +1,63 @@
+name: Build
+
+on:
+  push:
+    branches: [ "main" ]
+
+jobs:
+  build-windows:
+    runs-on: 'windows-latest'
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install Winget
+        uses: ./.github/workflows/install-winget
+
+      - name: Setup
+        shell: pwsh
+        run: .\scripts\Setup.ps1 -NoBuildTools
+
+      - name: Build and Test (no test overrides)
+        shell: pwsh
+        run: |
+          .\scripts\Build.ps1
+          .\scripts\Test.ps1 -OutputOnFailure
+
+      - name: Build and Test (with test overrides)
+        shell: pwsh
+        run: |
+          .\scripts\Build.ps1 -EnableTestOverrides
+          .\scripts\Test.ps1 -OutputOnFailure
+
+      - name: Build and Test (Release)
+        shell: pwsh
+        run: |
+            .\scripts\Build.ps1 -BuildType Release
+            .\scripts\Test.ps1 -OutputOnFailure
+
+  build-ubuntu:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup
+        run: source ./scripts/setup.sh
+
+      - name: Build and Test (no test overrides)
+        run: |
+          ./scripts/build.sh
+          ./scripts/test.sh --output-on-failure
+
+      - name: Build and Test (with test overrides)
+        shell: pwsh
+        run: |
+          ./scripts/build.sh --enable-test-overrides --regenerate
+          ./scripts/test.sh --output-on-failure
+
+      - name: Build and Test (Release)
+        shell: pwsh
+        run: |
+          ./scripts/build.sh --build-type Release
+          ./scripts/test.sh --output-on-failure
