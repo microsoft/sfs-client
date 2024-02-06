@@ -9,10 +9,7 @@ Simplifies build commands for the SFS Client.
 Use this to clean the build folder before building.
 
 .PARAMETER EnableTestOverrides
-Use this to enable test overrides. For this switch to work correctly, either the CMake build folder must have never been generated, or either the Clean or the Regenerate switch must be used to force the reconfiguration of the build cache.
-
-.PARAMETER Regenerate
-Use this to regenerate the CMake build targets.
+Use this to enable test overrides.
 
 .DESCRIPTION
 This script will contain the build commands for the SFS Client. The default build folder will be "<git_root>/build".
@@ -23,8 +20,8 @@ PS> ./scripts/Build.ps1
 #>
 param (
     [switch] $Clean = $false,
-    [switch] $EnableTestOverrides = $false,
-    [switch] $Regenerate = $false
+    # Make sure when adding a new switch below to check if it requires CMake regeneration
+    [switch] $EnableTestOverrides = $false
 )
 
 $GitRoot = (Resolve-Path (&git -C $PSScriptRoot rev-parse --show-toplevel)).Path
@@ -40,16 +37,30 @@ if ($Clean -and (Test-Path $BuildFolder))
     Remove-Item -Recurse -Force $BuildFolder
 }
 
-if ($EnableTestOverrides -and !$Regenerate -and !$Clean -and (Test-Path $BuildFolder))
+$Regenerate = $false
+$CMakeCacheFile = "$BuildFolder\CMakeCache.txt"
+$EnableTestOverridesStr = if ($EnableTestOverrides) {"ON"} else {"OFF"}
+
+function Test-CMakeCacheValueNoMatch($CMakeCacheFile, $Pattern, $ExpectedValue)
 {
-    Write-Warning "For the EnableTestOverrides switch to work if the CMake build has already been generated, either -Clean or -Regenerate must be passed to force the reconfiguration of the build cache. Otherwise, the switch will have no effect and the value used during the last configuration will be preserved."
+    $Match = Select-String -Path $CMakeCacheFile -Pattern $Pattern
+    if ($null -ne $Match -and $null -ne $Match.Matches.Groups[1])
+    {
+        return $ExpectedValue -ne $Match.Matches.Groups[1].Value
+    }
+    return $true
 }
 
-# Configure cmake if build folder doesn't exist or if Regenerate switch is used.
+if (Test-Path $CMakeCacheFile)
+{
+    # Regenerate if one of the build options is set to a different value than the one passed in
+    $Regenerate = Test-CMakeCacheValueNoMatch $CMakeCacheFile "^SFS_ENABLE_TEST_OVERRIDES:BOOL=(.*)$" $EnableTestOverridesStr
+}
+
+# Configure cmake if build folder doesn't exist or if the build must be regenerated.
 # This creates build targets that will be used by the build command
 if (!(Test-Path $BuildFolder) -or $Regenerate)
 {
-    $EnableTestOverridesStr = if ($EnableTestOverrides) {"ON"} else {"OFF"}
     cmake -S $GitRoot -B $BuildFolder "-DSFS_ENABLE_TEST_OVERRIDES=$EnableTestOverridesStr"
 }
 
