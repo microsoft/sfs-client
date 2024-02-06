@@ -76,10 +76,21 @@ fi
 regenerate=false
 cmake_cache_file="$build_folder/CMakeCache.txt"
 
-if [ -f $cmake_cache_file ]; then
-    # Regenerate if the SFS_ENABLE_TEST_OVERRIDES option is set to a different value than the one passed in
-    value=$(sed -nr 's/^SFS_ENABLE_TEST_OVERRIDES:BOOL=(.*)$/\1/p' $cmake_cache_file)
-    if ! [ -z "$value" ] && [ "$value" != "$enable_test_overrides" ]; then
+test_cmake_cache_value_no_match() {
+    local cmake_cache_file=$1
+    local pattern=$2
+    local expected_value=$3
+
+    value=$(sed -nr "s/$pattern/\1/p" "$cmake_cache_file")
+    if [ -n "$value" ] && [ "$value" == "$enable_test_overrides" ]; then
+        return 1
+    fi
+    return 0
+}
+
+if [ -f "$cmake_cache_file" ]; then
+    # Regenerate if one of the build options is set to a different value than the one passed in
+    if test_cmake_cache_value_no_match "$cmake_cache_file" "^SFS_ENABLE_TEST_OVERRIDES:BOOL=(.*)$" "$enable_test_overrides"; then
         regenerate=true
     fi
 fi

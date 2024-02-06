@@ -40,14 +40,20 @@ $Regenerate = $false
 $CMakeCacheFile = "$BuildFolder\CMakeCache.txt"
 $EnableTestOverridesStr = if ($EnableTestOverrides) {"ON"} else {"OFF"}
 
+function Test-CMakeCacheValueNoMatch($CMakeCacheFile, $Pattern, $ExpectedValue)
+{
+    $Match = Select-String -Path $CMakeCacheFile -Pattern $Pattern
+    if ($null -ne $Match -and $null -ne $Match.Matches.Groups[1])
+    {
+        return $ExpectedValue -ne $Match.Matches.Groups[1].Value
+    }
+    return $true
+}
+
 if (Test-Path $CMakeCacheFile)
 {
-    # Regenerate if the SFS_ENABLE_TEST_OVERRIDES option is set to a different value than the one passed in
-    $MatchTestOverrides = Select-String -Path $CMakeCacheFile -Pattern "^SFS_ENABLE_TEST_OVERRIDES:BOOL=(.*)$"
-    if ($null -ne $MatchTestOverrides -and $null -ne $MatchTestOverrides.Matches.Groups[1])
-    {
-        $Regenerate = $EnableTestOverridesStr -ne $MatchTestOverrides.Matches.Groups[1].Value
-    }
+    # Regenerate if one of the build options is set to a different value than the one passed in
+    $Regenerate = Test-CMakeCacheValueNoMatch $CMakeCacheFile "^SFS_ENABLE_TEST_OVERRIDES:BOOL=(.*)$" $EnableTestOverridesStr
 }
 
 # Configure cmake if build folder doesn't exist or if the build must be regenerated.
