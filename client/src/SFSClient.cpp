@@ -5,8 +5,8 @@
 
 #include "details/ErrorHandling.h"
 #include "details/SFSClientImpl.h"
-#include "details/connection/CurlConnectionManager.h"
 #include "details/connection/Connection.h"
+#include "details/connection/CurlConnectionManager.h"
 
 using namespace SFS;
 using namespace SFS::details;
@@ -57,7 +57,7 @@ try
     RETURN_IF_FAILED_LOG(m_impl->GetLatestVersion(productName, attributes, *connection, contentId),
                          m_impl->GetReportingHandler());
 
-    std::vector<std::unique_ptr<File>> files;
+    std::vector<File> files;
     RETURN_IF_FAILED_LOG(m_impl->GetDownloadInfo(productName, contentId->GetVersion(), *connection, files),
                          m_impl->GetReportingHandler());
 

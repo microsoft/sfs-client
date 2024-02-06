@@ -77,9 +77,17 @@ try
 }
 SFS_CATCH_RETURN()
 
-Result File::Clone(std::unique_ptr<File>& out) noexcept
+Result File::Clone(std::unique_ptr<File>& out) const noexcept
 {
     return Make(m_fileId, m_url, m_sizeInBytes, m_hashes, out);
+}
+
+File::File(File&& other) noexcept
+{
+    m_fileId = std::move(other.m_fileId);
+    m_url = std::move(other.m_url);
+    m_sizeInBytes = other.m_sizeInBytes;
+    m_hashes = std::move(other.m_hashes);
 }
 
 const std::string& File::GetFileId() const noexcept
@@ -116,7 +124,7 @@ bool File::operator!=(const File& other) const noexcept
 Result Content::Make(std::string contentNameSpace,
                      std::string contentName,
                      std::string contentVersion,
-                     const std::vector<std::unique_ptr<File>>& files,
+                     const std::vector<File>& files,
                      std::unique_ptr<Content>& out) noexcept
 try
 {
@@ -131,8 +139,8 @@ try
     for (const auto& file : files)
     {
         std::unique_ptr<File> clone;
-        RETURN_IF_FAILED(file->Clone(clone));
-        tmp->m_files.push_back(std::move(clone));
+        RETURN_IF_FAILED(file.Clone(clone));
+        tmp->m_files.push_back(std::move(*clone.release()));
     }
 
     out = std::move(tmp);
@@ -144,7 +152,7 @@ SFS_CATCH_RETURN()
 Result Content::Make(std::string contentNameSpace,
                      std::string contentName,
                      std::string contentVersion,
-                     std::vector<std::unique_ptr<File>>&& files,
+                     std::vector<File>&& files,
                      std::unique_ptr<Content>& out) noexcept
 try
 {
@@ -164,7 +172,7 @@ try
 SFS_CATCH_RETURN()
 
 Result Content::Make(std::unique_ptr<ContentId>&& contentId,
-                     std::vector<std::unique_ptr<File>>&& files,
+                     std::vector<File>&& files,
                      std::unique_ptr<Content>& out) noexcept
 try
 {
@@ -185,7 +193,7 @@ const ContentId& Content::GetContentId() const noexcept
     return *m_contentId;
 }
 
-const std::vector<std::unique_ptr<File>>& Content::GetFiles() const noexcept
+const std::vector<File>& Content::GetFiles() const noexcept
 {
     return m_files;
 }
@@ -198,9 +206,7 @@ try
                                 m_files.end(),
                                 other.m_files.begin(),
                                 other.m_files.end(),
-                                [](const std::unique_ptr<File>& lhs, const std::unique_ptr<File>& rhs) {
-                                    return lhs && rhs && *lhs == *rhs;
-                                }));
+                                [](const File& lhs, const File& rhs) { return lhs == rhs; }));
 }
 catch (...)
 {

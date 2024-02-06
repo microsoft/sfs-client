@@ -28,13 +28,13 @@ void CheckContentId(const ContentId& contentId, const std::string& version)
     REQUIRE(contentId.GetVersion() == version);
 }
 
-void CheckFiles(const std::vector<std::unique_ptr<File>>& files)
+void CheckFiles(const std::vector<File>& files)
 {
     REQUIRE(files.size() == 2);
-    REQUIRE(files[0]->GetFileId() == (c_productName + ".json"));
-    REQUIRE(files[0]->GetUrl() == ("http://localhost/1.json"));
-    REQUIRE(files[1]->GetFileId() == (c_productName + ".bin"));
-    REQUIRE(files[1]->GetUrl() == ("http://localhost/2.bin"));
+    REQUIRE(files[0].GetFileId() == (c_productName + ".json"));
+    REQUIRE(files[0].GetUrl() == ("http://localhost/1.json"));
+    REQUIRE(files[1].GetFileId() == (c_productName + ".bin"));
+    REQUIRE(files[1].GetUrl() == ("http://localhost/2.bin"));
 }
 
 void CheckMockContent(const Content& content, const std::string& version)

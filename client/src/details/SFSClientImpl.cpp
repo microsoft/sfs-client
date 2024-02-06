@@ -168,7 +168,7 @@ Result FileJsonToObj(const nlohmann::json& file, std::unique_ptr<File>& out)
     return File::Make(std::move(fileId), std::move(url), sizeInBytes, std::move(hashes), out);
 }
 
-Result GetDownloadInfoResponseToFileVector(const nlohmann::json& data, std::vector<std::unique_ptr<File>>& out)
+Result GetDownloadInfoResponseToFileVector(const nlohmann::json& data, std::vector<File>& out)
 {
     // Expected format:
     // [
@@ -194,14 +194,14 @@ Result GetDownloadInfoResponseToFileVector(const nlohmann::json& data, std::vect
 
     // TODO #48: For now ignore DeliveryOptimization data. Will implement its separate parsing later
 
-    std::vector<std::unique_ptr<File>> tmp;
+    std::vector<File> tmp;
     for (const auto& fileData : data)
     {
         RETURN_INVALID_RESPONSE_IF_FALSE(fileData.is_object(), "Array element is not a JSON object");
 
         std::unique_ptr<File> file;
         RETURN_IF_FAILED(FileJsonToObj(fileData, file));
-        tmp.push_back(std::move(file));
+        tmp.push_back(std::move(*file.release()));
     }
 
     out = std::move(tmp);
@@ -309,7 +309,7 @@ template <typename ConnectionManagerT>
 Result SFSClientImpl<ConnectionManagerT>::GetDownloadInfo(const std::string& productName,
                                                           const std::string& version,
                                                           Connection& connection,
-                                                          std::vector<std::unique_ptr<File>>& files) const
+                                                          std::vector<File>& files) const
 {
     const std::string url{
         SFSUrlComponents::GetDownloadInfoUrl(GetBaseUrl(), m_instanceId, m_nameSpace, productName, version)};
@@ -325,7 +325,7 @@ Result SFSClientImpl<ConnectionManagerT>::GetDownloadInfo(const std::string& pro
     json response;
     SFS_RETURN_IF_FAILED(ParseServerMethodStringToJson(out, "GetDownloadInfo", response));
 
-    std::vector<std::unique_ptr<File>> tmp;
+    std::vector<File> tmp;
     SFS_RETURN_IF_FAILED(GetDownloadInfoResponseToFileVector(response, tmp));
 
     SFS_INFO("Received a response with %zu files", tmp.size());

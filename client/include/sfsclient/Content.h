@@ -67,7 +67,9 @@ class File
                                      std::unordered_map<HashType, std::string> hashes,
                                      std::unique_ptr<File>& out) noexcept;
 
-    [[nodiscard]] Result Clone(std::unique_ptr<File>& out) noexcept;
+    [[nodiscard]] Result Clone(std::unique_ptr<File>& out) const noexcept;
+
+    File(File&&) noexcept;
 
     File(const File&) = delete;
     File& operator=(const File&) = delete;
@@ -113,7 +115,7 @@ class Content
     [[nodiscard]] static Result Make(std::string contentNameSpace,
                                      std::string contentName,
                                      std::string contentVersion,
-                                     const std::vector<std::unique_ptr<File>>& files,
+                                     const std::vector<File>& files,
                                      std::unique_ptr<Content>& out) noexcept;
 
     /**
@@ -122,14 +124,14 @@ class Content
     [[nodiscard]] static Result Make(std::string contentNameSpace,
                                      std::string contentName,
                                      std::string contentVersion,
-                                     std::vector<std::unique_ptr<File>>&& files,
+                                     std::vector<File>&& files,
                                      std::unique_ptr<Content>& out) noexcept;
 
     /**
      * @brief This Make() method should be used when the caller wants the @param contentId and @param files to be moved
      */
     [[nodiscard]] static Result Make(std::unique_ptr<ContentId>&& contentId,
-                                     std::vector<std::unique_ptr<File>>&& files,
+                                     std::vector<File>&& files,
                                      std::unique_ptr<Content>& out) noexcept;
 
     Content(const Content&) = delete;
@@ -140,7 +142,7 @@ class Content
      */
     const ContentId& GetContentId() const noexcept;
 
-    const std::vector<std::unique_ptr<File>>& GetFiles() const noexcept;
+    const std::vector<File>& GetFiles() const noexcept;
 
     bool operator==(const Content& other) const noexcept;
     bool operator!=(const Content& other) const noexcept;
@@ -149,6 +151,6 @@ class Content
     Content() = default;
 
     std::unique_ptr<ContentId> m_contentId;
-    std::vector<std::unique_ptr<File>> m_files;
+    std::vector<File> m_files;
 };
 } // namespace SFS
