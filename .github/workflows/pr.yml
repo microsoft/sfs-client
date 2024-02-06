@@ -38,7 +38,7 @@ jobs:
       - name: Build and Test (with test overrides)
         shell: pwsh
         run: |
-          .\scripts\Build.ps1 -EnableTestOverrides -Regenerate
+          .\scripts\Build.ps1 -EnableTestOverrides
           .\scripts\Test.ps1 -OutputOnFailure
 
   build-ubuntu:
@@ -65,5 +65,5 @@ jobs:
       - name: Build and Test (with test overrides)
         shell: pwsh
         run: |
-          ./scripts/build.sh --enable-test-overrides --regenerate
+          ./scripts/build.sh --enable-test-overrides
           ./scripts/test.sh --output-on-failure
