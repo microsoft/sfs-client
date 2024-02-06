@@ -32,6 +32,8 @@ enable_test_overrides="OFF"
 
 usage() { echo "Usage: $0 [-c|--clean, -t|--enable-test-overrides]" 1>&2; exit 1; }
 
+# Make sure when adding a new option to check if it requires CMake regeneration
+
 if ! opts=$(getopt \
   --longoptions "clean,enable-test-overrides" \
   --name "$(basename "$0")" \

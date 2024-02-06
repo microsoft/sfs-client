@@ -20,6 +20,7 @@ PS> ./scripts/Build.ps1
 #>
 param (
     [switch] $Clean = $false,
+    # Make sure when adding a new switch below to check if it requires CMake regeneration
     [switch] $EnableTestOverrides = $false
 )
 
