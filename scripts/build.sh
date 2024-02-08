@@ -29,15 +29,16 @@ warn() { echo -e "${COLOR_YELLOW}$*${NO_COLOR}"; }
 
 clean=false
 enable_test_overrides="OFF"
+build_type="Debug"
 
-usage() { echo "Usage: $0 [-c|--clean, -t|--enable-test-overrides]" 1>&2; exit 1; }
+usage() { echo "Usage: $0 [-c|--clean, -b|--build-type {Debug,Release}, -t|--enable-test-overrides]" 1>&2; exit 1; }
 
 # Make sure when adding a new option to check if it requires CMake regeneration
 
 if ! opts=$(getopt \
-  --longoptions "clean,enable-test-overrides" \
+  --longoptions "clean,build-type:,enable-test-overrides" \
   --name "$(basename "$0")" \
-  --options "ct" \
+  --options "cb:t" \
   -- "$@"
 ); then
     usage
@@ -49,6 +50,18 @@ while [ $# -gt 0 ]; do
     case "$1" in
         -c|--clean)
             clean=true
+            shift 1
+            ;;
+        -b|--build-type)
+            shift 1
+            build_type=$1
+            case "$build_type" in
+                Debug|Release)
+                    ;;
+                *)
+                    usage
+                    ;;
+            esac
             shift 1
             ;;
         -t|--enable-test-overrides)
@@ -84,7 +97,7 @@ test_cmake_cache_value_no_match() {
     local expected_value=$3
 
     value=$(sed -nr "s/$pattern/\1/p" "$cmake_cache_file")
-    if [ -n "$value" ] && [ "$value" == "$enable_test_overrides" ]; then
+    if [ -n "$value" ] && [ "$value" == "$expected_value" ]; then
         return 1
     fi
     return 0
@@ -92,6 +105,9 @@ test_cmake_cache_value_no_match() {
 
 if [ -f "$cmake_cache_file" ]; then
     # Regenerate if one of the build options is set to a different value than the one passed in
+    if test_cmake_cache_value_no_match "$cmake_cache_file" "^CMAKE_BUILD_TYPE:STRING=(.*)$" "$build_type"; then
+        regenerate=true
+    fi
     if test_cmake_cache_value_no_match "$cmake_cache_file" "^SFS_ENABLE_TEST_OVERRIDES:BOOL=(.*)$" "$enable_test_overrides"; then
         regenerate=true
     fi
@@ -100,7 +116,7 @@ fi
 # Configure cmake if build folder doesn't exist or if the build must be regenerated.
 # This creates build targets that will be used by the build command
 if [ ! -d "$build_folder" ] || $regenerate ; then
-    cmake -S "$git_root" -B "$build_folder" -DSFS_ENABLE_TEST_OVERRIDES="$enable_test_overrides"
+    cmake -S "$git_root" -B "$build_folder" -DCMAKE_BUILD_TYPE="$build_type" -DSFS_ENABLE_TEST_OVERRIDES="$enable_test_overrides"
 fi
 
 # This is the build command. If any CMakeLists.txt files change, this will also reconfigure before building
