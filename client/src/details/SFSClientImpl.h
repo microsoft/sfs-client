@@ -20,7 +20,11 @@ template <typename ConnectionManagerT>
 class SFSClientImpl : public SFSClientInterface
 {
   public:
-    SFSClientImpl(ClientConfig&& config);
+    /**
+     * @brief Make a new SFSClientImpl object
+     */
+    [[nodiscard]] static Result Make(ClientConfig&& config, std::unique_ptr<SFSClientInterface>& out);
+
     ~SFSClientImpl() override = default;
 
     //
@@ -74,6 +78,8 @@ class SFSClientImpl : public SFSClientInterface
     std::string GetBaseUrl() const;
 
   private:
+    SFSClientImpl() = default;
+
     std::string m_accountId;
     std::string m_instanceId;
     std::string m_nameSpace;

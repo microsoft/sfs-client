@@ -83,18 +83,30 @@ void CheckDownloadInfo(const std::vector<std::unique_ptr<File>>& files, const st
     REQUIRE(files[1]->GetFileId() == (name + ".bin"));
     REQUIRE(files[1]->GetUrl() == ("http://localhost/2.bin"));
 }
+
+template <typename T>
+std::unique_ptr<SFSClientImpl<T>> GetClientPtr(ClientConfig&& config)
+{
+    std::unique_ptr<SFSClientInterface> sfsClient;
+    REQUIRE(SFSClientImpl<T>::Make(std::move(config), sfsClient) == Result::Success);
+    REQUIRE(sfsClient);
+    std::unique_ptr<SFSClientImpl<T>> out{dynamic_cast<SFSClientImpl<T>*>(sfsClient.release())};
+    return out;
+}
 } // namespace
 
 TEST("Testing class SFSClientImpl()")
 {
     const std::string ns = "testNameSpace";
-    SFSClientImpl<CurlConnectionManager> sfsClient({"testAccountId", "testInstanceId", ns, LogCallbackToTest});
+    std::unique_ptr<SFSClientInterface> sfsClient;
+    REQUIRE(SFSClientImpl<CurlConnectionManager>::Make({"testAccountId", "testInstanceId", ns, LogCallbackToTest},
+                                                       sfsClient) == Result::Success);
 
     Result::Code responseCode = Result::Success;
     std::string getResponse;
     std::string postResponse;
     bool expectEmptyPostBody = true;
-    std::unique_ptr<Connection> connection = std::make_unique<MockCurlConnection>(sfsClient.GetReportingHandler(),
+    std::unique_ptr<Connection> connection = std::make_unique<MockCurlConnection>(sfsClient->GetReportingHandler(),
                                                                                   responseCode,
                                                                                   getResponse,
                                                                                   postResponse,
@@ -112,7 +124,7 @@ TEST("Testing class SFSClientImpl()")
         std::unique_ptr<ContentId> contentId;
         SECTION("No attributes")
         {
-            REQUIRE(sfsClient.GetLatestVersion(productName, {}, *connection, contentId) == Result::Success);
+            REQUIRE(sfsClient->GetLatestVersion(productName, {}, *connection, contentId) == Result::Success);
             REQUIRE(contentId);
             CheckProduct(*contentId, ns, productName, expectedVersion);
         }
@@ -120,7 +132,7 @@ TEST("Testing class SFSClientImpl()")
         SECTION("With attributes")
         {
             const SearchAttributes attributes{{"attr1", "value"}};
-            REQUIRE(sfsClient.GetLatestVersion(productName, attributes, *connection, contentId) == Result::Success);
+            REQUIRE(sfsClient->GetLatestVersion(productName, attributes, *connection, contentId) == Result::Success);
             REQUIRE(contentId);
             CheckProduct(*contentId, ns, productName, expectedVersion);
         }
@@ -128,10 +140,10 @@ TEST("Testing class SFSClientImpl()")
         SECTION("Failing")
         {
             responseCode = Result::HttpNotFound;
-            REQUIRE(sfsClient.GetLatestVersion("badName", {}, *connection, contentId) == responseCode);
+            REQUIRE(sfsClient->GetLatestVersion("badName", {}, *connection, contentId) == responseCode);
 
             const SearchAttributes attributes{{"attr1", "value"}};
-            REQUIRE(sfsClient.GetLatestVersion("badName", attributes, *connection, contentId) == responseCode);
+            REQUIRE(sfsClient->GetLatestVersion("badName", attributes, *connection, contentId) == responseCode);
         }
     }
 
@@ -144,7 +156,7 @@ TEST("Testing class SFSClientImpl()")
         std::unique_ptr<ContentId> contentId;
         SECTION("Getting version")
         {
-            REQUIRE(sfsClient.GetSpecificVersion(productName, expectedVersion, *connection, contentId) ==
+            REQUIRE(sfsClient->GetSpecificVersion(productName, expectedVersion, *connection, contentId) ==
                     Result::Success);
             REQUIRE(contentId);
             CheckProduct(*contentId, ns, productName, expectedVersion);
@@ -153,7 +165,8 @@ TEST("Testing class SFSClientImpl()")
         SECTION("Failing")
         {
             responseCode = Result::HttpNotFound;
-            REQUIRE(sfsClient.GetSpecificVersion(productName, expectedVersion, *connection, contentId) == responseCode);
+            REQUIRE(sfsClient->GetSpecificVersion(productName, expectedVersion, *connection, contentId) ==
+                    responseCode);
         }
     }
 
@@ -180,7 +193,7 @@ TEST("Testing class SFSClientImpl()")
         std::vector<std::unique_ptr<File>> files;
         SECTION("Getting version")
         {
-            REQUIRE(sfsClient.GetDownloadInfo(productName, expectedVersion, *connection, files) == Result::Success);
+            REQUIRE(sfsClient->GetDownloadInfo(productName, expectedVersion, *connection, files) == Result::Success);
             REQUIRE(!files.empty());
             CheckDownloadInfo(files, productName);
         }
@@ -188,7 +201,7 @@ TEST("Testing class SFSClientImpl()")
         SECTION("Failing")
         {
             responseCode = Result::HttpNotFound;
-            REQUIRE(sfsClient.GetDownloadInfo(productName, expectedVersion, *connection, files) == responseCode);
+            REQUIRE(sfsClient->GetDownloadInfo(productName, expectedVersion, *connection, files) == responseCode);
             REQUIRE(files.empty());
         }
     }
@@ -196,58 +209,63 @@ TEST("Testing class SFSClientImpl()")
 
 TEST("Testing SFSClientImpl::SetCustomBaseUrl()")
 {
-    SFSClientImpl<MockConnectionManager> sfsClient({"testAccountId", "testInstanceId", "testNameSpace", std::nullopt});
+    std::unique_ptr<SFSClientImpl<CurlConnectionManager>> sfsClient =
+        GetClientPtr<CurlConnectionManager>({"testAccountId", "testInstanceId", "testNameSpace", std::nullopt});
 
-    REQUIRE(sfsClient.GetBaseUrl() == "https://testAccountId.api.cdp.microsoft.com");
+    REQUIRE(sfsClient->GetBaseUrl() == "https://testAccountId.api.cdp.microsoft.com");
 
-    sfsClient.SetCustomBaseUrl("customUrl");
-    REQUIRE(sfsClient.GetBaseUrl() == "customUrl");
+    sfsClient->SetCustomBaseUrl("customUrl");
+    REQUIRE(sfsClient->GetBaseUrl() == "customUrl");
 }
 
 TEST("Testing test override SFS_TEST_OVERRIDE_BASE_URL")
 {
-    SFSClientImpl<MockConnectionManager> sfsClient({"testAccountId", "testInstanceId", "testNameSpace", std::nullopt});
+    std::unique_ptr<SFSClientImpl<MockConnectionManager>> sfsClient =
+        GetClientPtr<MockConnectionManager>({"testAccountId", "testInstanceId", "testNameSpace", std::nullopt});
 
-    REQUIRE(sfsClient.GetBaseUrl() == "https://testAccountId.api.cdp.microsoft.com");
+    REQUIRE(sfsClient->GetBaseUrl() == "https://testAccountId.api.cdp.microsoft.com");
 
     {
         INFO("Can override the base url with the test key");
         ScopedTestOverride override(TestOverride::BaseUrl, "override");
         if (AreTestOverridesAllowed())
         {
-            REQUIRE(sfsClient.GetBaseUrl() == "override");
+            REQUIRE(sfsClient->GetBaseUrl() == "override");
         }
         else
         {
-            REQUIRE(sfsClient.GetBaseUrl() == "https://testAccountId.api.cdp.microsoft.com");
+            REQUIRE(sfsClient->GetBaseUrl() == "https://testAccountId.api.cdp.microsoft.com");
         }
     }
 
     INFO("Override is unset after ScopedEnv goes out of scope");
-    REQUIRE(sfsClient.GetBaseUrl() == "https://testAccountId.api.cdp.microsoft.com");
+    REQUIRE(sfsClient->GetBaseUrl() == "https://testAccountId.api.cdp.microsoft.com");
 
-    sfsClient.SetCustomBaseUrl("customUrl");
-    REQUIRE(sfsClient.GetBaseUrl() == "customUrl");
+    sfsClient->SetCustomBaseUrl("customUrl");
+    REQUIRE(sfsClient->GetBaseUrl() == "customUrl");
 
     {
         INFO("Can also override a custom base base url with the test key");
         ScopedTestOverride override(TestOverride::BaseUrl, "override");
         if (AreTestOverridesAllowed())
         {
-            REQUIRE(sfsClient.GetBaseUrl() == "override");
+            REQUIRE(sfsClient->GetBaseUrl() == "override");
         }
         else
         {
-            REQUIRE(sfsClient.GetBaseUrl() == "customUrl");
+            REQUIRE(sfsClient->GetBaseUrl() == "customUrl");
         }
     }
 
-    REQUIRE(sfsClient.GetBaseUrl() == "customUrl");
+    REQUIRE(sfsClient->GetBaseUrl() == "customUrl");
 }
 
 TEST("Testing passing a logging callback to constructor of SFSClientImpl")
 {
-    SFSClientImpl<MockConnectionManager> sfsClient(
-        {"testAccountId", "testInstanceId", "testNameSpace", [](const LogData&) {}});
-    SFSClientImpl<MockConnectionManager> sfsClient2({"testAccountId", "testInstanceId", "testNameSpace", nullptr});
+    std::unique_ptr<SFSClientInterface> sfsClient;
+    REQUIRE(SFSClientImpl<MockConnectionManager>::Make(
+                {"testAccountId", "testInstanceId", "testNameSpace", [](const LogData&) {}},
+                sfsClient) == Result::Success);
+    REQUIRE(SFSClientImpl<MockConnectionManager>::Make({"testAccountId", "testInstanceId", "testNameSpace", nullptr},
+                                                       sfsClient) == Result::Success);
 }

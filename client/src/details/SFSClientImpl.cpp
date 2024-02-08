@@ -216,22 +216,32 @@ bool DoesGetVersionResponseMatchProduct(const ContentId& contentId, std::string_
 } // namespace
 
 template <typename ConnectionManagerT>
-SFSClientImpl<ConnectionManagerT>::SFSClientImpl(ClientConfig&& config)
-    : m_accountId(std::move(config.accountId))
-    , m_instanceId(config.instanceId && !config.instanceId->empty() ? std::move(*config.instanceId)
-                                                                    : c_defaultInstanceId)
-    , m_nameSpace(config.nameSpace && !config.nameSpace->empty() ? std::move(*config.nameSpace) : c_defaultNameSpace)
+[[nodiscard]] Result SFSClientImpl<ConnectionManagerT>::Make(ClientConfig&& config,
+                                                             std::unique_ptr<SFSClientInterface>& out)
 {
-    if (config.logCallbackFn)
-    {
-        m_reportingHandler.SetLoggingCallback(std::move(*config.logCallbackFn));
-    }
-
     static_assert(std::is_base_of<ConnectionManager, ConnectionManagerT>::value,
                   "ConnectionManagerT not derived from ConnectionManager");
-    m_connectionManager = std::make_unique<ConnectionManagerT>(m_reportingHandler);
 
-    LogIfTestOverridesAllowed(m_reportingHandler);
+    std::unique_ptr<SFSClientImpl> tmp(new SFSClientImpl());
+
+    tmp->m_accountId = std::move(config.accountId);
+    tmp->m_instanceId =
+        config.instanceId && !config.instanceId->empty() ? std::move(*config.instanceId) : c_defaultInstanceId;
+    tmp->m_nameSpace =
+        config.nameSpace && !config.nameSpace->empty() ? std::move(*config.nameSpace) : c_defaultNameSpace;
+
+    if (config.logCallbackFn)
+    {
+        tmp->m_reportingHandler.SetLoggingCallback(std::move(*config.logCallbackFn));
+    }
+
+    tmp->m_connectionManager = std::make_unique<ConnectionManagerT>(tmp->m_reportingHandler);
+
+    LogIfTestOverridesAllowed(tmp->m_reportingHandler);
+
+    out = std::move(tmp);
+
+    return Result::Success;
 }
 
 template <typename ConnectionManagerT>

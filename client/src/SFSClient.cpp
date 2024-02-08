@@ -5,8 +5,8 @@
 
 #include "details/ErrorHandling.h"
 #include "details/SFSClientImpl.h"
-#include "details/connection/CurlConnectionManager.h"
 #include "details/connection/Connection.h"
+#include "details/connection/CurlConnectionManager.h"
 
 using namespace SFS;
 using namespace SFS::details;
@@ -25,7 +25,7 @@ try
 
     out.reset();
     std::unique_ptr<SFSClient> tmp(new SFSClient());
-    tmp->m_impl = std::make_unique<details::SFSClientImpl<CurlConnectionManager>>(std::move(config));
+    RETURN_IF_FAILED(details::SFSClientImpl<CurlConnectionManager>::Make(std::move(config), tmp->m_impl));
     out = std::move(tmp);
     return Result::Success;
 }
