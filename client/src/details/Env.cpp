@@ -3,10 +3,9 @@
 
 #include "Env.h"
 
-#include "ErrorHandling.h"
-
 #include <cstdlib>
 
+using namespace SFS;
 using namespace SFS::details;
 using SFS::details::env::ScopedEnv;
 
@@ -62,13 +61,20 @@ bool env::UnsetEnv(const std::string& varName)
 #endif
 }
 
-ScopedEnv::ScopedEnv(std::string varName, const std::string& value) : m_varName(std::move(varName))
+Result ScopedEnv::Make(std::string varName, const std::string& value, std::unique_ptr<ScopedEnv>& out)
 {
-    m_oldValue = GetEnv(m_varName);
-    if (!SetEnv(m_varName, value))
+    auto tmp = std::unique_ptr<ScopedEnv>(new ScopedEnv(std::move(varName)));
+    tmp->m_oldValue = GetEnv(tmp->m_varName);
+    if (!SetEnv(tmp->m_varName, value))
     {
-        throw SFSException(Result::Unexpected, "Failed to set environment variable");
+        return Result(Result::Unexpected, "Failed to set environment variable");
     }
+    out = std::move(tmp);
+    return Result::Success;
+}
+
+ScopedEnv::ScopedEnv(std::string varName) : m_varName(std::move(varName))
+{
 }
 
 ScopedEnv::~ScopedEnv()

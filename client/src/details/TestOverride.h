@@ -36,9 +36,13 @@ std::optional<std::string> GetTestOverride(TestOverride override);
 class ScopedTestOverride
 {
   public:
-    ScopedTestOverride(TestOverride override, const std::string& value);
+    [[nodiscard]] static Result Make(TestOverride override,
+                                     const std::string& value,
+                                     std::unique_ptr<ScopedTestOverride>& out);
 
   private:
-    SFS::details::env::ScopedEnv m_scopedEnv;
+    ScopedTestOverride() = default;
+
+    std::unique_ptr<SFS::details::env::ScopedEnv> m_scopedEnv;
 };
 } // namespace SFS::test

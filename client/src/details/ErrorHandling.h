@@ -4,16 +4,11 @@
 #pragma once
 
 #include "Result.h"
-#include "SFSException.h"
 
 #define SFS_CATCH_RETURN()                                                                                             \
     catch (const std::bad_alloc&)                                                                                      \
     {                                                                                                                  \
         return Result::OutOfMemory;                                                                                    \
-    }                                                                                                                  \
-    catch (const SFS::details::SFSException& e)                                                                        \
-    {                                                                                                                  \
-        return e.GetResult();                                                                                          \
     }                                                                                                                  \
     catch (const std::exception&)                                                                                      \
     {                                                                                                                  \
@@ -73,17 +68,6 @@
             auto __result = SFS::Result(SFS::Result::code, ##__VA_ARGS__);                                             \
             SFS::details::LogFailedResult(handler, __result, __FILE__, __LINE__);                                      \
             return __result;                                                                                           \
-        }                                                                                                              \
-    } while ((void)0, 0)
-
-#define THROW_CODE_IF_LOG(code, condition, handler, ...)                                                               \
-    do                                                                                                                 \
-    {                                                                                                                  \
-        if (condition)                                                                                                 \
-        {                                                                                                              \
-            auto __result = SFS::Result(SFS::Result::code, ##__VA_ARGS__);                                             \
-            SFS::details::LogFailedResult(handler, __result, __FILE__, __LINE__);                                      \
-            throw SFS::details::SFSException(__result);                                                                \
         }                                                                                                              \
     } while ((void)0, 0)
 

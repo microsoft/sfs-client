@@ -68,7 +68,8 @@ TEST("Testing ScopedTestOverride")
         REQUIRE(!env.has_value());
 
         {
-            ScopedTestOverride scopedOverride(TestOverride::BaseUrl, "dummyValue");
+            std::unique_ptr<ScopedTestOverride> testOverride;
+            REQUIRE(ScopedTestOverride::Make(TestOverride::BaseUrl, "dummyValue", testOverride));
 
             INFO("Variable exists within scope");
             env = GetEnv(varName);
@@ -86,7 +87,8 @@ TEST("Testing ScopedTestOverride")
             SECTION("Testing ScopedEnv on an existing variable overwrites it")
             {
                 {
-                    ScopedTestOverride scopedOverride2(TestOverride::BaseUrl, "dummyValue2");
+                    std::unique_ptr<ScopedTestOverride> testOverride2;
+                    REQUIRE(ScopedTestOverride::Make(TestOverride::BaseUrl, "dummyValue2", testOverride2));
 
                     INFO("Variable has value overwritten within scope");
                     env = GetEnv(varName);

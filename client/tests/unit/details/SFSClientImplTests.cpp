@@ -243,7 +243,8 @@ TEST("Testing test override SFS_TEST_OVERRIDE_BASE_URL")
 
     {
         INFO("Can override the base url with the test key");
-        ScopedTestOverride override(TestOverride::BaseUrl, "override");
+        std::unique_ptr<ScopedTestOverride> testOverride;
+        REQUIRE(ScopedTestOverride::Make(TestOverride::BaseUrl, "override", testOverride));
         if (AreTestOverridesAllowed())
         {
             REQUIRE(sfsClient->GetBaseUrl() == "override");
@@ -262,7 +263,8 @@ TEST("Testing test override SFS_TEST_OVERRIDE_BASE_URL")
 
     {
         INFO("Can also override a custom base base url with the test key");
-        ScopedTestOverride override(TestOverride::BaseUrl, "override");
+        std::unique_ptr<ScopedTestOverride> testOverride;
+        REQUIRE(ScopedTestOverride::Make(TestOverride::BaseUrl, "override", testOverride));
         if (AreTestOverridesAllowed())
         {
             REQUIRE(sfsClient->GetBaseUrl() == "override");

@@ -3,6 +3,9 @@
 
 #pragma once
 
+#include "Result.h"
+
+#include <memory>
 #include <optional>
 #include <string>
 
@@ -30,10 +33,12 @@ bool UnsetEnv(const std::string& varName);
 class ScopedEnv
 {
   public:
-    ScopedEnv(std::string varName, const std::string& value);
+    [[nodiscard]] static Result Make(std::string varName, const std::string& value, std::unique_ptr<ScopedEnv>& out);
     ~ScopedEnv();
 
   private:
+    ScopedEnv(std::string varName);
+
     std::string m_varName;
     std::optional<std::string> m_oldValue;
 };

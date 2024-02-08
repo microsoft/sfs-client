@@ -95,12 +95,12 @@ struct CurlHeaderList
 struct CurlErrorBuffer
 {
   public:
-    CurlErrorBuffer(CURL* handle, const ReportingHandler& reportingHandler)
-        : m_handle(handle)
-        , m_reportingHandler(reportingHandler)
+    static Result Make(CURL* handle, const ReportingHandler& reportingHandler, std::unique_ptr<CurlErrorBuffer>& out)
     {
-        m_errorBuffer[0] = '\0';
-        SetBuffer();
+        auto tmp = std::unique_ptr<CurlErrorBuffer>(new CurlErrorBuffer(handle, reportingHandler));
+        RETURN_IF_FAILED_LOG(tmp->SetBuffer(), reportingHandler);
+        out = std::move(tmp);
+        return Result::Success;
     }
 
     ~CurlErrorBuffer()
@@ -108,12 +108,26 @@ struct CurlErrorBuffer
         LOG_IF_FAILED(UnsetBuffer(), m_reportingHandler);
     }
 
-    void SetBuffer()
+    char* Get()
     {
-        THROW_CODE_IF_LOG(ConnectionSetupFailed,
-                          curl_easy_setopt(m_handle, CURLOPT_ERRORBUFFER, m_errorBuffer) != CURLE_OK,
-                          m_reportingHandler,
-                          "Failed to set up error buffer for curl");
+        return m_errorBuffer;
+    }
+
+  private:
+    CurlErrorBuffer(CURL* handle, const ReportingHandler& reportingHandler)
+        : m_handle(handle)
+        , m_reportingHandler(reportingHandler)
+    {
+        m_errorBuffer[0] = '\0';
+    }
+
+    Result SetBuffer()
+    {
+        RETURN_CODE_IF_LOG(ConnectionSetupFailed,
+                           curl_easy_setopt(m_handle, CURLOPT_ERRORBUFFER, m_errorBuffer) != CURLE_OK,
+                           m_reportingHandler,
+                           "Failed to set up error buffer for curl");
+        return Result::Success;
     }
 
     Result UnsetBuffer()
@@ -123,12 +137,6 @@ struct CurlErrorBuffer
                    : Result(Result::ConnectionSetupFailed, "Failed to unset curl error buffer");
     }
 
-    char* Get()
-    {
-        return m_errorBuffer;
-    }
-
-  private:
     CURL* m_handle;
     const ReportingHandler& m_reportingHandler;
 
@@ -259,7 +267,8 @@ Result CurlConnection::CurlPerform(const std::string& url, std::string& response
     RETURN_IF_CURL_SETUP_ERROR(curl_easy_setopt(m_handle, CURLOPT_URL, url.c_str()));
 
     // Setting up error buffer where error messages get written - this gets unset in the destructor
-    CurlErrorBuffer errorBuffer(m_handle, m_handler);
+    std::unique_ptr<CurlErrorBuffer> errorBuffer;
+    RETURN_IF_FAILED_LOG(CurlErrorBuffer::Make(m_handle, m_handler, errorBuffer), m_handler);
 
     std::string readBuffer;
     RETURN_IF_CURL_SETUP_ERROR(curl_easy_setopt(m_handle, CURLOPT_WRITEFUNCTION, WriteCallback));
@@ -268,7 +277,7 @@ Result CurlConnection::CurlPerform(const std::string& url, std::string& response
     auto result = curl_easy_perform(m_handle);
     if (result != CURLE_OK)
     {
-        return CurlCodeToResult(result, errorBuffer.Get());
+        return CurlCodeToResult(result, errorBuffer->Get());
     }
 
     response = std::move(readBuffer);

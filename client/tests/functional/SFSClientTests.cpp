@@ -52,7 +52,8 @@ TEST("Testing SFSClient::GetLatestDownloadInfo()")
     }
 
     test::MockWebServer server;
-    ScopedTestOverride override(TestOverride::BaseUrl, server.GetBaseUrl());
+    std::unique_ptr<ScopedTestOverride> testOverride;
+    REQUIRE(ScopedTestOverride::Make(TestOverride::BaseUrl, server.GetBaseUrl(), testOverride));
 
     std::unique_ptr<SFSClient> sfsClient;
     REQUIRE(SFSClient::Make({"testAccountId", c_instanceId, c_namespace, LogCallbackToTest}, sfsClient) ==

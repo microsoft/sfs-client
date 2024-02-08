@@ -87,7 +87,8 @@ TEST("Testing ScopedEnv")
         REQUIRE(!env.has_value());
 
         {
-            ScopedEnv scopedEnv("DUMMYVARIABLE", "dummyValue");
+            std::unique_ptr<ScopedEnv> scopedEnv;
+            REQUIRE(ScopedEnv::Make("DUMMYVARIABLE", "dummyValue", scopedEnv));
 
             INFO("Variable exists within scope");
             env = GetEnv("DUMMYVARIABLE");
@@ -97,7 +98,8 @@ TEST("Testing ScopedEnv")
             SECTION("Testing ScopedEnv on an existing variable overwrites it")
             {
                 {
-                    ScopedEnv scopedEnv2("DUMMYVARIABLE", "dummyValue2");
+                    std::unique_ptr<ScopedEnv> scopedEnv2;
+                    REQUIRE(ScopedEnv::Make("DUMMYVARIABLE", "dummyValue2", scopedEnv2));
 
                     INFO("Variable has value overwritten within scope");
                     env = GetEnv("DUMMYVARIABLE");
