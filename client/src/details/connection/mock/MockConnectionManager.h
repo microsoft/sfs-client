@@ -18,6 +18,6 @@ class MockConnectionManager : public ConnectionManager
     MockConnectionManager(const ReportingHandler& handler);
     ~MockConnectionManager() override;
 
-    std::unique_ptr<Connection> MakeConnection() override;
+    [[nodiscard]] Result MakeConnection(std::unique_ptr<Connection>& out) override;
 };
 } // namespace SFS::details

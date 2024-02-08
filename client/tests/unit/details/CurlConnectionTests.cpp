@@ -20,11 +20,15 @@ namespace
 class MockCurlConnection : public CurlConnection
 {
   public:
-    MockCurlConnection(const ReportingHandler& handler, Result::Code& responseCode, std::string& response)
-        : CurlConnection(handler)
-        , m_responseCode(responseCode)
-        , m_response(response)
+    [[nodiscard]] static Result Make(const ReportingHandler& handler,
+                                     Result::Code& responseCode,
+                                     std::string& response,
+                                     std::unique_ptr<Connection>& out)
     {
+        auto tmp = std::unique_ptr<MockCurlConnection>(new MockCurlConnection(handler, responseCode, response));
+        REQUIRE(tmp->SetupCurl());
+        out = std::move(tmp);
+        return Result::Success;
     }
 
   protected:
@@ -38,6 +42,13 @@ class MockCurlConnection : public CurlConnection
     }
 
   private:
+    MockCurlConnection(const ReportingHandler& handler, Result::Code& responseCode, std::string& response)
+        : CurlConnection(handler)
+        , m_responseCode(responseCode)
+        , m_response(response)
+    {
+    }
+
     Result::Code& m_responseCode;
     std::string& m_response;
 };
@@ -49,7 +60,8 @@ TEST("Testing CurlConnection()")
     handler.SetLoggingCallback(LogCallbackToTest);
     Result::Code responseCode = Result::HttpNotFound;
     std::string response = "expected";
-    std::unique_ptr<Connection> connection = std::make_unique<MockCurlConnection>(handler, responseCode, response);
+    std::unique_ptr<Connection> connection;
+    REQUIRE(MockCurlConnection::Make(handler, responseCode, response, connection));
 
     SECTION("Testing CurlConnection::Get()")
     {

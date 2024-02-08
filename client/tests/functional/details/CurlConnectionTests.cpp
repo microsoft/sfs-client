@@ -33,8 +33,12 @@ namespace
 class CurlConnectionTimeout : public CurlConnection
 {
   public:
-    CurlConnectionTimeout(const ReportingHandler& handler) : CurlConnection(handler)
+    [[nodiscard]] static Result Make(const ReportingHandler& handler, std::unique_ptr<Connection>& out)
     {
+        auto tmp = std::unique_ptr<CurlConnectionTimeout>(new CurlConnectionTimeout(handler));
+        REQUIRE(tmp->SetupCurl());
+        out = std::move(tmp);
+        return Result::Success;
     }
 
     [[nodiscard]] Result Get(const std::string& url, std::string& response) override
@@ -50,6 +54,11 @@ class CurlConnectionTimeout : public CurlConnection
         curl_easy_setopt(m_handle, CURLOPT_TIMEOUT_MS, 100L);
         return CurlConnection::Post(url, data, response);
     }
+
+  private:
+    CurlConnectionTimeout(const ReportingHandler& handler) : CurlConnection(handler)
+    {
+    }
 };
 
 class CurlConnectionTimeoutManager : public CurlConnectionManager
@@ -59,9 +68,10 @@ class CurlConnectionTimeoutManager : public CurlConnectionManager
     {
     }
 
-    std::unique_ptr<Connection> MakeConnection() override
+    [[nodiscard]] Result MakeConnection(std::unique_ptr<Connection>& out) override
     {
-        return std::make_unique<CurlConnectionTimeout>(m_handler);
+        REQUIRE(CurlConnectionTimeout::Make(m_handler, out));
+        return Result::Success;
     }
 };
 } // namespace
@@ -72,7 +82,8 @@ TEST("Testing CurlConnection()")
     ReportingHandler handler;
     handler.SetLoggingCallback(LogCallbackToTest);
     CurlConnectionManager connectionManager(handler);
-    auto connection = connectionManager.MakeConnection();
+    std::unique_ptr<Connection> connection;
+    REQUIRE(connectionManager.MakeConnection(connection));
 
     SECTION("Testing CurlConnection::Get()")
     {
@@ -202,7 +213,8 @@ TEST("Testing CurlConnection when the server is not reachable")
     ReportingHandler handler;
     CurlConnectionTimeoutManager connectionManager(handler);
     handler.SetLoggingCallback(LogCallbackToTest);
-    auto connection = connectionManager.MakeConnection();
+    std::unique_ptr<Connection> connection;
+    REQUIRE(connectionManager.MakeConnection(connection));
 
     // Using a non-routable IP address to ensure the server is not reachable
     // https://www.rfc-editor.org/rfc/rfc5737#section-3: The blocks 192.0.2.0/24 (...) are provided for use in
@@ -230,13 +242,15 @@ TEST("Testing CurlConnection works from a second ConnectionManager")
     // Create a first connection manager and see it leave scope - curl initializes and uninitializes
     {
         CurlConnectionManager connectionManager(handler);
-        REQUIRE(connectionManager.MakeConnection() != nullptr);
+        std::unique_ptr<Connection> connection;
+        REQUIRE(connectionManager.MakeConnection(connection));
     }
 
     test::MockWebServer server;
     CurlConnectionManager connectionManager(handler);
     handler.SetLoggingCallback(LogCallbackToTest);
-    auto connection = connectionManager.MakeConnection();
+    std::unique_ptr<Connection> connection;
+    REQUIRE(connectionManager.MakeConnection(connection));
 
     const std::string url = SFSUrlComponents::GetSpecificVersionUrl(server.GetBaseUrl(),
                                                                     c_instanceId,
@@ -253,7 +267,8 @@ TEST("Testing CurlConnection works from a second ConnectionManager")
 
     SECTION("A second connection also works")
     {
-        auto connection2 = connectionManager.MakeConnection();
+        std::unique_ptr<Connection> connection2;
+        REQUIRE(connectionManager.MakeConnection(connection2));
         REQUIRE(connection2->Get(url, out) == Result::Success);
     }
 }
@@ -265,7 +280,8 @@ TEST("Testing a url that's too big throws 414")
 
     test::MockWebServer server;
     CurlConnectionManager connectionManager(handler);
-    auto connection = connectionManager.MakeConnection();
+    std::unique_ptr<Connection> connection;
+    REQUIRE(connectionManager.MakeConnection(connection));
 
     // Will use a fake large product name to produce a large url
     const std::string largeProductName(90000, 'a');
@@ -292,7 +308,8 @@ TEST("Testing a response over the limit fails the operation")
 
     test::MockWebServer server;
     CurlConnectionManager connectionManager(handler);
-    auto connection = connectionManager.MakeConnection();
+    std::unique_ptr<Connection> connection;
+    REQUIRE(connectionManager.MakeConnection(connection));
 
     // Will use a fake large product name to produce a response over the limit of 100k characters
     const std::string largeProductName(90000, 'a');

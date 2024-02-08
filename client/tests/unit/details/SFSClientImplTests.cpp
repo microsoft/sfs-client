@@ -25,17 +25,18 @@ namespace
 class MockCurlConnection : public CurlConnection
 {
   public:
-    MockCurlConnection(const ReportingHandler& handler,
-                       Result::Code& responseCode,
-                       std::string& getResponse,
-                       std::string& postResponse,
-                       bool& expectEmptyPostBody)
-        : CurlConnection(handler)
-        , m_responseCode(responseCode)
-        , m_getResponse(getResponse)
-        , m_postResponse(postResponse)
-        , m_expectEmptyPostBody(expectEmptyPostBody)
+    [[nodiscard]] static Result Make(const ReportingHandler& handler,
+                                     Result::Code& responseCode,
+                                     std::string& getResponse,
+                                     std::string& postResponse,
+                                     bool& expectEmptyPostBody,
+                                     std::unique_ptr<Connection>& out)
     {
+        auto tmp = std::unique_ptr<MockCurlConnection>(
+            new MockCurlConnection(handler, responseCode, getResponse, postResponse, expectEmptyPostBody));
+        REQUIRE(tmp->SetupCurl());
+        out = std::move(tmp);
+        return Result::Success;
     }
 
     [[nodiscard]] Result Get(const std::string&, std::string& response) override
@@ -62,6 +63,19 @@ class MockCurlConnection : public CurlConnection
     }
 
   private:
+    MockCurlConnection(const ReportingHandler& handler,
+                       Result::Code& responseCode,
+                       std::string& getResponse,
+                       std::string& postResponse,
+                       bool& expectEmptyPostBody)
+        : CurlConnection(handler)
+        , m_responseCode(responseCode)
+        , m_getResponse(getResponse)
+        , m_postResponse(postResponse)
+        , m_expectEmptyPostBody(expectEmptyPostBody)
+    {
+    }
+
     Result::Code& m_responseCode;
     std::string& m_getResponse;
     std::string& m_postResponse;
@@ -106,11 +120,13 @@ TEST("Testing class SFSClientImpl()")
     std::string getResponse;
     std::string postResponse;
     bool expectEmptyPostBody = true;
-    std::unique_ptr<Connection> connection = std::make_unique<MockCurlConnection>(sfsClient->GetReportingHandler(),
-                                                                                  responseCode,
-                                                                                  getResponse,
-                                                                                  postResponse,
-                                                                                  expectEmptyPostBody);
+    std::unique_ptr<Connection> connection;
+    REQUIRE(MockCurlConnection::Make(sfsClient->GetReportingHandler(),
+                                     responseCode,
+                                     getResponse,
+                                     postResponse,
+                                     expectEmptyPostBody,
+                                     connection));
 
     const std::string productName = "productName";
     const std::string expectedVersion = "0.0.0.2";

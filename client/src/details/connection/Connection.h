@@ -14,11 +14,7 @@ class ReportingHandler;
 class Connection
 {
   public:
-    Connection(const ReportingHandler& handler);
-
-    virtual ~Connection()
-    {
-    }
+    virtual ~Connection();
 
     Connection(const Connection&) = delete;
     Connection& operator=(const Connection&) = delete;
@@ -29,6 +25,8 @@ class Connection
     [[nodiscard]] Result Post(const std::string& url, std::string& response);
 
   protected:
+    Connection(const ReportingHandler& handler);
+
     const ReportingHandler& m_handler;
 };
 } // namespace SFS::details

@@ -186,21 +186,17 @@ Result HttpCodeToResult(long httpCode)
 }
 } // namespace
 
+Result CurlConnection::Make(const ReportingHandler& handler, std::unique_ptr<Connection>& out)
+{
+    auto tmp = std::unique_ptr<CurlConnection>(new CurlConnection(handler));
+    RETURN_IF_FAILED_LOG(tmp->SetupCurl(), handler);
+    out = std::move(tmp);
+
+    return Result::Success;
+}
+
 CurlConnection::CurlConnection(const ReportingHandler& handler) : Connection(handler)
 {
-    m_handle = curl_easy_init();
-    THROW_CODE_IF_LOG(ConnectionSetupFailed, !m_handle, m_handler, "Failed to init curl connection");
-
-    // Turning timeout signals off to avoid issues with threads
-    // See https://curl.se/libcurl/c/threadsafe.html
-    THROW_CODE_IF_LOG(ConnectionSetupFailed,
-                      curl_easy_setopt(m_handle, CURLOPT_NOSIGNAL, 1L) != CURLE_OK,
-                      m_handler,
-                      "Failed to set up curl");
-
-    // TODO #40: Allow passing user agent and MS-CV in the header
-    // TODO #41: Pass AAD token in the header if it is available
-    // TODO #42: Cert pinning with service
 }
 
 CurlConnection::~CurlConnection()
@@ -209,6 +205,25 @@ CurlConnection::~CurlConnection()
     {
         curl_easy_cleanup(m_handle);
     }
+}
+
+Result CurlConnection::SetupCurl()
+{
+    m_handle = curl_easy_init();
+    RETURN_CODE_IF_LOG(ConnectionSetupFailed, !m_handle, m_handler, "Failed to init curl connection");
+
+    // Turning timeout signals off to avoid issues with threads
+    // See https://curl.se/libcurl/c/threadsafe.html
+    RETURN_CODE_IF_LOG(ConnectionSetupFailed,
+                       curl_easy_setopt(m_handle, CURLOPT_NOSIGNAL, 1L) != CURLE_OK,
+                       m_handler,
+                       "Failed to set up curl");
+
+    // TODO #40: Allow passing user agent and MS-CV in the header
+    // TODO #41: Pass AAD token in the header if it is available
+    // TODO #42: Cert pinning with service
+
+    return Result::Success;
 }
 
 Result CurlConnection::Get(const std::string& url, std::string& response)

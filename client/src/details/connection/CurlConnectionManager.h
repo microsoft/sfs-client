@@ -18,6 +18,6 @@ class CurlConnectionManager : public ConnectionManager
     CurlConnectionManager(const ReportingHandler& handler);
     ~CurlConnectionManager() override;
 
-    std::unique_ptr<Connection> MakeConnection() override;
+    [[nodiscard]] Result MakeConnection(std::unique_ptr<Connection>& out) override;
 };
 } // namespace SFS::details

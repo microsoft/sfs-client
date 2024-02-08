@@ -44,7 +44,8 @@ CurlConnectionManager::~CurlConnectionManager()
     curl_global_cleanup();
 }
 
-std::unique_ptr<Connection> CurlConnectionManager::MakeConnection()
+Result CurlConnectionManager::MakeConnection(std::unique_ptr<Connection>& out)
 {
-    return std::make_unique<CurlConnection>(m_handler);
+    RETURN_IF_FAILED_LOG(CurlConnection::Make(m_handler, out), m_handler);
+    return Result::Success;
 }

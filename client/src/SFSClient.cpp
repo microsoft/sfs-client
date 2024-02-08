@@ -51,7 +51,8 @@ try
 
     // TODO #50: Adapt retrieval to storeapps flow with pre-requisites once that is implemented server-side
 
-    auto connection = m_impl->GetConnectionManager().MakeConnection();
+    std::unique_ptr<Connection> connection;
+    RETURN_IF_FAILED_LOG(m_impl->GetConnectionManager().MakeConnection(connection), m_impl->GetReportingHandler());
 
     std::unique_ptr<ContentId> contentId;
     RETURN_IF_FAILED_LOG(m_impl->GetLatestVersion(productName, attributes, *connection, contentId),

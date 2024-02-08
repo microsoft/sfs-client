@@ -3,8 +3,10 @@
 
 #include "MockConnectionManager.h"
 
+#include "../../ErrorHandling.h"
 #include "MockConnection.h"
 
+using namespace SFS;
 using namespace SFS::details;
 
 MockConnectionManager::MockConnectionManager(const ReportingHandler& handler) : ConnectionManager(handler)
@@ -15,7 +17,8 @@ MockConnectionManager::~MockConnectionManager()
 {
 }
 
-std::unique_ptr<Connection> MockConnectionManager::MakeConnection()
+Result MockConnectionManager::MakeConnection(std::unique_ptr<Connection>& out)
 {
-    return std::make_unique<MockConnection>(m_handler);
+    RETURN_IF_FAILED_LOG(MockConnection::Make(m_handler, out), m_handler);
+    return Result::Success;
 }

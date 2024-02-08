@@ -3,6 +3,8 @@
 
 #pragma once
 
+#include "Result.h"
+
 #include <memory>
 
 namespace SFS::details
@@ -19,7 +21,7 @@ class ConnectionManager
     ConnectionManager(const ConnectionManager&) = delete;
     ConnectionManager& operator=(const ConnectionManager&) = delete;
 
-    virtual std::unique_ptr<Connection> MakeConnection() = 0;
+    [[nodiscard]] virtual Result MakeConnection(std::unique_ptr<Connection>& out) = 0;
 
   protected:
     const ReportingHandler& m_handler;

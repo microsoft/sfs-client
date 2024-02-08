@@ -46,7 +46,8 @@ TEST("Testing class SFSClientImpl()")
     server.RegisterProduct("productName", "0.0.0.2");
     server.RegisterProduct("productName", "0.0.0.1");
 
-    auto connection = sfsClient->GetConnectionManager().MakeConnection();
+    std::unique_ptr<Connection> connection;
+    REQUIRE(sfsClient->GetConnectionManager().MakeConnection(connection) == Result::Success);
 
     SECTION("Testing SFSClientImpl::GetLatestVersion()")
     {
