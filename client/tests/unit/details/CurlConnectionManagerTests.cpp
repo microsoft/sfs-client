@@ -30,23 +30,26 @@ TEST("Testing expected values in curl_version_info_data")
 TEST("Testing CurlConnectionManager()")
 {
     ReportingHandler handler;
-    CurlConnectionManager curlConnectionManager(handler);
+    std::unique_ptr<ConnectionManager> curlConnectionManager;
+    REQUIRE(CurlConnectionManager::Make(handler, curlConnectionManager));
 
     // Check that the CurlConnectionManager generates a CurlConnection object
     std::unique_ptr<Connection> connection;
-    REQUIRE(curlConnectionManager.MakeConnection(connection) == Result::Success);
+    REQUIRE(curlConnectionManager->MakeConnection(connection));
     REQUIRE(connection != nullptr);
     REQUIRE(dynamic_cast<CurlConnection*>(connection.get()) != nullptr);
 
     // Having many CurlConnectionManager objects should not cause any issues, curl is smart enough to
     // handle multiple initialization and cleanup calls
-    CurlConnectionManager curlConnectionManager2(handler);
+    std::unique_ptr<ConnectionManager> curlConnectionManager2;
+    REQUIRE(CurlConnectionManager::Make(handler, curlConnectionManager2));
     std::unique_ptr<Connection> connection2;
-    REQUIRE(curlConnectionManager2.MakeConnection(connection2) == Result::Success);
+    REQUIRE(curlConnectionManager2->MakeConnection(connection2));
 
-    CurlConnectionManager curlConnectionManager3(handler);
+    std::unique_ptr<ConnectionManager> curlConnectionManager3;
+    REQUIRE(CurlConnectionManager::Make(handler, curlConnectionManager3));
     std::unique_ptr<Connection> connection3;
-    REQUIRE(curlConnectionManager3.MakeConnection(connection3) == Result::Success);
+    REQUIRE(curlConnectionManager3->MakeConnection(connection3));
     std::unique_ptr<Connection> connection4;
-    REQUIRE(curlConnectionManager3.MakeConnection(connection4) == Result::Success);
+    REQUIRE(curlConnectionManager3->MakeConnection(connection4));
 }

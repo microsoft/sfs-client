@@ -9,6 +9,13 @@
 using namespace SFS;
 using namespace SFS::details;
 
+Result MockConnectionManager::Make(const ReportingHandler& handler, std::unique_ptr<ConnectionManager>& out)
+{
+    auto tmp = std::unique_ptr<MockConnectionManager>(new MockConnectionManager(handler));
+    out = std::move(tmp);
+    return Result::Success;
+}
+
 MockConnectionManager::MockConnectionManager(const ReportingHandler& handler) : ConnectionManager(handler)
 {
 }

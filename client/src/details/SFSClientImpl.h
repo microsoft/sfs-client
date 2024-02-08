@@ -16,6 +16,8 @@
 
 namespace SFS::details
 {
+class ConnectionManager;
+
 template <typename ConnectionManagerT>
 class SFSClientImpl : public SFSClientInterface
 {
@@ -84,7 +86,7 @@ class SFSClientImpl : public SFSClientInterface
     std::string m_instanceId;
     std::string m_nameSpace;
 
-    std::unique_ptr<ConnectionManagerT> m_connectionManager;
+    std::unique_ptr<ConnectionManager> m_connectionManager;
 
     std::optional<std::string> m_customBaseUrl;
 };

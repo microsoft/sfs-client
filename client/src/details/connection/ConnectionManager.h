@@ -15,7 +15,6 @@ class ReportingHandler;
 class ConnectionManager
 {
   public:
-    ConnectionManager(const ReportingHandler& handler);
     virtual ~ConnectionManager();
 
     ConnectionManager(const ConnectionManager&) = delete;
@@ -24,6 +23,8 @@ class ConnectionManager
     [[nodiscard]] virtual Result MakeConnection(std::unique_ptr<Connection>& out) = 0;
 
   protected:
+    ConnectionManager(const ReportingHandler& handler);
+
     const ReportingHandler& m_handler;
 };
 } // namespace SFS::details

@@ -235,7 +235,8 @@ template <typename ConnectionManagerT>
         tmp->m_reportingHandler.SetLoggingCallback(std::move(*config.logCallbackFn));
     }
 
-    tmp->m_connectionManager = std::make_unique<ConnectionManagerT>(tmp->m_reportingHandler);
+    RETURN_IF_FAILED_LOG(ConnectionManagerT::Make(tmp->m_reportingHandler, tmp->m_connectionManager),
+                         tmp->m_reportingHandler);
 
     LogIfTestOverridesAllowed(tmp->m_reportingHandler);
 

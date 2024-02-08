@@ -14,34 +14,50 @@ using namespace SFS::details;
 namespace
 {
 // Curl recommends checking for expected features in runtime
-void CheckCurlFeatures(const ReportingHandler& handler)
+Result CheckCurlFeatures(const ReportingHandler& handler)
 {
     curl_version_info_data* ver = curl_version_info(CURLVERSION_NOW);
-    THROW_CODE_IF_LOG(HttpUnexpected, !ver, handler);
+    RETURN_CODE_IF_LOG(HttpUnexpected, !ver, handler);
 
-    THROW_CODE_IF_LOG(HttpUnexpected, !(ver->features & CURL_VERSION_SSL), handler, "Curl was not built with SSL");
-    THROW_CODE_IF_LOG(HttpUnexpected, !(ver->features & CURL_VERSION_THREADSAFE), handler, "Curl is not thread safe");
+    RETURN_CODE_IF_LOG(HttpUnexpected, !(ver->features & CURL_VERSION_SSL), handler, "Curl was not built with SSL");
+    RETURN_CODE_IF_LOG(HttpUnexpected, !(ver->features & CURL_VERSION_THREADSAFE), handler, "Curl is not thread safe");
 
     // For thread safety we need the DNS resolutions to be asynchronous (which happens because of c-ares)
-    THROW_CODE_IF_LOG(HttpUnexpected,
-                      !(ver->features & CURL_VERSION_ASYNCHDNS),
-                      handler,
-                      "Curl was not built with async DNS resolutions");
+    RETURN_CODE_IF_LOG(HttpUnexpected,
+                       !(ver->features & CURL_VERSION_ASYNCHDNS),
+                       handler,
+                       "Curl was not built with async DNS resolutions");
+
+    return Result::Success;
 }
 } // namespace
 
+Result CurlConnectionManager::Make(const ReportingHandler& handler, std::unique_ptr<ConnectionManager>& out)
+{
+    auto tmp = std::unique_ptr<CurlConnectionManager>(new CurlConnectionManager(handler));
+    RETURN_IF_FAILED_LOG(tmp->SetupCurl(), handler);
+    out = std::move(tmp);
+
+    return Result::Success;
+}
+
 CurlConnectionManager::CurlConnectionManager(const ReportingHandler& handler) : ConnectionManager(handler)
 {
-    THROW_CODE_IF_LOG(HttpUnexpected,
-                      curl_global_init(CURL_GLOBAL_ALL) != CURLE_OK,
-                      m_handler,
-                      "Curl failed to initialize");
-    CheckCurlFeatures(m_handler);
 }
 
 CurlConnectionManager::~CurlConnectionManager()
 {
     curl_global_cleanup();
+}
+
+Result CurlConnectionManager::SetupCurl()
+{
+    RETURN_CODE_IF_LOG(HttpUnexpected,
+                       curl_global_init(CURL_GLOBAL_ALL) != CURLE_OK,
+                       m_handler,
+                       "Curl failed to initialize");
+    RETURN_IF_FAILED_LOG(CheckCurlFeatures(m_handler), m_handler);
+    return Result::Success;
 }
 
 Result CurlConnectionManager::MakeConnection(std::unique_ptr<Connection>& out)
