@@ -68,11 +68,11 @@ To build, use the `build` command. It simplifies the CMake build commands and re
 
 Available build options:
 
-| Switch (PowerShell)  | Switch (Bash)           | Description                                                                                         |
-|----------------------|-------------------------|-----------------------------------------------------------------------------------------------------|
-| -Clean               | --clean                 | Use this to clean the build folder before building.                                                 |
-| -BuildType           | (none)                  | Use this to define the build type between "Debug" and "Release" in Windows. The default is "Debug". |
-| -EnableTestOverrides | --enable-test-overrides | Use this to enable test overrides. See [TEST](TEST.md) for more.                                    |
+| Switch (PowerShell)  | Switch (Bash)           | Description                                                                              |
+|----------------------|-------------------------|------------------------------------------------------------------------------------------|
+| -Clean               | --clean                 | Use this to clean the build folder before building.                                      |
+| -BuildType           | --build-type            | Use this to define the build type between "Debug" and "Release". The default is "Debug". |
+| -EnableTestOverrides | --enable-test-overrides | Use this to enable test overrides. See [TEST](TEST.md) for more.                         |
 
 ## VSCode
 
