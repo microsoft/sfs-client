@@ -1,5 +1,7 @@
 # SFS Client
 
+[![Windows Latest](https://github.com/microsoft/sfs-client/actions/workflows/main-build-windows.yml/badge.svg?branch=main&event=push)](https://github.com/microsoft/sfs-client/actions/workflows/main-build-windows.yml) [![Ubuntu Latest](https://github.com/microsoft/sfs-client/actions/workflows/main-build-ubuntu.yml/badge.svg?branch=main&event=push)](https://github.com/microsoft/sfs-client/actions/workflows/main-build-ubuntu.yml)
+
 ## Introduction
 
 This repository holds the Simple File Solution (SFS) Client, a C++ library that simplifies the interface with the SFS service.
