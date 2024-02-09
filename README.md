@@ -66,7 +66,13 @@ clang-format -i ./*.h
 
 To build, use the `build` command. It simplifies the CMake build commands and re-generates CMake configurations if needed.
 
-If you face problems with compilation, try cleaning the build folder with `build -Clean` on Windows and `build --clean` on Linux.
+Available build options:
+
+| Switch (PowerShell)  | Switch (Bash)           | Description                                                                              |
+|----------------------|-------------------------|------------------------------------------------------------------------------------------|
+| -Clean               | --clean                 | Use this to clean the build folder before building.                                      |
+| -BuildType           | --build-type            | Use this to define the build type between "Debug" and "Release". The default is "Debug". |
+| -EnableTestOverrides | --enable-test-overrides | Use this to enable test overrides. See [TEST](TEST.md) for more.                         |
 
 ## VSCode
 
