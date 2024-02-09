@@ -27,6 +27,7 @@ target_sources(
             unit/details/ReportingHandlerTests.cpp
             unit/details/SFSClientImplTests.cpp
             unit/details/TestOverrideTests.cpp
+            unit/details/UtilTests.cpp
             unit/ResultTests.cpp
             unit/SFSClientTests.cpp
             util/SFSExceptionMatcher.cpp
