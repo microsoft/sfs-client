@@ -10,9 +10,9 @@ namespace SFS::details
 class SFSUrlComponents
 {
   public:
-    static std::string GetLatestVersionUrl(const std::string& baseUrl,
-                                           const std::string& instanceId,
-                                           const std::string& nameSpace);
+    static std::string GetLatestVersionBatchUrl(const std::string& baseUrl,
+                                                const std::string& instanceId,
+                                                const std::string& nameSpace);
 
     static std::string GetSpecificVersionUrl(const std::string& baseUrl,
                                              const std::string& instanceId,

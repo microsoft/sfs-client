@@ -27,14 +27,12 @@ class SFSClientInterface
     //
 
     /**
-     * @brief Gets the metadata for the latest available version for the specified product that matches the optional
-     * request attributes
+     * @brief Gets the metadata for the latest available version for the specified product requests
      * @return ContentId for the latest version of the product
      * @throws SFSException if the request fails
      */
-    virtual std::unique_ptr<ContentId> GetLatestVersion(const std::string& productName,
-                                                        const SearchAttributes& attributes,
-                                                        Connection& connection) const = 0;
+    virtual std::vector<ContentId> GetLatestVersionBatch(const std::vector<ProductRequest> productRequests,
+                                                         Connection& connection) const = 0;
 
     /**
      * @brief Gets the metadata for a specific version of the specified product

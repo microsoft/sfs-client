@@ -14,6 +14,7 @@
 namespace SFS
 {
 using SearchAttributes = std::unordered_map<std::string, std::string>;
+using ProductRequest = std::pair<std::string, SearchAttributes>;
 
 class ContentId
 {
@@ -22,6 +23,8 @@ class ContentId
                                      std::string name,
                                      std::string version,
                                      std::unique_ptr<ContentId>& out) noexcept;
+
+    ContentId(ContentId&&) noexcept;
 
     ContentId(const ContentId&) = delete;
     ContentId& operator=(const ContentId&) = delete;

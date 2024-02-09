@@ -103,10 +103,10 @@ TEST("Testing CurlConnection()")
 
     SECTION("Testing CurlConnection::Post()")
     {
-        SECTION("With GetLatestVersion mock")
+        SECTION("With GetLatestVersionBatch mock")
         {
             const std::string url =
-                SFSUrlComponents::GetLatestVersionUrl(server.GetBaseUrl(), c_instanceId, c_namespace);
+                SFSUrlComponents::GetLatestVersionBatchUrl(server.GetBaseUrl(), c_instanceId, c_namespace);
 
             // Missing proper body returns HttpBadRequest
             REQUIRE_THROWS_CODE(connection->Post(url), HttpBadRequest);
@@ -299,9 +299,9 @@ TEST("Testing a response over the limit fails the operation")
     server.RegisterProduct(largeProductName, c_version);
     server.RegisterProduct(overLimitProductName, c_version);
 
-    // Using GetLatestVersion api since the product name is in the body and not in the url, to avoid a 414 error like on
-    // the test above
-    const std::string url = SFSUrlComponents::GetLatestVersionUrl(server.GetBaseUrl(), c_instanceId, c_namespace);
+    // Using GetLatestVersionBatch api since the product name is in the body and not in the url, to avoid a 414 error
+    // like on the test above
+    const std::string url = SFSUrlComponents::GetLatestVersionBatchUrl(server.GetBaseUrl(), c_instanceId, c_namespace);
 
     // Large one works
     json body = {{{"TargetingAttributes", {}}, {"Product", largeProductName}}};

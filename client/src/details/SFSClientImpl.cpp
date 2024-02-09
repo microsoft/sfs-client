@@ -16,6 +16,8 @@
 
 #include <nlohmann/json.hpp>
 
+#include <unordered_set>
+
 #define SFS_INFO(...) LOG_INFO(m_reportingHandler, __VA_ARGS__)
 
 using namespace SFS;
@@ -57,7 +59,7 @@ json ParseServerMethodStringToJson(const std::string& data, const std::string& m
     }
 }
 
-std::unique_ptr<ContentId> GetLatestVersionResponseToContentId(const json& data, const ReportingHandler& handler)
+std::vector<ContentId> GetLatestVersionBatchResponseToContentIds(const json& data, const ReportingHandler& handler)
 {
     // Expected format:
     // [
@@ -71,16 +73,19 @@ std::unique_ptr<ContentId> GetLatestVersionResponseToContentId(const json& data,
     //   ...
     // ]
     //
-    // We only query for one product at a time, so we expect only one result
 
     ThrowInvalidResponseIfFalse(data.is_array(), "Response is not a JSON array", handler);
-    ThrowInvalidResponseIfFalse(data.size() == 1, "Response does not have the expected size", handler);
+    ThrowInvalidResponseIfFalse(data.size() > 0, "Response does not have the expected size", handler);
 
-    const json& firstObj = data[0];
-    ThrowInvalidResponseIfFalse(firstObj.is_object(), "Response is not a JSON object", handler);
-    ThrowInvalidResponseIfFalse(firstObj.contains("ContentId"), "Missing ContentId in response", handler);
+    std::vector<ContentId> contentIds;
+    for (const auto& obj : data)
+    {
+        ThrowInvalidResponseIfFalse(obj.is_object(), "Array element is not a JSON object", handler);
+        ThrowInvalidResponseIfFalse(obj.contains("ContentId"), "Missing ContentId in response", handler);
+        contentIds.push_back(std::move(*ContentIdJsonToObj(obj["ContentId"], handler)));
+    }
 
-    return ContentIdJsonToObj(firstObj["ContentId"], handler);
+    return contentIds;
 }
 
 std::unique_ptr<ContentId> GetSpecificVersionResponseToContentId(const json& data, const ReportingHandler& handler)
@@ -167,38 +172,60 @@ SFSClientImpl<ConnectionManagerT>::SFSClientImpl(ClientConfig&& config)
 }
 
 template <typename ConnectionManagerT>
-std::unique_ptr<ContentId> SFSClientImpl<ConnectionManagerT>::GetLatestVersion(const std::string& productName,
-                                                                               const SearchAttributes& attributes,
-                                                                               Connection& connection) const
+std::vector<ContentId> SFSClientImpl<ConnectionManagerT>::GetLatestVersionBatch(
+    const std::vector<ProductRequest> productRequests,
+    Connection& connection) const
 try
 {
-    const std::string url{SFSUrlComponents::GetLatestVersionUrl(GetBaseUrl(), m_instanceId, m_nameSpace)};
+    const std::string url{SFSUrlComponents::GetLatestVersionBatchUrl(GetBaseUrl(), m_instanceId, m_nameSpace)};
 
-    SFS_INFO("Requesting latest version of [%s] from URL [%s]", productName.c_str(), url.c_str());
+    SFS_INFO("Requesting latest version of multiple products from URL [%s]", url.c_str());
 
-    json targettingAttributes = json::object();
-    for (const auto& [key, value] : attributes)
-    {
-        targettingAttributes[key] = value;
-    }
+    // Creating request body
+    std::unordered_set<std::string> productNames;
     json body = json::array();
-    body.push_back({{"TargetingAttributes", targettingAttributes}, {"Product", productName}});
+    for (const auto& [productName, attributes] : productRequests)
+    {
+        SFS_INFO("Product #%zu: [%s]", body.size() + size_t{1}, productName.c_str());
+        productNames.insert(productName);
+
+        json targettingAttributes = json::object();
+        for (const auto& [key, value] : attributes)
+        {
+            targettingAttributes[key] = value;
+        }
+        body.push_back({{"TargetingAttributes", targettingAttributes}, {"Product", productName}});
+    }
 
     SFS_INFO("Request body [%s]", body.dump().c_str());
 
     const std::string postResponse{connection.Post(url, body.dump())};
 
-    const json versionResponse = ParseServerMethodStringToJson(postResponse, "GetLatestVersion", m_reportingHandler);
+    const json versionResponse =
+        ParseServerMethodStringToJson(postResponse, "GetLatestVersionBatch", m_reportingHandler);
 
-    auto contentId = GetLatestVersionResponseToContentId(versionResponse, m_reportingHandler);
-    THROW_CODE_IF_LOG(ServiceInvalidResponse,
-                      !DoesGetVersionResponseMatchProduct(*contentId, m_nameSpace, productName),
-                      m_reportingHandler,
-                      "(GetLatestVersion) Response does not match the requested product");
+    auto contentIds = GetLatestVersionBatchResponseToContentIds(versionResponse, m_reportingHandler);
 
-    SFS_INFO("Received a response with version %s", contentId->GetVersion().c_str());
+    // Validating responses
+    for (const auto& contentId : contentIds)
+    {
+        THROW_CODE_IF_LOG(ServiceInvalidResponse,
+                          productNames.count(contentId.GetName()) == 0,
+                          m_reportingHandler,
+                          "(GetLatestVersionBatch) Response of product [" + contentId.GetName() +
+                              "] does not match the requested products");
+        THROW_CODE_IF_LOG(ServiceInvalidResponse,
+                          AreNotEqualI(contentId.GetNameSpace(), m_nameSpace),
+                          m_reportingHandler,
+                          "(GetLatestVersionBatch) Response of product [" + contentId.GetName() +
+                              "] does not match the requested namespace");
 
-    return contentId;
+        SFS_INFO("Received a response for product [%s] with version %s",
+                 contentId.GetName().c_str(),
+                 contentId.GetVersion().c_str());
+    }
+
+    return contentIds;
 }
 SFS_CATCH_LOG_RETHROW(m_reportingHandler)
 

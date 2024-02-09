@@ -47,34 +47,35 @@ TEST("Testing class SFSClientImpl()")
 
     auto connection = sfsClient.GetConnectionManager().MakeConnection();
 
-    SECTION("Testing SFSClientImpl::GetLatestVersion()")
+    SECTION("Testing SFSClientImpl::GetLatestVersionBatch()")
     {
-        std::unique_ptr<ContentId> contentId;
+        std::vector<ContentId> contentIds;
 
         SECTION("No attributes")
         {
-            REQUIRE_NOTHROW(contentId = sfsClient.GetLatestVersion("productName", {}, *connection));
-            REQUIRE(contentId);
-            CheckProduct(*contentId, ns, "productName", "0.0.0.2");
+            REQUIRE_NOTHROW(contentIds = sfsClient.GetLatestVersionBatch({{"productName", {}}}, *connection));
+            REQUIRE(!contentIds.empty());
+            CheckProduct(contentIds[0], ns, "productName", "0.0.0.2");
         }
 
         SECTION("With attributes")
         {
             const SearchAttributes attributes{{"attr1", "value"}};
-            REQUIRE_NOTHROW(contentId = sfsClient.GetLatestVersion("productName", attributes, *connection));
-            REQUIRE(contentId);
-            CheckProduct(*contentId, ns, "productName", "0.0.0.2");
+            REQUIRE_NOTHROW(contentIds = sfsClient.GetLatestVersionBatch({{"productName", attributes}}, *connection));
+            REQUIRE(!contentIds.empty());
+            CheckProduct(contentIds[0], ns, "productName", "0.0.0.2");
         }
 
         SECTION("Wrong product name")
         {
-            REQUIRE_THROWS_CODE(contentId = sfsClient.GetLatestVersion("badName", {}, *connection), HttpNotFound);
-            REQUIRE(!contentId);
+            REQUIRE_THROWS_CODE(contentIds = sfsClient.GetLatestVersionBatch({{"badName", {}}}, *connection),
+                                HttpNotFound);
+            REQUIRE(contentIds.empty());
 
             const SearchAttributes attributes{{"attr1", "value"}};
-            REQUIRE_THROWS_CODE(contentId = sfsClient.GetLatestVersion("badName", attributes, *connection),
+            REQUIRE_THROWS_CODE(contentIds = sfsClient.GetLatestVersionBatch({{"badName", attributes}}, *connection),
                                 HttpNotFound);
-            REQUIRE(!contentId);
+            REQUIRE(contentIds.empty());
         }
     }
 
