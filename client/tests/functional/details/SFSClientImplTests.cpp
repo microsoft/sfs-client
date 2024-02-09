@@ -96,12 +96,6 @@ TEST("Testing class SFSClientImpl()")
             REQUIRE_THROWS_CODE(contentIds = sfsClient.GetLatestVersionBatch({{"badName", attributes}}, *connection),
                                 HttpNotFound);
             REQUIRE(contentIds.empty());
-
-            REQUIRE_THROWS_CODE(
-                contentIds =
-                    sfsClient.GetLatestVersionBatch({{"badName", attributes}, {"badName2", attributes}}, *connection),
-                HttpNotFound);
-            REQUIRE(contentIds.empty());
         }
 
         SECTION("Multiple unique products")
@@ -138,6 +132,22 @@ TEST("Testing class SFSClientImpl()")
                                 *connection));
             REQUIRE(contentIds.size() == 2);
             CheckProducts(contentIds, ns, {{"productName", "0.0.0.2"}, {"productName2", "0.0.0.3"}});
+        }
+
+        SECTION("Multiple wrong products returns 404")
+        {
+            REQUIRE_THROWS_CODE(contentIds =
+                                    sfsClient.GetLatestVersionBatch({{"badName", {}}, {"badName2", {}}}, *connection),
+                                HttpNotFound);
+            REQUIRE(contentIds.empty());
+        }
+
+        SECTION("Multiple products, one wrong returns 200")
+        {
+            REQUIRE_NOTHROW(contentIds =
+                                sfsClient.GetLatestVersionBatch({{"productName", {}}, {"badName", {}}}, *connection));
+            REQUIRE(contentIds.size() == 1);
+            CheckProduct(contentIds[0], ns, "productName", "0.0.0.2");
         }
     }
 

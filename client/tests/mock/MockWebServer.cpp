@@ -356,14 +356,15 @@ void MockWebServerImpl::ConfigurePostLatestVersionBatch()
             requestedProducts.emplace(productRequest["Product"], productRequest["TargetingAttributes"]);
         }
 
+        // If at least one product exists, we will return a 200 OK with that. Non-existing products are ignored.
+        // Otherwise, a 404 is sent.
         json response = json::array();
         for (const auto& [name, _] : requestedProducts)
         {
             auto it = m_products.find(name);
             if (it == m_products.end())
             {
-                res.status = static_cast<int>(StatusCode::NotFound);
-                return;
+                continue;
             }
 
             const VersionList& versions = it->second;
@@ -378,6 +379,12 @@ void MockWebServerImpl::ConfigurePostLatestVersionBatch()
 
             res.status = static_cast<int>(StatusCode::Ok);
             response.push_back(GeneratePostLatestVersionBatchElementResponse(name, latestVersion, ns));
+        }
+
+        if (response.empty())
+        {
+            res.status = static_cast<int>(StatusCode::NotFound);
+            return;
         }
 
         res.set_content(response.dump(), "application/json");
