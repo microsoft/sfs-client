@@ -1,0 +1,14 @@
+name: Build
+
+on:
+  push:
+    branches: [ "main" ]
+
+# Jobs are on separate files so we can get badges for each
+
+jobs:
+  build-windows:
+    uses: ./.github/workflows/main/build-windows
+
+  build-ubuntu:
+    uses: ./.github/workflows/main/build-ubuntu
