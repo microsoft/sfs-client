@@ -46,7 +46,6 @@ TEST("Testing ApplicabilityDetails::Make()")
             };
 
             CompareDetailsEqual(GetDetails(architectures, platformApplicabilityForPackage, fileMoniker));
-            CompareDetailsEqual(GetDetails(architectures, platformApplicabilityForPackage, "MYAPP"));
         }
 
         SECTION("Not equal")
@@ -60,6 +59,7 @@ TEST("Testing ApplicabilityDetails::Make()")
             CompareDetailsNotEqual(GetDetails(architectures, {}, fileMoniker));
             CompareDetailsNotEqual(GetDetails(architectures, platformApplicabilityForPackage, ""));
             CompareDetailsNotEqual(GetDetails({}, {}, ""));
+            CompareDetailsNotEqual(GetDetails(architectures, platformApplicabilityForPackage, "MYAPP"));
         }
     }
 }

@@ -4,10 +4,8 @@
 #include "ApplicabilityDetails.h"
 
 #include "details/ErrorHandling.h"
-#include "details/Util.h"
 
 using namespace SFS;
-using namespace SFS::details::util;
 
 Result ApplicabilityDetails::Make(std::vector<Architecture> architectures,
                                   std::vector<std::string> platformApplicabilityForPackage,
@@ -45,9 +43,10 @@ const std::string& ApplicabilityDetails::GetFileMoniker() const noexcept
 
 bool ApplicabilityDetails::operator==(const ApplicabilityDetails& other) const noexcept
 {
+    // String characters can be UTF-8 encoded, so we need to compare them in a case-sensitive manner.
     return m_architectures == other.m_architectures &&
            m_platformApplicabilityForPackage == other.m_platformApplicabilityForPackage &&
-           AreEqualI(m_fileMoniker, other.m_fileMoniker);
+           m_fileMoniker == other.m_fileMoniker;
 }
 
 bool ApplicabilityDetails::operator!=(const ApplicabilityDetails& other) const noexcept

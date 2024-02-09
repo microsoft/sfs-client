@@ -67,9 +67,6 @@ TEST("Testing ContentId::Make()")
             };
 
             CompareContentIdEqual(GetContentId(nameSpace, name, version));
-            CompareContentIdEqual(GetContentId("MYNAMESPACE", name, version));
-            CompareContentIdEqual(GetContentId(nameSpace, "MYNAME", version));
-            CompareContentIdEqual(GetContentId(nameSpace, name, "MYVERSION"));
         }
 
         SECTION("Not equal")
@@ -83,6 +80,9 @@ TEST("Testing ContentId::Make()")
             CompareContentIdNotEqual(GetContentId(nameSpace, "", version));
             CompareContentIdNotEqual(GetContentId(nameSpace, name, ""));
             CompareContentIdNotEqual(GetContentId("", "", ""));
+            CompareContentIdNotEqual(GetContentId("MYNAMESPACE", name, version));
+            CompareContentIdNotEqual(GetContentId(nameSpace, "MYNAME", version));
+            CompareContentIdNotEqual(GetContentId(nameSpace, name, "MYVERSION"));
         }
     }
 }
@@ -111,8 +111,6 @@ TEST("Testing File::Make()")
             };
 
             CompareFileEqual(GetFile(fileId, url, sizeInBytes, hashes));
-            CompareFileEqual(GetFile("MYFILEID", url, sizeInBytes, hashes));
-            CompareFileEqual(GetFile(fileId, "MYURL", sizeInBytes, hashes));
         }
 
         SECTION("Not equal")
@@ -127,6 +125,8 @@ TEST("Testing File::Make()")
             CompareFileNotEqual(GetFile(fileId, url, 0, hashes));
             CompareFileNotEqual(GetFile(fileId, url, sizeInBytes, {}));
             CompareFileNotEqual(GetFile("", "", 0, {}));
+            CompareFileNotEqual(GetFile("MYFILEID", url, sizeInBytes, hashes));
+            CompareFileNotEqual(GetFile(fileId, "MYURL", sizeInBytes, hashes));
         }
     }
 }
@@ -232,9 +232,6 @@ TEST("Testing Content equality operators")
 
         CompareContentEqual(GetContent(contentNameSpace, contentName, contentVersion, files));
         CompareContentEqual(GetContent(contentNameSpace, contentName, contentVersion, clonedFiles));
-        CompareContentEqual(GetContent("MYNAMESPACE", contentName, contentVersion, files));
-        CompareContentEqual(GetContent(contentNameSpace, "MYNAME", contentVersion, files));
-        CompareContentEqual(GetContent(contentNameSpace, contentName, "MYVERSION", files));
     }
 
     SECTION("Not equal")
@@ -249,5 +246,8 @@ TEST("Testing Content equality operators")
         CompareContentNotEqual(GetContent(contentNameSpace, contentName, "", files));
         CompareContentNotEqual(GetContent(contentNameSpace, contentName, contentVersion, {}));
         CompareContentNotEqual(GetContent("", "", "", {}));
+        CompareContentNotEqual(GetContent("MYNAMESPACE", contentName, contentVersion, files));
+        CompareContentNotEqual(GetContent(contentNameSpace, "MYNAME", contentVersion, files));
+        CompareContentNotEqual(GetContent(contentNameSpace, contentName, "MYVERSION", files));
     }
 }

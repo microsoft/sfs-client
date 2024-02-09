@@ -41,7 +41,14 @@ class ContentId
      */
     const std::string& GetVersion() const noexcept;
 
+    /**
+     * @brief Compares two ContentId objects for equality. The values of members are strictly compared.
+     */
     bool operator==(const ContentId& other) const noexcept;
+
+    /**
+     * @brief Compares two ContentId objects for inequality. The values of members are strictly compared.
+     */
     bool operator!=(const ContentId& other) const noexcept;
 
   private:
@@ -92,7 +99,14 @@ class File
      */
     const std::unordered_map<HashType, std::string>& GetHashes() const noexcept;
 
+    /**
+     * @brief Compares two File objects for equality. The values of members are strictly compared.
+     */
     bool operator==(const File& other) const noexcept;
+
+    /**
+     * @brief Compares two File objects for inequality. The values of members are strictly compared.
+     */
     bool operator!=(const File& other) const noexcept;
 
   private:
@@ -146,7 +160,14 @@ class Content
 
     const std::vector<File>& GetFiles() const noexcept;
 
+    /**
+     * @brief Compares two Content objects for equality. The values of members are strictly compared.
+     */
     bool operator==(const Content& other) const noexcept;
+
+    /**
+     * @brief Compares two Content objects for inequality. The values of members are strictly compared.
+     */
     bool operator!=(const Content& other) const noexcept;
 
   private:
