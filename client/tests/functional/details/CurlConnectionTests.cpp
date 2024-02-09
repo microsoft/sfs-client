@@ -64,8 +64,7 @@ class CurlConnectionTimeout : public CurlConnection
 class CurlConnectionTimeoutManager : public CurlConnectionManager
 {
   public:
-    [[nodiscard]] static Result CurlConnectionTimeoutManager::Make(const ReportingHandler& handler,
-                                                                   std::unique_ptr<ConnectionManager>& out)
+    [[nodiscard]] static Result Make(const ReportingHandler& handler, std::unique_ptr<ConnectionManager>& out)
     {
         auto tmp = std::unique_ptr<CurlConnectionTimeoutManager>(new CurlConnectionTimeoutManager(handler));
         REQUIRE(tmp->SetupCurl());
