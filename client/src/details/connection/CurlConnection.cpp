@@ -9,16 +9,16 @@
 
 #include <cstring>
 
-#define RETURN_IF_CURL_ERROR(curlCall, error)                                                                          \
+#define THROW_IF_CURL_ERROR(curlCall, error)                                                                           \
     do                                                                                                                 \
     {                                                                                                                  \
         auto __curlCode = (curlCall);                                                                                  \
         std::string __message = "Curl error: " + std::string(curl_easy_strerror(__curlCode));                          \
-        RETURN_CODE_IF_LOG(error, __curlCode != CURLE_OK, m_handler, std::move(__message));                            \
+        THROW_CODE_IF_LOG(error, __curlCode != CURLE_OK, m_handler, std::move(__message));                             \
     } while ((void)0, 0)
 
-#define RETURN_IF_CURL_SETUP_ERROR(curlCall) RETURN_IF_CURL_ERROR(curlCall, ConnectionSetupFailed)
-#define RETURN_IF_CURL_UNEXPECTED_ERROR(curlCall) RETURN_IF_CURL_ERROR(curlCall, ConnectionUnexpectedError)
+#define THROW_IF_CURL_SETUP_ERROR(curlCall) THROW_IF_CURL_ERROR(curlCall, ConnectionSetupFailed)
+#define THROW_IF_CURL_UNEXPECTED_ERROR(curlCall) THROW_IF_CURL_ERROR(curlCall, ConnectionUnexpectedError)
 
 // Setting a hard limit of 100k characters for the response to avoid rogue servers sending huge amounts of data
 #define MAX_RESPONSE_CHARACTERS 100000
@@ -77,16 +77,18 @@ struct CurlHeaderList
         curl_slist_free_all(m_slist);
     }
 
-    [[nodiscard]] Result Add(HttpHeader header, const std::string& value)
+    /**
+     * @throws SFSException if the header cannot be added to the list.
+     */
+    void Add(HttpHeader header, const std::string& value)
     {
         const std::string data = ToString(header) + ": " + value;
         const auto ret = curl_slist_append(m_slist, data.c_str());
         if (!ret)
         {
-            return Result(Result::ConnectionSetupFailed, "Failed to add header to CurlHeaderList");
+            throw SFSException(Result::ConnectionSetupFailed, "Failed to add header " + data + " to CurlHeaderList");
         }
         m_slist = ret;
-        return Result::Success;
     }
 
     struct curl_slist* m_slist{nullptr};
@@ -211,57 +213,53 @@ CurlConnection::~CurlConnection()
     }
 }
 
-Result CurlConnection::Get(const std::string& url, std::string& response)
+std::string CurlConnection::Get(const std::string& url)
 {
-    RETURN_CODE_IF_LOG(InvalidArg, url.empty(), m_handler, "url cannot be empty");
+    THROW_CODE_IF_LOG(InvalidArg, url.empty(), m_handler, "url cannot be empty");
 
-    RETURN_IF_CURL_SETUP_ERROR(curl_easy_setopt(m_handle, CURLOPT_HTTPGET, 1L));
-    RETURN_IF_CURL_SETUP_ERROR(curl_easy_setopt(m_handle, CURLOPT_HTTPHEADER, nullptr));
+    THROW_IF_CURL_SETUP_ERROR(curl_easy_setopt(m_handle, CURLOPT_HTTPGET, 1L));
+    THROW_IF_CURL_SETUP_ERROR(curl_easy_setopt(m_handle, CURLOPT_HTTPHEADER, nullptr));
 
-    RETURN_IF_FAILED_LOG(CurlPerform(url, response), m_handler);
-
-    return Result::Success;
+    return CurlPerform(url);
 }
 
-Result CurlConnection::Post(const std::string& url, const std::string& data, std::string& response)
+std::string CurlConnection::Post(const std::string& url, const std::string& data)
 {
-    RETURN_CODE_IF_LOG(InvalidArg, url.empty(), m_handler, "url cannot be empty");
+    THROW_CODE_IF_LOG(InvalidArg, url.empty(), m_handler, "url cannot be empty");
 
     CurlHeaderList headerList;
-    RETURN_IF_FAILED_LOG(headerList.Add(HttpHeader::ContentType, "application/json"), m_handler);
+    headerList.Add(HttpHeader::ContentType, "application/json");
 
-    RETURN_IF_CURL_SETUP_ERROR(curl_easy_setopt(m_handle, CURLOPT_POST, 1L));
-    RETURN_IF_CURL_SETUP_ERROR(curl_easy_setopt(m_handle, CURLOPT_COPYPOSTFIELDS, data.c_str()));
-    RETURN_IF_CURL_SETUP_ERROR(curl_easy_setopt(m_handle, CURLOPT_HTTPHEADER, headerList.m_slist));
+    THROW_IF_CURL_SETUP_ERROR(curl_easy_setopt(m_handle, CURLOPT_POST, 1L));
+    THROW_IF_CURL_SETUP_ERROR(curl_easy_setopt(m_handle, CURLOPT_COPYPOSTFIELDS, data.c_str()));
+    THROW_IF_CURL_SETUP_ERROR(curl_easy_setopt(m_handle, CURLOPT_HTTPHEADER, headerList.m_slist));
 
-    RETURN_IF_FAILED_LOG(CurlPerform(url, response), m_handler);
-
-    return Result::Success;
+    return CurlPerform(url);
 }
 
-Result CurlConnection::CurlPerform(const std::string& url, std::string& response)
+std::string CurlConnection::CurlPerform(const std::string& url)
 {
-    RETURN_IF_CURL_SETUP_ERROR(curl_easy_setopt(m_handle, CURLOPT_URL, url.c_str()));
+    THROW_IF_CURL_SETUP_ERROR(curl_easy_setopt(m_handle, CURLOPT_URL, url.c_str()));
 
     // Setting up error buffer where error messages get written - this gets unset in the destructor
     CurlErrorBuffer errorBuffer(m_handle, m_handler);
 
     std::string readBuffer;
-    RETURN_IF_CURL_SETUP_ERROR(curl_easy_setopt(m_handle, CURLOPT_WRITEFUNCTION, WriteCallback));
-    RETURN_IF_CURL_SETUP_ERROR(curl_easy_setopt(m_handle, CURLOPT_WRITEDATA, &readBuffer));
+    THROW_IF_CURL_SETUP_ERROR(curl_easy_setopt(m_handle, CURLOPT_WRITEFUNCTION, WriteCallback));
+    THROW_IF_CURL_SETUP_ERROR(curl_easy_setopt(m_handle, CURLOPT_WRITEDATA, &readBuffer));
 
     auto result = curl_easy_perform(m_handle);
     if (result != CURLE_OK)
     {
-        return CurlCodeToResult(result, errorBuffer.Get());
+        throw SFSException(CurlCodeToResult(result, errorBuffer.Get()));
     }
-
-    response = std::move(readBuffer);
 
     // TODO #43: perform retry logic according to response errors
     // The retry logic should also be opt-out-able by the user
 
     long httpCode = 0;
-    RETURN_IF_CURL_UNEXPECTED_ERROR(curl_easy_getinfo(m_handle, CURLINFO_RESPONSE_CODE, &httpCode));
-    return HttpCodeToResult(httpCode);
+    THROW_IF_CURL_UNEXPECTED_ERROR(curl_easy_getinfo(m_handle, CURLINFO_RESPONSE_CODE, &httpCode));
+    THROW_IF_FAILED_LOG(HttpCodeToResult(httpCode), m_handler);
+
+    return readBuffer;
 }

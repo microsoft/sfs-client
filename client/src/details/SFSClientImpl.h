@@ -30,6 +30,7 @@ class SFSClientImpl : public SFSClientInterface
     /**
      * @brief Gets the metadata for the latest available version for the specified product that matches the optional
      * request attributes
+     * @throws SFSException if the request fails
      */
     [[nodiscard]] Result GetLatestVersion(const std::string& productName,
                                           const SearchAttributes& attributes,
@@ -38,6 +39,7 @@ class SFSClientImpl : public SFSClientInterface
 
     /**
      * @brief Gets the metadata for a specific version of the specified product
+     * @throws SFSException if the request fails
      */
     [[nodiscard]] Result GetSpecificVersion(const std::string& productName,
                                             const std::string& version,
@@ -46,6 +48,7 @@ class SFSClientImpl : public SFSClientInterface
 
     /**
      * @brief Gets the files metadata for a specific version of the specified product
+     * @throws SFSException if the request fails
      */
     [[nodiscard]] Result GetDownloadInfo(const std::string& productName,
                                          const std::string& version,

@@ -10,7 +10,7 @@ Connection::Connection(const ReportingHandler& handler) : m_handler(handler)
 {
 }
 
-Result Connection::Post(const std::string& url, std::string& response)
+std::string Connection::Post(const std::string& url)
 {
-    return Post(url, {}, response);
+    return Post(url, {});
 }

@@ -14,12 +14,12 @@ MockConnection::~MockConnection()
 {
 }
 
-Result MockConnection::Get(const std::string&, std::string&)
+std::string MockConnection::Get(const std::string&)
 {
-    return Result::Success;
+    return {};
 }
 
-Result MockConnection::Post(const std::string&, const std::string&, std::string&)
+std::string MockConnection::Post(const std::string&, const std::string&)
 {
-    return Result::Success;
+    return {};
 }

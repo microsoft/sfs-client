@@ -24,6 +24,17 @@
         return Result::Unexpected;                                                                                     \
     }
 
+#define SFS_CATCH_LOG_RETHROW(handler)                                                                                 \
+    catch (const SFS::details::SFSException& e)                                                                        \
+    {                                                                                                                  \
+        SFS::details::LogFailedResult(handler, e.GetResult(), __FILE__, __LINE__);                                     \
+        throw;                                                                                                         \
+    }                                                                                                                  \
+    catch (...)                                                                                                        \
+    {                                                                                                                  \
+        throw;                                                                                                         \
+    }
+
 #define RETURN_IF_FAILED(result)                                                                                       \
     do                                                                                                                 \
     {                                                                                                                  \
@@ -73,6 +84,17 @@
             auto __result = SFS::Result(SFS::Result::code, ##__VA_ARGS__);                                             \
             SFS::details::LogFailedResult(handler, __result, __FILE__, __LINE__);                                      \
             return __result;                                                                                           \
+        }                                                                                                              \
+    } while ((void)0, 0)
+
+#define THROW_IF_FAILED_LOG(result, handler, ...)                                                                      \
+    do                                                                                                                 \
+    {                                                                                                                  \
+        auto __result = (result); /* Assigning to a variable ensures a code block gets called only once */             \
+        if (__result.IsFailure())                                                                                      \
+        {                                                                                                              \
+            SFS::details::LogFailedResult(handler, __result, __FILE__, __LINE__);                                      \
+            throw SFS::details::SFSException(__result);                                                                \
         }                                                                                                              \
     } while ((void)0, 0)
 

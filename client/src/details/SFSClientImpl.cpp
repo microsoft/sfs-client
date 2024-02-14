@@ -239,6 +239,7 @@ Result SFSClientImpl<ConnectionManagerT>::GetLatestVersion(const std::string& pr
                                                            const SearchAttributes& attributes,
                                                            Connection& connection,
                                                            std::unique_ptr<ContentId>& contentId) const
+try
 {
     const std::string url{SFSUrlComponents::GetLatestVersionUrl(GetBaseUrl(), m_instanceId, m_nameSpace)};
 
@@ -254,8 +255,7 @@ Result SFSClientImpl<ConnectionManagerT>::GetLatestVersion(const std::string& pr
 
     SFS_INFO("Request body [%s]", body.dump().c_str());
 
-    std::string out;
-    SFS_RETURN_IF_FAILED(connection.Post(url, body.dump(), out));
+    const std::string out = connection.Post(url, body.dump());
 
     json response;
     SFS_RETURN_IF_FAILED(ParseServerMethodStringToJson(out, "GetLatestVersion", response));
@@ -273,20 +273,21 @@ Result SFSClientImpl<ConnectionManagerT>::GetLatestVersion(const std::string& pr
 
     return Result::Success;
 }
+SFS_CATCH_LOG_RETHROW(m_reportingHandler)
 
 template <typename ConnectionManagerT>
 Result SFSClientImpl<ConnectionManagerT>::GetSpecificVersion(const std::string& productName,
                                                              const std::string& version,
                                                              Connection& connection,
                                                              std::unique_ptr<ContentId>& contentId) const
+try
 {
     const std::string url{
         SFSUrlComponents::GetSpecificVersionUrl(GetBaseUrl(), m_instanceId, m_nameSpace, productName, version)};
 
     SFS_INFO("Requesting version [%s] of [%s] from URL [%s]", version.c_str(), productName.c_str(), url.c_str());
 
-    std::string out;
-    SFS_RETURN_IF_FAILED(connection.Get(url, out));
+    const std::string out = connection.Get(url);
 
     json response;
     SFS_RETURN_IF_FAILED(ParseServerMethodStringToJson(out, "GetSpecificVersion", response));
@@ -304,12 +305,14 @@ Result SFSClientImpl<ConnectionManagerT>::GetSpecificVersion(const std::string& 
 
     return Result::Success;
 }
+SFS_CATCH_LOG_RETHROW(m_reportingHandler)
 
 template <typename ConnectionManagerT>
 Result SFSClientImpl<ConnectionManagerT>::GetDownloadInfo(const std::string& productName,
                                                           const std::string& version,
                                                           Connection& connection,
                                                           std::vector<File>& files) const
+try
 {
     const std::string url{
         SFSUrlComponents::GetDownloadInfoUrl(GetBaseUrl(), m_instanceId, m_nameSpace, productName, version)};
@@ -319,8 +322,7 @@ Result SFSClientImpl<ConnectionManagerT>::GetDownloadInfo(const std::string& pro
              productName.c_str(),
              url.c_str());
 
-    std::string out;
-    SFS_RETURN_IF_FAILED(connection.Post(url, out));
+    const std::string out = connection.Post(url);
 
     json response;
     SFS_RETURN_IF_FAILED(ParseServerMethodStringToJson(out, "GetDownloadInfo", response));
@@ -334,6 +336,7 @@ Result SFSClientImpl<ConnectionManagerT>::GetDownloadInfo(const std::string& pro
 
     return Result::Success;
 }
+SFS_CATCH_LOG_RETHROW(m_reportingHandler)
 
 template <typename ConnectionManagerT>
 ConnectionManager& SFSClientImpl<ConnectionManagerT>::GetConnectionManager()

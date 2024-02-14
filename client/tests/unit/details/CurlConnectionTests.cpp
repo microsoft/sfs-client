@@ -1,8 +1,10 @@
 // Copyright (c) Microsoft Corporation.
 // Licensed under the MIT License.
 
+#include "../../util/SFSExceptionMatcher.h"
 #include "../../util/TestHelper.h"
 #include "ReportingHandler.h"
+#include "Result.h"
 #include "connection/CurlConnection.h"
 
 #include <catch2/catch_test_macros.hpp>
@@ -28,13 +30,13 @@ class MockCurlConnection : public CurlConnection
     }
 
   protected:
-    [[nodiscard]] Result CurlPerform(const std::string&, std::string& response) override
+    std::string CurlPerform(const std::string&) override
     {
         if (m_responseCode == Result::Success)
         {
-            response = m_response;
+            return m_response;
         }
-        return m_responseCode;
+        throw SFSException(m_responseCode);
     }
 
   private:
@@ -54,30 +56,30 @@ TEST("Testing CurlConnection()")
     SECTION("Testing CurlConnection::Get()")
     {
         std::string out;
-        REQUIRE(connection->Get("url", out) == responseCode);
+        REQUIRE_THROWS_CODE(out = connection->Get("url"), HttpNotFound);
         REQUIRE(out.empty());
 
         responseCode = Result::Success;
-        REQUIRE(connection->Get("url", out) == responseCode);
+        REQUIRE_NOTHROW(out = connection->Get("url"));
         REQUIRE(out == response);
     }
 
     SECTION("Testing CurlConnection::Post()")
     {
         std::string out;
-        REQUIRE(connection->Post("url", out) == responseCode);
+        REQUIRE_THROWS_CODE(out = connection->Post("url"), HttpNotFound);
         REQUIRE(out.empty());
 
         const json body = {{{"dummy", {}}}};
-        REQUIRE(connection->Post("url", body.dump(), out) == responseCode);
+        REQUIRE_THROWS_CODE(out = connection->Post("url", body.dump()), HttpNotFound);
         REQUIRE(out.empty());
 
         responseCode = Result::Success;
-        REQUIRE(connection->Get("url", out) == responseCode);
+        REQUIRE_NOTHROW(out = connection->Get("url"));
         REQUIRE(out == response);
 
         response.clear();
-        REQUIRE(connection->Post("url", body.dump(), out) == responseCode);
+        REQUIRE_NOTHROW(out = connection->Post("url", body.dump()));
         REQUIRE(out == response);
     }
 }
