@@ -255,7 +255,7 @@ try
 
     SFS_INFO("Request body [%s]", body.dump().c_str());
 
-    const std::string out = connection.Post(url, body.dump());
+    const std::string out{connection.Post(url, body.dump())};
 
     json response;
     SFS_RETURN_IF_FAILED(ParseServerMethodStringToJson(out, "GetLatestVersion", response));
@@ -287,7 +287,7 @@ try
 
     SFS_INFO("Requesting version [%s] of [%s] from URL [%s]", version.c_str(), productName.c_str(), url.c_str());
 
-    const std::string out = connection.Get(url);
+    const std::string out{connection.Get(url)};
 
     json response;
     SFS_RETURN_IF_FAILED(ParseServerMethodStringToJson(out, "GetSpecificVersion", response));
@@ -322,7 +322,7 @@ try
              productName.c_str(),
              url.c_str());
 
-    const std::string out = connection.Post(url);
+    const std::string out{connection.Post(url)};
 
     json response;
     SFS_RETURN_IF_FAILED(ParseServerMethodStringToJson(out, "GetDownloadInfo", response));
