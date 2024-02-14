@@ -29,6 +29,7 @@ target_sources(
             unit/details/TestOverrideTests.cpp
             unit/ResultTests.cpp
             unit/SFSClientTests.cpp
+            util/SFSExceptionMatcher.cpp
             util/TestHelper.cpp)
 
 set(SFS_CLIENT_LIB_NAME "Microsoft::${CMAKE_PROJECT_NAME}")
