@@ -251,7 +251,7 @@ std::string CurlConnection::CurlPerform(const std::string& url)
     auto result = curl_easy_perform(m_handle);
     if (result != CURLE_OK)
     {
-        throw SFSException(CurlCodeToResult(result, errorBuffer.Get()));
+        THROW_LOG(CurlCodeToResult(result, errorBuffer.Get()), m_handler);
     }
 
     // TODO #43: perform retry logic according to response errors

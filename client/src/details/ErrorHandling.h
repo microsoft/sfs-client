@@ -87,7 +87,15 @@
         }                                                                                                              \
     } while ((void)0, 0)
 
-#define THROW_IF_FAILED_LOG(result, handler, ...)                                                                      \
+#define THROW_LOG(result, handler)                                                                                     \
+    do                                                                                                                 \
+    {                                                                                                                  \
+        auto __result = (result); /* Assigning to a variable ensures a code block gets called only once */             \
+        SFS::details::LogFailedResult(handler, __result, __FILE__, __LINE__);                                          \
+        throw SFS::details::SFSException(__result);                                                                    \
+    } while ((void)0, 0)
+
+#define THROW_IF_FAILED_LOG(result, handler)                                                                           \
     do                                                                                                                 \
     {                                                                                                                  \
         auto __result = (result); /* Assigning to a variable ensures a code block gets called only once */             \
