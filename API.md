@@ -38,4 +38,3 @@ If a logging callback is set in a multi-threaded environment, and the same `SFSC
 
 A few data types are provided which abstract contents that can be sent by the SFS Service, such as `Content`, `ContentId`, `File`, `DeliveryOptimizationData`.
 These data types provide `noexcept` methods to interact with member data.
-They also provide comparison methods that allows one to check if an object is exactly the same as another one. The purpose of these comparisons is to ensure a recently-obtained piece of data is the same as another. As such, string comparisons of members are case-sensitive. If the server changes representation of internal data, the Content will no longer be considered equal.
