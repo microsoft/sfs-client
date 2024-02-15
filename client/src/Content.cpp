@@ -140,7 +140,7 @@ try
     {
         std::unique_ptr<File> clone;
         RETURN_IF_FAILED(file.Clone(clone));
-        tmp->m_files.push_back(std::move(*clone.release()));
+        tmp->m_files.push_back(std::move(*clone));
     }
 
     out = std::move(tmp);

@@ -143,8 +143,8 @@ TEST_SCENARIO("Testing Content::Make()")
         std::unique_ptr<File> file2 = GetFile("fileId2", "url2", 1 /*sizeInBytes*/, {{HashType::Sha256, "sha256"}});
 
         std::vector<File> files;
-        files.push_back(std::move(*file1.release()));
-        files.push_back(std::move(*file2.release()));
+        files.push_back(std::move(*file1));
+        files.push_back(std::move(*file2));
 
         // Getting raw pointers to check they don't match after copy but match after move
         std::vector<File*> filePointers;
@@ -215,10 +215,10 @@ TEST("Testing Content equality operators")
     REQUIRE(file->Clone(clonedFile) == Result::Success);
 
     std::vector<File> files;
-    files.push_back(std::move(*file.release()));
+    files.push_back(std::move(*file));
 
     std::vector<File> clonedFiles;
-    clonedFiles.push_back(std::move(*clonedFile.release()));
+    clonedFiles.push_back(std::move(*clonedFile));
 
     const std::unique_ptr<Content> content = GetContent(contentNameSpace, contentName, contentVersion, files);
 

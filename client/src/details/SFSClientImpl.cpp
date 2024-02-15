@@ -201,7 +201,7 @@ Result GetDownloadInfoResponseToFileVector(const nlohmann::json& data, std::vect
 
         std::unique_ptr<File> file;
         RETURN_IF_FAILED(FileJsonToObj(fileData, file));
-        tmp.push_back(std::move(*file.release()));
+        tmp.push_back(std::move(*file));
     }
 
     out = std::move(tmp);
