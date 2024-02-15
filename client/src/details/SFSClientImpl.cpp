@@ -52,7 +52,7 @@ json ParseServerMethodStringToJson(const std::string& data, const std::string& m
     }
 }
 
-std::unique_ptr<ContentId> ContentIdJsonToObj(const nlohmann::json& contentId, const ReportingHandler& handler)
+std::unique_ptr<ContentId> ContentIdJsonToObj(const json& contentId, const ReportingHandler& handler)
 {
     THROW_INVALID_RESPONSE_IF_FALSE(contentId.is_object(), "ContentId is not a JSON object", handler);
 
@@ -76,8 +76,7 @@ std::unique_ptr<ContentId> ContentIdJsonToObj(const nlohmann::json& contentId, c
     return tmp;
 }
 
-std::unique_ptr<ContentId> GetLatestVersionResponseToContentId(const nlohmann::json& data,
-                                                               const ReportingHandler& handler)
+std::unique_ptr<ContentId> GetLatestVersionResponseToContentId(const json& data, const ReportingHandler& handler)
 {
     // Expected format:
     // [
@@ -103,8 +102,7 @@ std::unique_ptr<ContentId> GetLatestVersionResponseToContentId(const nlohmann::j
     return ContentIdJsonToObj(firstObj["ContentId"], handler);
 }
 
-std::unique_ptr<ContentId> GetSpecificVersionResponseToContentId(const nlohmann::json& data,
-                                                                 const ReportingHandler& handler)
+std::unique_ptr<ContentId> GetSpecificVersionResponseToContentId(const json& data, const ReportingHandler& handler)
 {
     // Expected format:
     // {
@@ -142,7 +140,7 @@ HashType HashTypeFromString(const std::string& hashType, const ReportingHandler&
     }
 }
 
-std::unique_ptr<File> FileJsonToObj(const nlohmann::json& file, const ReportingHandler& handler)
+std::unique_ptr<File> FileJsonToObj(const json& file, const ReportingHandler& handler)
 {
     THROW_INVALID_RESPONSE_IF_FALSE(file.is_object(), "File is not a JSON object", handler);
 
@@ -175,7 +173,7 @@ std::unique_ptr<File> FileJsonToObj(const nlohmann::json& file, const ReportingH
     return tmp;
 }
 
-std::vector<File> GetDownloadInfoResponseToFileVector(const nlohmann::json& data, const ReportingHandler& handler)
+std::vector<File> GetDownloadInfoResponseToFileVector(const json& data, const ReportingHandler& handler)
 {
     // Expected format:
     // [
