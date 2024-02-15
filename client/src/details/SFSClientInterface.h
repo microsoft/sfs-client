@@ -32,27 +32,27 @@ class SFSClientInterface
      * @return ContentId for the latest version of the product
      * @throws SFSException if the request fails
      */
-    [[nodiscard]] virtual std::unique_ptr<ContentId> GetLatestVersion(const std::string& productName,
-                                                                      const SearchAttributes& attributes,
-                                                                      Connection& connection) const = 0;
+    virtual std::unique_ptr<ContentId> GetLatestVersion(const std::string& productName,
+                                                        const SearchAttributes& attributes,
+                                                        Connection& connection) const = 0;
 
     /**
      * @brief Gets the metadata for a specific version of the specified product
      * @return ContentId for the specific version of the product
      * @throws SFSException if the request fails
      */
-    [[nodiscard]] virtual std::unique_ptr<ContentId> GetSpecificVersion(const std::string& productName,
-                                                                        const std::string& version,
-                                                                        Connection& connection) const = 0;
+    virtual std::unique_ptr<ContentId> GetSpecificVersion(const std::string& productName,
+                                                          const std::string& version,
+                                                          Connection& connection) const = 0;
 
     /**
      * @brief Gets the files metadata for a specific version of the specified product
      * @return vector of File objects for the specific version of the product
      * @throws SFSException if the request fails
      */
-    [[nodiscard]] virtual std::vector<File> GetDownloadInfo(const std::string& productName,
-                                                            const std::string& version,
-                                                            Connection& connection) const = 0;
+    virtual std::vector<File> GetDownloadInfo(const std::string& productName,
+                                              const std::string& version,
+                                              Connection& connection) const = 0;
 
     /**
      * @brief Returns the ConnectionManager to be used by the SFSClient to create Connection objects
