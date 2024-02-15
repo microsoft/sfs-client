@@ -6,6 +6,8 @@
 #include "Result.h"
 #include "SFSException.h"
 
+#include <cassert>
+
 #define SFS_CATCH_RETURN()                                                                                             \
     catch (const std::bad_alloc&)                                                                                      \
     {                                                                                                                  \
@@ -87,6 +89,7 @@
     do                                                                                                                 \
     {                                                                                                                  \
         auto __result = (result); /* Assigning to a variable ensures a code block gets called only once */             \
+        assert(__result.IsFailure());                                                                                  \
         SFS::details::LogFailedResult(handler, __result, __FILE__, __LINE__);                                          \
         throw SFS::details::SFSException(__result);                                                                    \
     } while ((void)0, 0)
@@ -108,6 +111,7 @@
         if (condition)                                                                                                 \
         {                                                                                                              \
             auto __result = SFS::Result(SFS::Result::code, ##__VA_ARGS__);                                             \
+            assert(__result.IsFailure());                                                                              \
             SFS::details::LogFailedResult(handler, __result, __FILE__, __LINE__);                                      \
             throw SFS::details::SFSException(__result);                                                                \
         }                                                                                                              \
