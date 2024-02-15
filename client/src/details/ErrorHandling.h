@@ -29,10 +29,6 @@
     {                                                                                                                  \
         SFS::details::LogFailedResult(handler, e.GetResult(), __FILE__, __LINE__);                                     \
         throw;                                                                                                         \
-    }                                                                                                                  \
-    catch (...)                                                                                                        \
-    {                                                                                                                  \
-        throw;                                                                                                         \
     }
 
 #define RETURN_IF_FAILED(result)                                                                                       \
