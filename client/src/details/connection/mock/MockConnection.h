@@ -4,7 +4,6 @@
 #pragma once
 
 #include "../Connection.h"
-#include "Result.h"
 
 #include <string>
 
@@ -18,7 +17,7 @@ class MockConnection : public Connection
     MockConnection(const ReportingHandler& handler);
     ~MockConnection() override;
 
-    [[nodiscard]] Result Get(const std::string& url, std::string& response) override;
-    [[nodiscard]] Result Post(const std::string& url, const std::string& data, std::string& response) override;
+    std::string Get(const std::string& url) override;
+    std::string Post(const std::string& url, const std::string& data) override;
 };
 } // namespace SFS::details

@@ -3,8 +3,6 @@
 
 #pragma once
 
-#include "Result.h"
-
 #include <string>
 
 namespace SFS::details
@@ -23,10 +21,26 @@ class Connection
     Connection(const Connection&) = delete;
     Connection& operator=(const Connection&) = delete;
 
-    [[nodiscard]] virtual Result Get(const std::string& url, std::string& response) = 0;
-    [[nodiscard]] virtual Result Post(const std::string& url, const std::string& data, std::string& response) = 0;
+    /**
+     * @brief Perform a GET request to the given @param url
+     * @return The response body
+     * @throws SFSException if the request fails
+     */
+    virtual std::string Get(const std::string& url) = 0;
 
-    [[nodiscard]] Result Post(const std::string& url, std::string& response);
+    /**
+     * @brief Perform a POST request to the given @param url with @param data as the request body
+     * @return The response body
+     * @throws SFSException if the request fails
+     */
+    virtual std::string Post(const std::string& url, const std::string& data) = 0;
+
+    /**
+     * @brief Perform a POST request to the given @param url
+     * @return The response body
+     * @throws SFSException if the request fails
+     */
+    std::string Post(const std::string& url);
 
   protected:
     const ReportingHandler& m_handler;

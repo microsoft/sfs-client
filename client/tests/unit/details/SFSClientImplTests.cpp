@@ -1,6 +1,7 @@
 // Copyright (c) Microsoft Corporation.
 // Licensed under the MIT License.
 
+#include "../../util/SFSExceptionMatcher.h"
 #include "../../util/TestHelper.h"
 #include "SFSClientImpl.h"
 #include "TestOverride.h"
@@ -38,27 +39,32 @@ class MockCurlConnection : public CurlConnection
     {
     }
 
-    [[nodiscard]] Result Get(const std::string&, std::string& response) override
+    std::string Get(const std::string&) override
     {
-        INFO("MockCurlConnection::Get() called, response: " << m_getResponse);
-        response = m_getResponse;
-        return m_responseCode;
+        if (m_responseCode == Result::Success)
+        {
+            INFO("MockCurlConnection::Get() called, response: " << m_getResponse);
+            return m_getResponse;
+        }
+        throw SFSException(m_responseCode);
     }
 
-    [[nodiscard]] Result Post(const std::string&, const std::string& data, std::string& response) override
+    std::string Post(const std::string&, const std::string& data) override
     {
-        INFO("MockCurlConnection::Post() called, response: " << m_postResponse);
-        if (m_expectEmptyPostBody)
+        if (m_responseCode == Result::Success)
         {
-            REQUIRE(data.empty());
+            INFO("MockCurlConnection::Post() called, response: " << m_postResponse);
+            if (m_expectEmptyPostBody)
+            {
+                REQUIRE(data.empty());
+            }
+            else
+            {
+                REQUIRE(!data.empty());
+            }
+            return m_postResponse;
         }
-        else
-        {
-            REQUIRE(!data.empty());
-        }
-
-        response = m_postResponse;
-        return m_responseCode;
+        throw SFSException(m_responseCode);
     }
 
   private:
@@ -128,10 +134,11 @@ TEST("Testing class SFSClientImpl()")
         SECTION("Failing")
         {
             responseCode = Result::HttpNotFound;
-            REQUIRE(sfsClient.GetLatestVersion("badName", {}, *connection, contentId) == responseCode);
+            REQUIRE_THROWS_CODE(sfsClient.GetLatestVersion("badName", {}, *connection, contentId), HttpNotFound);
 
             const SearchAttributes attributes{{"attr1", "value"}};
-            REQUIRE(sfsClient.GetLatestVersion("badName", attributes, *connection, contentId) == responseCode);
+            REQUIRE_THROWS_CODE(sfsClient.GetLatestVersion("badName", attributes, *connection, contentId),
+                                HttpNotFound);
         }
     }
 
@@ -153,7 +160,8 @@ TEST("Testing class SFSClientImpl()")
         SECTION("Failing")
         {
             responseCode = Result::HttpNotFound;
-            REQUIRE(sfsClient.GetSpecificVersion(productName, expectedVersion, *connection, contentId) == responseCode);
+            REQUIRE_THROWS_CODE(sfsClient.GetSpecificVersion(productName, expectedVersion, *connection, contentId),
+                                HttpNotFound);
         }
     }
 
@@ -188,7 +196,8 @@ TEST("Testing class SFSClientImpl()")
         SECTION("Failing")
         {
             responseCode = Result::HttpNotFound;
-            REQUIRE(sfsClient.GetDownloadInfo(productName, expectedVersion, *connection, files) == responseCode);
+            REQUIRE_THROWS_CODE(sfsClient.GetDownloadInfo(productName, expectedVersion, *connection, files),
+                                HttpNotFound);
             REQUIRE(files.empty());
         }
     }

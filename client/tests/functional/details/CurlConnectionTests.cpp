@@ -2,6 +2,7 @@
 // Licensed under the MIT License.
 
 #include "../../mock/MockWebServer.h"
+#include "../../util/SFSExceptionMatcher.h"
 #include "../../util/TestHelper.h"
 #include "ReportingHandler.h"
 #include "SFSUrlComponents.h"
@@ -9,6 +10,7 @@
 #include "connection/CurlConnectionManager.h"
 
 #include <catch2/catch_test_macros.hpp>
+#include <catch2/matchers/catch_matchers_string.hpp>
 #include <curl/curl.h>
 #include <nlohmann/json.hpp>
 
@@ -37,18 +39,18 @@ class CurlConnectionTimeout : public CurlConnection
     {
     }
 
-    [[nodiscard]] Result Get(const std::string& url, std::string& response) override
+    std::string Get(const std::string& url) override
     {
         // Timeout within 100ms
         curl_easy_setopt(m_handle, CURLOPT_TIMEOUT_MS, 100L);
-        return CurlConnection::Get(url, response);
+        return CurlConnection::Get(url);
     }
 
-    [[nodiscard]] Result Post(const std::string& url, const std::string& data, std::string& response) override
+    std::string Post(const std::string& url, const std::string& data) override
     {
         // Timeout within 100ms
         curl_easy_setopt(m_handle, CURLOPT_TIMEOUT_MS, 100L);
-        return CurlConnection::Post(url, data, response);
+        return CurlConnection::Post(url, data);
     }
 };
 
@@ -83,14 +85,14 @@ TEST("Testing CurlConnection()")
                                                                         c_version);
 
         // Before registering the product, the URL returns 404 Not Found
-        std::string out;
-        REQUIRE(connection->Get(url, out) == Result::HttpNotFound);
+        REQUIRE_THROWS_CODE(connection->Get(url), HttpNotFound);
 
         // Register the product
         server.RegisterProduct(c_productName, c_version);
 
         // After registering the product, the URL returns 200 OK
-        REQUIRE(connection->Get(url, out) == Result::Success);
+        std::string out;
+        REQUIRE_NOTHROW(out = connection->Get(url));
 
         json expectedResponse;
         expectedResponse["ContentId"] = {{"Namespace", "default"}, {"Name", c_productName}, {"Version", c_version}};
@@ -106,20 +108,19 @@ TEST("Testing CurlConnection()")
             const std::string url =
                 SFSUrlComponents::GetLatestVersionUrl(server.GetBaseUrl(), c_instanceId, c_namespace);
 
-            std::string out;
-
             // Missing proper body returns HttpBadRequest
-            REQUIRE(connection->Post(url, out) == Result::HttpBadRequest);
+            REQUIRE_THROWS_CODE(connection->Post(url), HttpBadRequest);
 
             // Before registering the product, the URL returns 404 Not Found
             const json body = {{{"TargetingAttributes", {}}, {"Product", c_productName}}};
-            REQUIRE(connection->Post(url, body.dump(), out) == Result::HttpNotFound);
+            REQUIRE_THROWS_CODE(connection->Post(url, body.dump()), HttpNotFound);
 
             // Register the product
             server.RegisterProduct(c_productName, c_version);
 
             // After registering the product, the URL returns 200 OK
-            REQUIRE(connection->Post(url, body.dump(), out) == Result::Success);
+            std::string out;
+            REQUIRE_NOTHROW(out = connection->Post(url, body.dump()));
 
             json expectedResponse = json::array();
             expectedResponse.push_back(
@@ -128,7 +129,7 @@ TEST("Testing CurlConnection()")
 
             // Returns the next version now
             server.RegisterProduct(c_productName, c_nextVersion);
-            REQUIRE(connection->Post(url, body.dump(), out) == Result::Success);
+            REQUIRE_NOTHROW(out = connection->Post(url, body.dump()));
 
             expectedResponse = json::array();
             expectedResponse.push_back(
@@ -145,14 +146,14 @@ TEST("Testing CurlConnection()")
                                                                          c_version);
 
             // Before registering the product, the URL returns 404 Not Found
-            std::string out;
-            REQUIRE(connection->Post(url, out) == Result::HttpNotFound);
+            REQUIRE_THROWS_CODE(connection->Post(url), HttpNotFound);
 
             // Register the product
             server.RegisterProduct(c_productName, c_version);
 
             // After registering the product, the URL returns 200 OK
-            REQUIRE(connection->Post(url, out) == Result::Success);
+            std::string out;
+            REQUIRE_NOTHROW(out = connection->Post(url));
 
             json expectedResponse = json::array();
             expectedResponse.push_back({{"Url", "http://localhost/1.json"},
@@ -178,18 +179,17 @@ TEST("Testing CurlConnection()")
     SECTION("Testing with a malformed url")
     {
         std::string url = server.GetBaseUrl();
-        std::string out;
-        REQUIRE(connection->Get(url, out) == Result::HttpNotFound);
-        CHECK(out.empty());
-        REQUIRE(connection->Get(url + "/names", out) == Result::HttpNotFound);
-        REQUIRE(connection->Post(url + "/names", "{}", out) == Result::HttpNotFound);
+        REQUIRE_THROWS_CODE(connection->Get(url), HttpNotFound);
+        REQUIRE_THROWS_CODE(connection->Get(url + "/names"), HttpNotFound);
+        REQUIRE_THROWS_CODE(connection->Post(url + "/names", "{}"), HttpNotFound);
 
         url = server.GetBaseUrl() + "/api/v1/contents/" + c_instanceId + "/namespaces/" + c_namespace + "/names/" +
               c_productName + "/versYions/" + c_version + "/files?action=GenerateDownloadInfo";
 
-        REQUIRE(connection->Get(url, out) == Result::HttpNotFound);
-        REQUIRE(connection->Post(url, std::string(), out) == Result::HttpNotFound);
-        REQUIRE(connection->Post(url, {}, out) == Result::HttpNotFound);
+        std::string out;
+        REQUIRE_THROWS_CODE(connection->Get(url), HttpNotFound);
+        REQUIRE_THROWS_CODE(connection->Post(url, std::string()), HttpNotFound);
+        REQUIRE_THROWS_CODE(out = connection->Post(url, {}), HttpNotFound);
         CHECK(out.empty());
     }
 
@@ -209,18 +209,17 @@ TEST("Testing CurlConnection when the server is not reachable")
     // documentation.
     std::string url = "192.0.2.0";
     std::string out;
-    REQUIRE(connection->Get(url, out) == Result::HttpTimeout);
-    REQUIRE(connection->Post(url + "/names", "{}", out) == Result::HttpTimeout);
+    REQUIRE_THROWS_CODE(connection->Get(url), HttpTimeout);
+    REQUIRE_THROWS_CODE(connection->Post(url + "/names", "{}"), HttpTimeout);
 
     url = "192.0.2.0/files?action=GenerateDownloadInfo";
 
-    auto ret = connection->Get(url, out);
-    REQUIRE(ret.GetCode() == Result::HttpTimeout);
-    REQUIRE(ret.GetMessage().find("timed out after") != std::string::npos);
-
-    ret = connection->Post(url, {}, out);
-    REQUIRE(ret.GetCode() == Result::HttpTimeout);
-    REQUIRE(ret.GetMessage().find("timed out after") != std::string::npos);
+    REQUIRE_THROWS_CODE_MSG_MATCHES(connection->Get(url),
+                                    HttpTimeout,
+                                    Catch::Matchers::ContainsSubstring("timed out after"));
+    REQUIRE_THROWS_CODE_MSG_MATCHES(connection->Post(url, {}),
+                                    HttpTimeout,
+                                    Catch::Matchers::ContainsSubstring("timed out after"));
 }
 
 TEST("Testing CurlConnection works from a second ConnectionManager")
@@ -248,13 +247,12 @@ TEST("Testing CurlConnection works from a second ConnectionManager")
     server.RegisterProduct(c_productName, c_version);
 
     // After registering the product, the URL returns 200 OK
-    std::string out;
-    REQUIRE(connection->Get(url, out) == Result::Success);
+    REQUIRE_NOTHROW(connection->Get(url));
 
     SECTION("A second connection also works")
     {
         auto connection2 = connectionManager.MakeConnection();
-        REQUIRE(connection2->Get(url, out) == Result::Success);
+        REQUIRE_NOTHROW(connection2->Get(url));
     }
 }
 
@@ -275,14 +273,13 @@ TEST("Testing a url that's too big throws 414")
 
     // Url produces: 414 URI Too Long
     std::string out;
-    auto ret = connection->Get(SFSUrlComponents::GetSpecificVersionUrl(server.GetBaseUrl(),
-                                                                       c_instanceId,
-                                                                       c_namespace,
-                                                                       largeProductName,
-                                                                       c_version),
-                               out);
-    REQUIRE(ret.GetCode() == Result::HttpUnexpected);
-    REQUIRE(ret.GetMessage() == "Unexpected HTTP code 414");
+    REQUIRE_THROWS_CODE_MSG(connection->Get(SFSUrlComponents::GetSpecificVersionUrl(server.GetBaseUrl(),
+                                                                                    c_instanceId,
+                                                                                    c_namespace,
+                                                                                    largeProductName,
+                                                                                    c_version)),
+                            HttpUnexpected,
+                            "Unexpected HTTP code 414");
 }
 
 TEST("Testing a response over the limit fails the operation")
@@ -308,12 +305,11 @@ TEST("Testing a response over the limit fails the operation")
 
     // Large one works
     json body = {{{"TargetingAttributes", {}}, {"Product", largeProductName}}};
-    std::string out;
-    REQUIRE(connection->Post(url, body.dump(), out) == Result::Success);
+    REQUIRE_NOTHROW(connection->Post(url, body.dump()));
 
     // Over limit fails
     body[0]["Product"] = overLimitProductName;
-    auto ret = connection->Post(url, body.dump(), out);
-    REQUIRE(ret.GetCode() == Result::ConnectionUnexpectedError);
-    REQUIRE(ret.GetMessage() == "Failure writing output to destination");
+    REQUIRE_THROWS_CODE_MSG(connection->Post(url, body.dump()),
+                            ConnectionUnexpectedError,
+                            "Failure writing output to destination");
 }

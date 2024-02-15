@@ -4,7 +4,6 @@
 #pragma once
 
 #include "Connection.h"
-#include "Result.h"
 
 #include <string>
 
@@ -21,11 +20,27 @@ class CurlConnection : public Connection
     CurlConnection(const ReportingHandler& handler);
     ~CurlConnection() override;
 
-    [[nodiscard]] Result Get(const std::string& url, std::string& response) override;
-    [[nodiscard]] Result Post(const std::string& url, const std::string& data, std::string& response) override;
+    /**
+     * @brief Perform a GET request to the given @param url
+     * @return The response body
+     * @throws SFSException if the request fails
+     */
+    std::string Get(const std::string& url) override;
+
+    /**
+     * @brief Perform a POST request to the given @param url with @param data as the request body
+     * @return The response body
+     * @throws SFSException if the request fails
+     */
+    std::string Post(const std::string& url, const std::string& data) override;
 
   protected:
-    [[nodiscard]] virtual Result CurlPerform(const std::string& url, std::string& response);
+    /**
+     * @brief Perform a REST request to the given @param url
+     * @return The response body
+     * @throws SFSException if the request fails
+     */
+    virtual std::string CurlPerform(const std::string& url);
 
     CURL* m_handle;
 };

@@ -6,6 +6,8 @@
 #include "Result.h"
 #include "SFSException.h"
 
+#include <cassert>
+
 #define SFS_CATCH_RETURN()                                                                                             \
     catch (const std::bad_alloc&)                                                                                      \
     {                                                                                                                  \
@@ -22,6 +24,13 @@
     catch (...)                                                                                                        \
     {                                                                                                                  \
         return Result::Unexpected;                                                                                     \
+    }
+
+#define SFS_CATCH_LOG_RETHROW(handler)                                                                                 \
+    catch (const SFS::details::SFSException& e)                                                                        \
+    {                                                                                                                  \
+        SFS::details::LogFailedResult(handler, e.GetResult(), __FILE__, __LINE__);                                     \
+        throw;                                                                                                         \
     }
 
 #define RETURN_IF_FAILED(result)                                                                                       \
@@ -76,14 +85,35 @@
         }                                                                                                              \
     } while ((void)0, 0)
 
+#define THROW_LOG(result, handler)                                                                                     \
+    do                                                                                                                 \
+    {                                                                                                                  \
+        auto __result = (result); /* Assigning to a variable ensures a code block gets called only once */             \
+        assert(__result.IsFailure());                                                                                  \
+        SFS::details::LogFailedResult(handler, __result, __FILE__, __LINE__);                                          \
+        throw SFS::details::SFSException(std::move(__result));                                                         \
+    } while ((void)0, 0)
+
+#define THROW_IF_FAILED_LOG(result, handler)                                                                           \
+    do                                                                                                                 \
+    {                                                                                                                  \
+        auto __result = (result); /* Assigning to a variable ensures a code block gets called only once */             \
+        if (__result.IsFailure())                                                                                      \
+        {                                                                                                              \
+            SFS::details::LogFailedResult(handler, __result, __FILE__, __LINE__);                                      \
+            throw SFS::details::SFSException(std::move(__result));                                                     \
+        }                                                                                                              \
+    } while ((void)0, 0)
+
 #define THROW_CODE_IF_LOG(code, condition, handler, ...)                                                               \
     do                                                                                                                 \
     {                                                                                                                  \
         if (condition)                                                                                                 \
         {                                                                                                              \
             auto __result = SFS::Result(SFS::Result::code, ##__VA_ARGS__);                                             \
+            assert(__result.IsFailure());                                                                              \
             SFS::details::LogFailedResult(handler, __result, __FILE__, __LINE__);                                      \
-            throw SFS::details::SFSException(__result);                                                                \
+            throw SFS::details::SFSException(std::move(__result));                                                     \
         }                                                                                                              \
     } while ((void)0, 0)
 

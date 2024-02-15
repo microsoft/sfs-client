@@ -2,6 +2,7 @@
 // Licensed under the MIT License.
 
 #include "../../mock/MockWebServer.h"
+#include "../../util/SFSExceptionMatcher.h"
 #include "../../util/TestHelper.h"
 #include "SFSClientImpl.h"
 #include "connection/Connection.h"
@@ -67,11 +68,12 @@ TEST("Testing class SFSClientImpl()")
 
         SECTION("Wrong product name")
         {
-            REQUIRE(sfsClient.GetLatestVersion("badName", {}, *connection, contentId) == Result::HttpNotFound);
+            REQUIRE_THROWS_CODE(sfsClient.GetLatestVersion("badName", {}, *connection, contentId), HttpNotFound);
             REQUIRE(!contentId);
 
             const SearchAttributes attributes{{"attr1", "value"}};
-            REQUIRE(sfsClient.GetLatestVersion("badName", attributes, *connection, contentId) == Result::HttpNotFound);
+            REQUIRE_THROWS_CODE(sfsClient.GetLatestVersion("badName", attributes, *connection, contentId),
+                                HttpNotFound);
             REQUIRE(!contentId);
         }
     }
@@ -96,14 +98,15 @@ TEST("Testing class SFSClientImpl()")
 
         SECTION("Wrong product name")
         {
-            REQUIRE(sfsClient.GetSpecificVersion("badName", "0.0.0.2", *connection, contentId) == Result::HttpNotFound);
+            REQUIRE_THROWS_CODE(sfsClient.GetSpecificVersion("badName", "0.0.0.2", *connection, contentId),
+                                HttpNotFound);
             REQUIRE(!contentId);
         }
 
         SECTION("Wrong version")
         {
-            REQUIRE(sfsClient.GetSpecificVersion("productName", "0.0.0.3", *connection, contentId) ==
-                    Result::HttpNotFound);
+            REQUIRE_THROWS_CODE(sfsClient.GetSpecificVersion("productName", "0.0.0.3", *connection, contentId),
+                                HttpNotFound);
             REQUIRE(!contentId);
         }
     }
@@ -128,13 +131,13 @@ TEST("Testing class SFSClientImpl()")
 
         SECTION("Wrong product name")
         {
-            REQUIRE(sfsClient.GetDownloadInfo("badName", "0.0.0.2", *connection, files) == Result::HttpNotFound);
+            REQUIRE_THROWS_CODE(sfsClient.GetDownloadInfo("badName", "0.0.0.2", *connection, files), HttpNotFound);
             REQUIRE(files.empty());
         }
 
         SECTION("Wrong version")
         {
-            REQUIRE(sfsClient.GetDownloadInfo("productName", "0.0.0.3", *connection, files) == Result::HttpNotFound);
+            REQUIRE_THROWS_CODE(sfsClient.GetDownloadInfo("productName", "0.0.0.3", *connection, files), HttpNotFound);
             REQUIRE(files.empty());
         }
     }
