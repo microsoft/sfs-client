@@ -44,12 +44,12 @@ class ContentId
     /**
      * @brief Compares two ContentId objects for equality. The values of members are strictly compared.
      */
-    bool operator==(const ContentId& other) const noexcept;
+    bool IsObjectEqual(const ContentId& other) const noexcept;
 
     /**
      * @brief Compares two ContentId objects for inequality. The values of members are strictly compared.
      */
-    bool operator!=(const ContentId& other) const noexcept;
+    bool IsObjectNotEqual(const ContentId& other) const noexcept;
 
   private:
     ContentId() = default;
@@ -102,12 +102,12 @@ class File
     /**
      * @brief Compares two File objects for equality. The values of members are strictly compared.
      */
-    bool operator==(const File& other) const noexcept;
+    bool IsObjectEqual(const File& other) const noexcept;
 
     /**
      * @brief Compares two File objects for inequality. The values of members are strictly compared.
      */
-    bool operator!=(const File& other) const noexcept;
+    bool IsObjectNotEqual(const File& other) const noexcept;
 
   private:
     File() = default;
@@ -163,12 +163,12 @@ class Content
     /**
      * @brief Compares two Content objects for equality. The values of members are strictly compared.
      */
-    bool operator==(const Content& other) const noexcept;
+    bool IsObjectEqual(const Content& other) const noexcept;
 
     /**
      * @brief Compares two Content objects for inequality. The values of members are strictly compared.
      */
-    bool operator!=(const Content& other) const noexcept;
+    bool IsObjectNotEqual(const Content& other) const noexcept;
 
   private:
     Content() = default;

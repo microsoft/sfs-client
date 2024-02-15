@@ -43,15 +43,15 @@ const std::string& ContentId::GetVersion() const noexcept
     return m_version;
 }
 
-bool ContentId::operator==(const ContentId& other) const noexcept
+bool ContentId::IsObjectEqual(const ContentId& other) const noexcept
 {
     // String characters can be UTF-8 encoded, so we need to compare them in a case-sensitive manner.
     return m_nameSpace == other.m_nameSpace && m_name == other.m_name && m_version == other.m_version;
 }
 
-bool ContentId::operator!=(const ContentId& other) const noexcept
+bool ContentId::IsObjectNotEqual(const ContentId& other) const noexcept
 {
-    return !(*this == other);
+    return !IsObjectEqual(other);
 }
 
 Result File::Make(std::string fileId,
@@ -108,16 +108,16 @@ const std::unordered_map<HashType, std::string>& File::GetHashes() const noexcep
     return m_hashes;
 }
 
-bool File::operator==(const File& other) const noexcept
+bool File::IsObjectEqual(const File& other) const noexcept
 {
     // String characters can be UTF-8 encoded, so we need to compare them in a case-sensitive manner.
     return m_fileId == other.m_fileId && m_url == other.m_url && m_sizeInBytes == other.m_sizeInBytes &&
            m_hashes == other.m_hashes;
 }
 
-bool File::operator!=(const File& other) const noexcept
+bool File::IsObjectNotEqual(const File& other) const noexcept
 {
-    return !(*this == other);
+    return !IsObjectEqual(other);
 }
 
 Result Content::Make(std::string contentNameSpace,
@@ -197,22 +197,22 @@ const std::vector<File>& Content::GetFiles() const noexcept
     return m_files;
 }
 
-bool Content::operator==(const Content& other) const noexcept
+bool Content::IsObjectEqual(const Content& other) const noexcept
 try
 {
-    return (m_contentId && other.m_contentId && *m_contentId == *other.m_contentId) &&
+    return (m_contentId && other.m_contentId && m_contentId->IsObjectEqual(*other.m_contentId)) &&
            (std::is_permutation(m_files.begin(),
                                 m_files.end(),
                                 other.m_files.begin(),
                                 other.m_files.end(),
-                                [](const File& lhs, const File& rhs) { return lhs == rhs; }));
+                                [](const File& lhs, const File& rhs) { return lhs.IsObjectEqual(rhs); }));
 }
 catch (...)
 {
     return false;
 }
 
-bool Content::operator!=(const Content& other) const noexcept
+bool Content::IsObjectNotEqual(const Content& other) const noexcept
 {
-    return !(*this == other);
+    return !IsObjectEqual(other);
 }

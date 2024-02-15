@@ -62,8 +62,8 @@ TEST("Testing ContentId::Make()")
         SECTION("Equal")
         {
             auto CompareContentIdEqual = [&contentId](const std::unique_ptr<ContentId>& sameContentId) {
-                REQUIRE(*contentId == *sameContentId);
-                REQUIRE_FALSE(*contentId != *sameContentId);
+                REQUIRE(contentId->IsObjectEqual(*sameContentId));
+                REQUIRE_FALSE(contentId->IsObjectNotEqual(*sameContentId));
             };
 
             CompareContentIdEqual(GetContentId(nameSpace, name, version));
@@ -72,8 +72,8 @@ TEST("Testing ContentId::Make()")
         SECTION("Not equal")
         {
             auto CompareContentIdNotEqual = [&contentId](const std::unique_ptr<ContentId>& otherContentId) {
-                REQUIRE(*contentId != *otherContentId);
-                REQUIRE_FALSE(*contentId == *otherContentId);
+                REQUIRE(contentId->IsObjectNotEqual(*otherContentId));
+                REQUIRE_FALSE(contentId->IsObjectEqual(*otherContentId));
             };
 
             CompareContentIdNotEqual(GetContentId("", name, version));
@@ -106,8 +106,8 @@ TEST("Testing File::Make()")
         SECTION("Equal")
         {
             auto CompareFileEqual = [&file](const std::unique_ptr<File>& sameFile) {
-                REQUIRE(*file == *sameFile);
-                REQUIRE_FALSE(*file != *sameFile);
+                REQUIRE(file->IsObjectEqual(*sameFile));
+                REQUIRE_FALSE(file->IsObjectNotEqual(*sameFile));
             };
 
             CompareFileEqual(GetFile(fileId, url, sizeInBytes, hashes));
@@ -116,8 +116,8 @@ TEST("Testing File::Make()")
         SECTION("Not equal")
         {
             auto CompareFileNotEqual = [&file](const std::unique_ptr<File>& otherFile) {
-                REQUIRE(*file != *otherFile);
-                REQUIRE_FALSE(*file == *otherFile);
+                REQUIRE(file->IsObjectNotEqual(*otherFile));
+                REQUIRE_FALSE(file->IsObjectEqual(*otherFile));
             };
 
             CompareFileNotEqual(GetFile("", url, sizeInBytes, hashes));
@@ -176,7 +176,7 @@ TEST_SCENARIO("Testing Content::Make()")
                     REQUIRE(&files[i] != &copiedContent->GetFiles()[i]);
 
                     // Checking contents
-                    CHECK(files[i] == copiedContent->GetFiles()[i]);
+                    CHECK(files[i].IsObjectEqual(copiedContent->GetFiles()[i]));
                 }
             }
 
@@ -188,7 +188,7 @@ TEST_SCENARIO("Testing Content::Make()")
                 REQUIRE(movedContent != nullptr);
 
                 // Checking contents
-                CHECK(*copiedContent == *movedContent);
+                CHECK(copiedContent->IsObjectEqual(*movedContent));
 
                 // Checking underlying pointers are the same since they were moved
                 REQUIRE(filePointers.size() == movedContent->GetFiles().size());
@@ -226,8 +226,8 @@ TEST("Testing Content equality operators")
     SECTION("Equal")
     {
         auto CompareContentEqual = [&content](const std::unique_ptr<Content>& sameContent) {
-            REQUIRE(*content == *sameContent);
-            REQUIRE_FALSE(*content != *sameContent);
+            REQUIRE(content->IsObjectEqual(*sameContent));
+            REQUIRE_FALSE(content->IsObjectNotEqual(*sameContent));
         };
 
         CompareContentEqual(GetContent(contentNameSpace, contentName, contentVersion, files));
@@ -237,8 +237,8 @@ TEST("Testing Content equality operators")
     SECTION("Not equal")
     {
         auto CompareContentNotEqual = [&content](const std::unique_ptr<Content>& otherContent) {
-            REQUIRE(*content != *otherContent);
-            REQUIRE_FALSE(*content == *otherContent);
+            REQUIRE(content->IsObjectNotEqual(*otherContent));
+            REQUIRE_FALSE(content->IsObjectEqual(*otherContent));
         };
 
         CompareContentNotEqual(GetContent("", contentName, contentVersion, files));
