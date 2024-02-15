@@ -67,8 +67,6 @@ class File
                                      std::unordered_map<HashType, std::string> hashes,
                                      std::unique_ptr<File>& out) noexcept;
 
-    [[nodiscard]] Result Clone(std::unique_ptr<File>& out) const noexcept;
-
     File(File&&) noexcept;
 
     File(const File&) = delete;
@@ -99,6 +97,10 @@ class File
 
   private:
     File() = default;
+
+    [[nodiscard]] Result Clone(std::unique_ptr<File>& out) const noexcept;
+
+    friend class Content;
 
     std::string m_fileId;
     std::string m_url;

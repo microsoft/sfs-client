@@ -212,7 +212,8 @@ TEST("Testing Content equality operators")
     std::unique_ptr<File> file = GetFile("fileId", "url", 1 /*sizeInBytes*/, {{HashType::Sha1, "sha1"}});
 
     std::unique_ptr<File> clonedFile;
-    REQUIRE(file->Clone(clonedFile) == Result::Success);
+    REQUIRE(File::Make(file->GetFileId(), file->GetUrl(), file->GetSizeInBytes(), file->GetHashes(), clonedFile) ==
+            Result::Success);
 
     std::vector<File> files;
     files.push_back(std::move(*file));
