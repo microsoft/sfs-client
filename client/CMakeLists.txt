@@ -21,6 +21,7 @@ target_sources(
             src/details/connection/CurlConnectionManager.cpp
             src/details/connection/mock/MockConnection.cpp
             src/details/connection/mock/MockConnectionManager.cpp
+            src/details/ContentUtil.cpp
             src/details/Env.cpp
             src/details/ErrorHandling.cpp
             src/details/ReportingHandler.cpp

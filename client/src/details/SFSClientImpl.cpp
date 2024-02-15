@@ -3,6 +3,7 @@
 
 #include "SFSClientImpl.h"
 
+#include "ContentUtil.h"
 #include "ErrorHandling.h"
 #include "Logging.h"
 #include "SFSUrlComponents.h"
@@ -16,11 +17,10 @@
 #include <nlohmann/json.hpp>
 
 #define SFS_INFO(...) LOG_INFO(m_reportingHandler, __VA_ARGS__)
-#define THROW_INVALID_RESPONSE_IF_FALSE(condition, message, handler)                                                   \
-    THROW_CODE_IF_LOG(ServiceInvalidResponse, !(condition), handler, message)
 
 using namespace SFS;
 using namespace SFS::details;
+using namespace SFS::details::contentutil;
 using namespace SFS::details::util;
 using json = nlohmann::json;
 
@@ -38,6 +38,11 @@ void LogIfTestOverridesAllowed(const ReportingHandler& handler)
     }
 }
 
+void ThrowInvalidResponseIfFalse(bool condition, const std::string& message, const ReportingHandler& handler)
+{
+    THROW_CODE_IF_LOG(ServiceInvalidResponse, !condition, handler, message);
+}
+
 json ParseServerMethodStringToJson(const std::string& data, const std::string& method, const ReportingHandler& handler)
 {
     try
@@ -50,30 +55,6 @@ json ParseServerMethodStringToJson(const std::string& data, const std::string& m
             Result(Result::ServiceInvalidResponse, "(" + method + ") JSON Parsing error: " + std::string(ex.what())),
             handler);
     }
-}
-
-std::unique_ptr<ContentId> ContentIdJsonToObj(const json& contentId, const ReportingHandler& handler)
-{
-    THROW_INVALID_RESPONSE_IF_FALSE(contentId.is_object(), "ContentId is not a JSON object", handler);
-
-    THROW_INVALID_RESPONSE_IF_FALSE(contentId.contains("Namespace"),
-                                    "Missing ContentId.Namespace in response",
-                                    handler);
-    THROW_INVALID_RESPONSE_IF_FALSE(contentId["Namespace"].is_string(), "ContentId.Namespace is not a string", handler);
-    std::string nameSpace = contentId["Namespace"];
-
-    THROW_INVALID_RESPONSE_IF_FALSE(contentId.contains("Name"), "Missing ContentId.Name in response", handler);
-    THROW_INVALID_RESPONSE_IF_FALSE(contentId["Name"].is_string(), "ContentId.Name is not a string", handler);
-    std::string name = contentId["Name"];
-
-    THROW_INVALID_RESPONSE_IF_FALSE(contentId.contains("Version"), "Missing ContentId.Version in response", handler);
-    THROW_INVALID_RESPONSE_IF_FALSE(contentId["Version"].is_string(), "ContentId.Version is not a string", handler);
-    std::string version = contentId["Version"];
-
-    std::unique_ptr<ContentId> tmp;
-    THROW_IF_FAILED_LOG(ContentId::Make(std::move(nameSpace), std::move(name), std::move(version), tmp), handler);
-
-    return tmp;
 }
 
 std::unique_ptr<ContentId> GetLatestVersionResponseToContentId(const json& data, const ReportingHandler& handler)
@@ -92,12 +73,12 @@ std::unique_ptr<ContentId> GetLatestVersionResponseToContentId(const json& data,
     //
     // We only query for one product at a time, so we expect only one result
 
-    THROW_INVALID_RESPONSE_IF_FALSE(data.is_array(), "Response is not a JSON array", handler);
-    THROW_INVALID_RESPONSE_IF_FALSE(data.size() == 1, "Response does not have the expected size", handler);
+    ThrowInvalidResponseIfFalse(data.is_array(), "Response is not a JSON array", handler);
+    ThrowInvalidResponseIfFalse(data.size() == 1, "Response does not have the expected size", handler);
 
     const json& firstObj = data[0];
-    THROW_INVALID_RESPONSE_IF_FALSE(firstObj.is_object(), "Response is not a JSON object", handler);
-    THROW_INVALID_RESPONSE_IF_FALSE(firstObj.contains("ContentId"), "Missing ContentId in response", handler);
+    ThrowInvalidResponseIfFalse(firstObj.is_object(), "Response is not a JSON object", handler);
+    ThrowInvalidResponseIfFalse(firstObj.contains("ContentId"), "Missing ContentId in response", handler);
 
     return ContentIdJsonToObj(firstObj["ContentId"], handler);
 }
@@ -119,58 +100,9 @@ std::unique_ptr<ContentId> GetSpecificVersionResponseToContentId(const json& dat
     //
     // We don't care about Files in this response, so we just ignore them
 
-    THROW_INVALID_RESPONSE_IF_FALSE(data.is_object(), "Response is not a JSON object", handler);
+    ThrowInvalidResponseIfFalse(data.is_object(), "Response is not a JSON object", handler);
 
     return ContentIdJsonToObj(data["ContentId"], handler);
-}
-
-HashType HashTypeFromString(const std::string& hashType, const ReportingHandler& handler)
-{
-    if (AreEqualI(hashType, "Sha1"))
-    {
-        return HashType::Sha1;
-    }
-    else if (AreEqualI(hashType, "Sha256"))
-    {
-        return HashType::Sha256;
-    }
-    else
-    {
-        THROW_LOG(Result(Result::Unexpected, "Unknown hash type: " + hashType), handler);
-    }
-}
-
-std::unique_ptr<File> FileJsonToObj(const json& file, const ReportingHandler& handler)
-{
-    THROW_INVALID_RESPONSE_IF_FALSE(file.is_object(), "File is not a JSON object", handler);
-
-    THROW_INVALID_RESPONSE_IF_FALSE(file.contains("FileId"), "Missing File.FileId in response", handler);
-    THROW_INVALID_RESPONSE_IF_FALSE(file["FileId"].is_string(), "File.FileId is not a string", handler);
-    std::string fileId = file["FileId"];
-
-    THROW_INVALID_RESPONSE_IF_FALSE(file.contains("Url"), "Missing File.Url in response", handler);
-    THROW_INVALID_RESPONSE_IF_FALSE(file["Url"].is_string(), "File.Url is not a string", handler);
-    std::string url = file["Url"];
-
-    THROW_INVALID_RESPONSE_IF_FALSE(file.contains("SizeInBytes"), "Missing File.SizeInBytes in response", handler);
-    THROW_INVALID_RESPONSE_IF_FALSE(file["SizeInBytes"].is_number_unsigned(),
-                                    "File.SizeInBytes is not an unsigned number",
-                                    handler);
-    uint64_t sizeInBytes = file["SizeInBytes"];
-
-    THROW_INVALID_RESPONSE_IF_FALSE(file.contains("Hashes"), "Missing File.Hashes in response", handler);
-    THROW_INVALID_RESPONSE_IF_FALSE(file["Hashes"].is_object(), "File.Hashes is not an object", handler);
-    std::unordered_map<HashType, std::string> hashes;
-    for (const auto& [hashType, hashValue] : file["Hashes"].items())
-    {
-        THROW_INVALID_RESPONSE_IF_FALSE(hashValue.is_string(), "File.Hashes object value is not a string", handler);
-        hashes[HashTypeFromString(hashType, handler)] = hashValue;
-    }
-
-    std::unique_ptr<File> tmp;
-    THROW_IF_FAILED_LOG(File::Make(std::move(fileId), std::move(url), sizeInBytes, std::move(hashes), tmp), handler);
-
-    return tmp;
 }
 
 std::vector<File> GetDownloadInfoResponseToFileVector(const json& data, const ReportingHandler& handler)
@@ -195,14 +127,14 @@ std::vector<File> GetDownloadInfoResponseToFileVector(const json& data, const Re
     //   ...
     // ]
 
-    THROW_INVALID_RESPONSE_IF_FALSE(data.is_array(), "Response is not a JSON array", handler);
+    ThrowInvalidResponseIfFalse(data.is_array(), "Response is not a JSON array", handler);
 
     // TODO #48: For now ignore DeliveryOptimization data. Will implement its separate parsing later
 
     std::vector<File> tmp;
     for (const auto& fileData : data)
     {
-        THROW_INVALID_RESPONSE_IF_FALSE(fileData.is_object(), "Array element is not a JSON object", handler);
+        ThrowInvalidResponseIfFalse(fileData.is_object(), "Array element is not a JSON object", handler);
         tmp.push_back(std::move(*FileJsonToObj(fileData, handler)));
     }
 
