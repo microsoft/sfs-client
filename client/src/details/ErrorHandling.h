@@ -91,7 +91,7 @@
         auto __result = (result); /* Assigning to a variable ensures a code block gets called only once */             \
         assert(__result.IsFailure());                                                                                  \
         SFS::details::LogFailedResult(handler, __result, __FILE__, __LINE__);                                          \
-        throw SFS::details::SFSException(__result);                                                                    \
+        throw SFS::details::SFSException(std::move(__result));                                                         \
     } while ((void)0, 0)
 
 #define THROW_IF_FAILED_LOG(result, handler)                                                                           \
@@ -101,7 +101,7 @@
         if (__result.IsFailure())                                                                                      \
         {                                                                                                              \
             SFS::details::LogFailedResult(handler, __result, __FILE__, __LINE__);                                      \
-            throw SFS::details::SFSException(__result);                                                                \
+            throw SFS::details::SFSException(std::move(__result));                                                     \
         }                                                                                                              \
     } while ((void)0, 0)
 
@@ -113,7 +113,7 @@
             auto __result = SFS::Result(SFS::Result::code, ##__VA_ARGS__);                                             \
             assert(__result.IsFailure());                                                                              \
             SFS::details::LogFailedResult(handler, __result, __FILE__, __LINE__);                                      \
-            throw SFS::details::SFSException(__result);                                                                \
+            throw SFS::details::SFSException(std::move(__result));                                                     \
         }                                                                                                              \
     } while ((void)0, 0)
 
