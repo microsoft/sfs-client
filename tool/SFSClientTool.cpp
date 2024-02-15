@@ -187,15 +187,15 @@ void DisplayResults(const std::unique_ptr<Content>& content)
         for (const auto& file : content->GetFiles())
         {
             std::cout << R"(      {)" << std::endl;
-            std::cout << R"(        "FileId": ")" << file->GetFileId() << R"(",)" << std::endl;
-            std::cout << R"(        "Url": ")" << file->GetUrl() << R"(",)" << std::endl;
-            std::cout << R"(        "SizeInBytes": )" << file->GetSizeInBytes() << R"(,)" << std::endl;
+            std::cout << R"(        "FileId": ")" << file.GetFileId() << R"(",)" << std::endl;
+            std::cout << R"(        "Url": ")" << file.GetUrl() << R"(",)" << std::endl;
+            std::cout << R"(        "SizeInBytes": )" << file.GetSizeInBytes() << R"(,)" << std::endl;
             std::cout << R"(        "Hashes": {)" << std::endl;
             size_t hashCount = 0;
-            for (const auto& hash : file->GetHashes())
+            for (const auto& hash : file.GetHashes())
             {
                 std::cout << "          \"" << ToString(hash.first) << R"(": ")" << hash.second << '"'
-                          << comma(hashCount++, file->GetHashes().size()) << std::endl;
+                          << comma(hashCount++, file.GetHashes().size()) << std::endl;
             }
             std::cout << R"(        })" << std::endl;
             std::cout << R"(      })" << comma(fileCount++, content->GetFiles().size()) << std::endl;

@@ -36,7 +36,7 @@ std::unique_ptr<File> GetFile(const std::string& fileId,
 std::unique_ptr<Content> GetContent(const std::string& contentNameSpace,
                                     const std::string& contentName,
                                     const std::string& contentVersion,
-                                    const std::vector<std::unique_ptr<File>>& files)
+                                    const std::vector<File>& files)
 {
     std::unique_ptr<Content> content;
     REQUIRE(Content::Make(contentNameSpace, contentName, contentVersion, files, content) == Result::Success);
@@ -142,15 +142,15 @@ TEST_SCENARIO("Testing Content::Make()")
         std::unique_ptr<File> file1 = GetFile("fileId1", "url1", 1 /*sizeInBytes*/, {{HashType::Sha1, "sha1"}});
         std::unique_ptr<File> file2 = GetFile("fileId2", "url2", 1 /*sizeInBytes*/, {{HashType::Sha256, "sha256"}});
 
-        std::vector<std::unique_ptr<File>> files;
-        files.push_back(std::move(file1));
-        files.push_back(std::move(file2));
+        std::vector<File> files;
+        files.push_back(std::move(*file1));
+        files.push_back(std::move(*file2));
 
         // Getting raw pointers to check they don't match after copy but match after move
         std::vector<File*> filePointers;
-        for (const auto& file : files)
+        for (size_t i = 0; i < files.size(); ++i)
         {
-            filePointers.push_back(file.get());
+            filePointers.push_back(&files[i]);
         }
 
         WHEN("A Content is created by copying the parameters")
@@ -172,11 +172,11 @@ TEST_SCENARIO("Testing Content::Make()")
                 for (size_t i = 0; i < files.size(); ++i)
                 {
                     // Checking ptrs
-                    REQUIRE(filePointers[i] != copiedContent->GetFiles()[i].get());
-                    REQUIRE(files[i] != copiedContent->GetFiles()[i]);
+                    REQUIRE(filePointers[i] != &copiedContent->GetFiles()[i]);
+                    REQUIRE(&files[i] != &copiedContent->GetFiles()[i]);
 
                     // Checking contents
-                    CHECK(*files[i] == *copiedContent->GetFiles()[i]);
+                    CHECK(files[i] == copiedContent->GetFiles()[i]);
                 }
             }
 
@@ -195,8 +195,8 @@ TEST_SCENARIO("Testing Content::Make()")
                 REQUIRE(copiedContent->GetFiles().size() == movedContent->GetFiles().size());
                 for (size_t i = 0; i < filePointers.size(); ++i)
                 {
-                    REQUIRE(copiedContent->GetFiles()[i] != movedContent->GetFiles()[i]);
-                    REQUIRE(filePointers[i] == movedContent->GetFiles()[i].get());
+                    REQUIRE(&copiedContent->GetFiles()[i] != &movedContent->GetFiles()[i]);
+                    REQUIRE(filePointers[i] == &movedContent->GetFiles()[i]);
                 }
             }
         }
@@ -212,13 +212,14 @@ TEST("Testing Content equality operators")
     std::unique_ptr<File> file = GetFile("fileId", "url", 1 /*sizeInBytes*/, {{HashType::Sha1, "sha1"}});
 
     std::unique_ptr<File> clonedFile;
-    REQUIRE(file->Clone(clonedFile) == Result::Success);
+    REQUIRE(File::Make(file->GetFileId(), file->GetUrl(), file->GetSizeInBytes(), file->GetHashes(), clonedFile) ==
+            Result::Success);
 
-    std::vector<std::unique_ptr<File>> files;
-    files.push_back(std::move(file));
+    std::vector<File> files;
+    files.push_back(std::move(*file));
 
-    std::vector<std::unique_ptr<File>> clonedFiles;
-    clonedFiles.push_back(std::move(clonedFile));
+    std::vector<File> clonedFiles;
+    clonedFiles.push_back(std::move(*clonedFile));
 
     const std::unique_ptr<Content> content = GetContent(contentNameSpace, contentName, contentVersion, files);
 

@@ -75,13 +75,13 @@ void CheckProduct(const ContentId& contentId, std::string_view ns, std::string_v
     REQUIRE(contentId.GetVersion() == version);
 }
 
-void CheckDownloadInfo(const std::vector<std::unique_ptr<File>>& files, const std::string& name)
+void CheckDownloadInfo(const std::vector<File>& files, const std::string& name)
 {
     REQUIRE(files.size() == 2);
-    REQUIRE(files[0]->GetFileId() == (name + ".json"));
-    REQUIRE(files[0]->GetUrl() == ("http://localhost/1.json"));
-    REQUIRE(files[1]->GetFileId() == (name + ".bin"));
-    REQUIRE(files[1]->GetUrl() == ("http://localhost/2.bin"));
+    REQUIRE(files[0].GetFileId() == (name + ".json"));
+    REQUIRE(files[0].GetUrl() == ("http://localhost/1.json"));
+    REQUIRE(files[1].GetFileId() == (name + ".bin"));
+    REQUIRE(files[1].GetUrl() == ("http://localhost/2.bin"));
 }
 } // namespace
 
@@ -177,7 +177,7 @@ TEST("Testing class SFSClientImpl()")
         downloadInfoResponse[1]["DeliveryOptimization"] = downloadInfoResponse[0]["DeliveryOptimization"];
         postResponse = downloadInfoResponse.dump();
 
-        std::vector<std::unique_ptr<File>> files;
+        std::vector<File> files;
         SECTION("Getting version")
         {
             REQUIRE(sfsClient.GetDownloadInfo(productName, expectedVersion, *connection, files) == Result::Success);
