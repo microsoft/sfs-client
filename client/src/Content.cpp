@@ -43,17 +43,6 @@ const std::string& ContentId::GetVersion() const noexcept
     return m_version;
 }
 
-bool ContentId::IsObjectEqual(const ContentId& other) const noexcept
-{
-    // String characters can be UTF-8 encoded, so we need to compare them in a case-sensitive manner.
-    return m_nameSpace == other.m_nameSpace && m_name == other.m_name && m_version == other.m_version;
-}
-
-bool ContentId::IsObjectNotEqual(const ContentId& other) const noexcept
-{
-    return !IsObjectEqual(other);
-}
-
 Result File::Make(std::string fileId,
                   std::string url,
                   uint64_t sizeInBytes,
@@ -106,18 +95,6 @@ uint64_t File::GetSizeInBytes() const noexcept
 const std::unordered_map<HashType, std::string>& File::GetHashes() const noexcept
 {
     return m_hashes;
-}
-
-bool File::IsObjectEqual(const File& other) const noexcept
-{
-    // String characters can be UTF-8 encoded, so we need to compare them in a case-sensitive manner.
-    return m_fileId == other.m_fileId && m_url == other.m_url && m_sizeInBytes == other.m_sizeInBytes &&
-           m_hashes == other.m_hashes;
-}
-
-bool File::IsObjectNotEqual(const File& other) const noexcept
-{
-    return !IsObjectEqual(other);
 }
 
 Result Content::Make(std::string contentNameSpace,
@@ -197,22 +174,41 @@ const std::vector<File>& Content::GetFiles() const noexcept
     return m_files;
 }
 
-bool Content::IsObjectEqual(const Content& other) const noexcept
-try
+bool details::operator==(const ContentId& lhs, const ContentId& rhs)
 {
-    return (m_contentId && other.m_contentId && m_contentId->IsObjectEqual(*other.m_contentId)) &&
-           (std::is_permutation(m_files.begin(),
-                                m_files.end(),
-                                other.m_files.begin(),
-                                other.m_files.end(),
-                                [](const File& lhs, const File& rhs) { return lhs.IsObjectEqual(rhs); }));
-}
-catch (...)
-{
-    return false;
+    // String characters can be UTF-8 encoded, so we need to compare them in a case-sensitive manner.
+    return lhs.GetNameSpace() == rhs.GetNameSpace() && lhs.GetName() == rhs.GetName() &&
+           lhs.GetVersion() == rhs.GetVersion();
 }
 
-bool Content::IsObjectNotEqual(const Content& other) const noexcept
+bool details::operator!=(const ContentId& lhs, const ContentId& rhs)
 {
-    return !IsObjectEqual(other);
+    return !(lhs == rhs);
+}
+
+bool details::operator==(const File& lhs, const File& rhs)
+{
+    // String characters can be UTF-8 encoded, so we need to compare them in a case-sensitive manner.
+    return lhs.GetFileId() == rhs.GetFileId() && lhs.GetUrl() == rhs.GetUrl() &&
+           lhs.GetSizeInBytes() == rhs.GetSizeInBytes() && lhs.GetHashes() == rhs.GetHashes();
+}
+
+bool details::operator!=(const File& lhs, const File& rhs)
+{
+    return !(lhs == rhs);
+}
+
+bool details::operator==(const Content& lhs, const Content& rhs)
+{
+    return lhs.GetContentId() == rhs.GetContentId() &&
+           (std::is_permutation(lhs.GetFiles().begin(),
+                                lhs.GetFiles().end(),
+                                rhs.GetFiles().begin(),
+                                rhs.GetFiles().end(),
+                                [](const File& flhs, const File& frhs) { return flhs == frhs; }));
+}
+
+bool details::operator!=(const Content& lhs, const Content& rhs)
+{
+    return !(lhs == rhs);
 }

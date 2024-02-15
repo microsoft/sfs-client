@@ -41,16 +41,6 @@ class ContentId
      */
     const std::string& GetVersion() const noexcept;
 
-    /**
-     * @brief Compares two ContentId objects for equality. The values of members are strictly compared.
-     */
-    bool IsObjectEqual(const ContentId& other) const noexcept;
-
-    /**
-     * @brief Compares two ContentId objects for inequality. The values of members are strictly compared.
-     */
-    bool IsObjectNotEqual(const ContentId& other) const noexcept;
-
   private:
     ContentId() = default;
 
@@ -98,16 +88,6 @@ class File
      * @return Dictionary of algorithm type to base64 encoded file hash string
      */
     const std::unordered_map<HashType, std::string>& GetHashes() const noexcept;
-
-    /**
-     * @brief Compares two File objects for equality. The values of members are strictly compared.
-     */
-    bool IsObjectEqual(const File& other) const noexcept;
-
-    /**
-     * @brief Compares two File objects for inequality. The values of members are strictly compared.
-     */
-    bool IsObjectNotEqual(const File& other) const noexcept;
 
   private:
     File() = default;
@@ -160,16 +140,6 @@ class Content
 
     const std::vector<File>& GetFiles() const noexcept;
 
-    /**
-     * @brief Compares two Content objects for equality. The values of members are strictly compared.
-     */
-    bool IsObjectEqual(const Content& other) const noexcept;
-
-    /**
-     * @brief Compares two Content objects for inequality. The values of members are strictly compared.
-     */
-    bool IsObjectNotEqual(const Content& other) const noexcept;
-
   private:
     Content() = default;
 
@@ -177,3 +147,24 @@ class Content
     std::vector<File> m_files;
 };
 } // namespace SFS
+
+namespace SFS::details
+{
+/// @brief Compares two ContentId objects for equality. The values of members are strictly compared.
+bool operator==(const ContentId& lhs, const ContentId& rhs);
+
+/// @brief Compares two ContentId objects for inequality. The values of members are strictly compared.
+bool operator!=(const ContentId& lhs, const ContentId& rhs);
+
+/// @brief Compares two File objects for equality. The values of members are strictly compared.
+bool operator==(const File& lhs, const File& rhs);
+
+/// @brief Compares two File objects for inequality. The values of members are strictly compared.
+bool operator!=(const File& lhs, const File& rhs);
+
+/// @brief Compares two Content objects for equality. The values of members are strictly compared.
+bool operator==(const Content& lhs, const Content& rhs);
+
+/// @brief Compares two Content objects for inequality. The values of members are strictly compared.
+bool operator!=(const Content& lhs, const Content& rhs);
+} // namespace SFS::details
