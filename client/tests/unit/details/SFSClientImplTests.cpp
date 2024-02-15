@@ -118,7 +118,7 @@ TEST("Testing class SFSClientImpl()")
         std::unique_ptr<ContentId> contentId;
         SECTION("No attributes")
         {
-            REQUIRE(sfsClient.GetLatestVersion(productName, {}, *connection, contentId) == Result::Success);
+            REQUIRE_NOTHROW(contentId = sfsClient.GetLatestVersion(productName, {}, *connection));
             REQUIRE(contentId);
             CheckProduct(*contentId, ns, productName, expectedVersion);
         }
@@ -126,7 +126,7 @@ TEST("Testing class SFSClientImpl()")
         SECTION("With attributes")
         {
             const SearchAttributes attributes{{"attr1", "value"}};
-            REQUIRE(sfsClient.GetLatestVersion(productName, attributes, *connection, contentId) == Result::Success);
+            REQUIRE_NOTHROW(contentId = sfsClient.GetLatestVersion(productName, attributes, *connection));
             REQUIRE(contentId);
             CheckProduct(*contentId, ns, productName, expectedVersion);
         }
@@ -134,10 +134,10 @@ TEST("Testing class SFSClientImpl()")
         SECTION("Failing")
         {
             responseCode = Result::HttpNotFound;
-            REQUIRE_THROWS_CODE(sfsClient.GetLatestVersion("badName", {}, *connection, contentId), HttpNotFound);
+            REQUIRE_THROWS_CODE(contentId = sfsClient.GetLatestVersion("badName", {}, *connection), HttpNotFound);
 
             const SearchAttributes attributes{{"attr1", "value"}};
-            REQUIRE_THROWS_CODE(sfsClient.GetLatestVersion("badName", attributes, *connection, contentId),
+            REQUIRE_THROWS_CODE(contentId = sfsClient.GetLatestVersion("badName", attributes, *connection),
                                 HttpNotFound);
         }
     }
@@ -151,8 +151,7 @@ TEST("Testing class SFSClientImpl()")
         std::unique_ptr<ContentId> contentId;
         SECTION("Getting version")
         {
-            REQUIRE(sfsClient.GetSpecificVersion(productName, expectedVersion, *connection, contentId) ==
-                    Result::Success);
+            REQUIRE_NOTHROW(contentId = sfsClient.GetSpecificVersion(productName, expectedVersion, *connection));
             REQUIRE(contentId);
             CheckProduct(*contentId, ns, productName, expectedVersion);
         }
@@ -160,7 +159,7 @@ TEST("Testing class SFSClientImpl()")
         SECTION("Failing")
         {
             responseCode = Result::HttpNotFound;
-            REQUIRE_THROWS_CODE(sfsClient.GetSpecificVersion(productName, expectedVersion, *connection, contentId),
+            REQUIRE_THROWS_CODE(contentId = sfsClient.GetSpecificVersion(productName, expectedVersion, *connection),
                                 HttpNotFound);
         }
     }
@@ -188,7 +187,7 @@ TEST("Testing class SFSClientImpl()")
         std::vector<File> files;
         SECTION("Getting version")
         {
-            REQUIRE(sfsClient.GetDownloadInfo(productName, expectedVersion, *connection, files) == Result::Success);
+            REQUIRE_NOTHROW(files = sfsClient.GetDownloadInfo(productName, expectedVersion, *connection));
             REQUIRE(!files.empty());
             CheckDownloadInfo(files, productName);
         }
@@ -196,7 +195,7 @@ TEST("Testing class SFSClientImpl()")
         SECTION("Failing")
         {
             responseCode = Result::HttpNotFound;
-            REQUIRE_THROWS_CODE(sfsClient.GetDownloadInfo(productName, expectedVersion, *connection, files),
+            REQUIRE_THROWS_CODE(files = sfsClient.GetDownloadInfo(productName, expectedVersion, *connection),
                                 HttpNotFound);
             REQUIRE(files.empty());
         }

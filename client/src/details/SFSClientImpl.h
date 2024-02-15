@@ -30,30 +30,30 @@ class SFSClientImpl : public SFSClientInterface
     /**
      * @brief Gets the metadata for the latest available version for the specified product that matches the optional
      * request attributes
+     * @return ContentId for the latest version of the product
      * @throws SFSException if the request fails
      */
-    [[nodiscard]] Result GetLatestVersion(const std::string& productName,
-                                          const SearchAttributes& attributes,
-                                          Connection& connection,
-                                          std::unique_ptr<ContentId>& contentId) const override;
+    [[nodiscard]] std::unique_ptr<ContentId> GetLatestVersion(const std::string& productName,
+                                                              const SearchAttributes& attributes,
+                                                              Connection& connection) const override;
 
     /**
      * @brief Gets the metadata for a specific version of the specified product
+     * @return ContentId for the specific version of the product
      * @throws SFSException if the request fails
      */
-    [[nodiscard]] Result GetSpecificVersion(const std::string& productName,
-                                            const std::string& version,
-                                            Connection& connection,
-                                            std::unique_ptr<ContentId>& contentId) const override;
+    [[nodiscard]] std::unique_ptr<ContentId> GetSpecificVersion(const std::string& productName,
+                                                                const std::string& version,
+                                                                Connection& connection) const override;
 
     /**
      * @brief Gets the files metadata for a specific version of the specified product
+     * @return vector of File objects for the specific version of the product
      * @throws SFSException if the request fails
      */
-    [[nodiscard]] Result GetDownloadInfo(const std::string& productName,
-                                         const std::string& version,
-                                         Connection& connection,
-                                         std::vector<File>& files) const override;
+    [[nodiscard]] std::vector<File> GetDownloadInfo(const std::string& productName,
+                                                    const std::string& version,
+                                                    Connection& connection) const override;
 
     /**
      * @brief Returns the ConnectionManager to be used by the SFSClient to create Connection objects
