@@ -182,6 +182,7 @@ class MockWebServerImpl
     std::string GetUrl() const;
 
     void RegisterProduct(std::string&& name, std::string&& version);
+    void RegisterExpectedRequestHeader(std::string&& header, std::string&& value);
 
   private:
     void ConfigureServerSettings();
@@ -192,7 +193,10 @@ class MockWebServerImpl
     void ConfigureGetSpecificVersion();
     void ConfigurePostDownloadInfo();
 
+    void CheckRequestHeaders(const httplib::Request& req);
+
     void BufferLog(const BufferedLogData& data);
+    void ProcessBufferedLogs();
 
     httplib::Server m_server;
     int m_port{-1};
@@ -203,6 +207,8 @@ class MockWebServerImpl
 
     using VersionList = std::set<std::string>;
     std::unordered_map<std::string, VersionList> m_products;
+
+    std::unordered_map<std::string, std::string> m_expectedRequestHeaders;
 
     std::vector<BufferedLogData> m_bufferedLog;
     std::mutex m_logMutex;
@@ -239,6 +245,11 @@ void MockWebServer::RegisterProduct(std::string name, std::string version)
     m_impl->RegisterProduct(std::move(name), std::move(version));
 }
 
+void MockWebServer::RegisterExpectedRequestHeader(std::string header, std::string value)
+{
+    m_impl->RegisterExpectedRequestHeader(std::move(header), std::move(value));
+}
+
 void MockWebServerImpl::Start()
 {
     ConfigureServerSettings();
@@ -271,6 +282,9 @@ void MockWebServerImpl::ConfigureServerSettings()
         {
             m_lastException = Result(Result::HttpUnexpected, "Unknown Exception");
         }
+
+        ProcessBufferedLogs();
+
         res.status = static_cast<int>(StatusCode::InternalServerError);
     });
 
@@ -292,6 +306,7 @@ void MockWebServerImpl::ConfigurePostLatestVersion()
     const std::string pattern = "/api/:apiVersion/contents/:instanceId/namespaces/:ns/names/:name/versions/latest";
     m_server.Post(pattern, [&](const httplib::Request& req, httplib::Response& res) {
         BUFFER_LOG("Matched PostLatestVersion");
+        CheckRequestHeaders(req);
 
         if (util::AreNotEqualI(req.path_params.at("apiVersion"), "v2"))
         {
@@ -367,6 +382,7 @@ void MockWebServerImpl::ConfigurePostLatestVersionBatch()
     const std::string pattern = "/api/:apiVersion/contents/:instanceId/namespaces/:ns/names";
     m_server.Post(pattern, [&](const httplib::Request& req, httplib::Response& res) {
         BUFFER_LOG("Matched PostLatestVersionBatch");
+        CheckRequestHeaders(req);
 
         if (util::AreNotEqualI(req.path_params.at("apiVersion"), "v2"))
         {
@@ -468,6 +484,7 @@ void MockWebServerImpl::ConfigureGetSpecificVersion()
     const std::string pattern = "/api/:apiVersion/contents/:instanceId/namespaces/:ns/names/:name/versions/:version";
     m_server.Get(pattern, [&](const httplib::Request& req, httplib::Response& res) {
         BUFFER_LOG("Matched GetSpecificVersion");
+        CheckRequestHeaders(req);
 
         if (util::AreNotEqualI(req.path_params.at("apiVersion"), "v1"))
         {
@@ -514,6 +531,7 @@ void MockWebServerImpl::ConfigurePostDownloadInfo()
         "/api/:apiVersion/contents/:instanceId/namespaces/:ns/names/:name/versions/:version/files";
     m_server.Post(pattern, [&](const httplib::Request& req, httplib::Response& res) {
         BUFFER_LOG("Matched PostDownloadInfo");
+        CheckRequestHeaders(req);
 
         if (util::AreNotEqualI(req.path_params.at("apiVersion"), "v1"))
         {
@@ -559,10 +577,42 @@ void MockWebServerImpl::ConfigurePostDownloadInfo()
     });
 }
 
+void MockWebServerImpl::CheckRequestHeaders(const httplib::Request& req)
+{
+    for (const auto& header : m_expectedRequestHeaders)
+    {
+        std::optional<std::string> errorMessage;
+        if (!req.has_header(header.first))
+        {
+            errorMessage = "Expected header [" + header.first + "] not found";
+        }
+        else if (util::AreNotEqualI(req.get_header_value(header.first), header.second))
+        {
+            errorMessage = "Header [" + header.first + "] with value [" + req.get_header_value(header.first) +
+                           "] does not match the expected value [" + header.second + "]";
+        }
+
+        if (errorMessage)
+        {
+            BUFFER_LOG(*errorMessage);
+            throw std::runtime_error(errorMessage->c_str());
+        }
+    }
+}
+
 void MockWebServerImpl::BufferLog(const BufferedLogData& data)
 {
     std::lock_guard guard(m_logMutex);
     m_bufferedLog.push_back(data);
+}
+
+void MockWebServerImpl::ProcessBufferedLogs()
+{
+    for (const auto& data : m_bufferedLog)
+    {
+        LogCallbackToTest(ToLogData(data));
+    }
+    m_bufferedLog.clear();
 }
 
 Result MockWebServerImpl::Stop()
@@ -572,11 +622,7 @@ Result MockWebServerImpl::Stop()
         m_server.stop();
         m_listenerThread.join();
     }
-    for (const auto& data : m_bufferedLog)
-    {
-        LogCallbackToTest(ToLogData(data));
-    }
-    m_bufferedLog.clear();
+    ProcessBufferedLogs();
     return m_lastException.value_or(Result::Success);
 }
 
@@ -588,4 +634,9 @@ std::string MockWebServerImpl::GetUrl() const
 void MockWebServerImpl::RegisterProduct(std::string&& name, std::string&& version)
 {
     m_products[std::move(name)].emplace(std::move(version));
+}
+
+void MockWebServerImpl::RegisterExpectedRequestHeader(std::string&& header, std::string&& value)
+{
+    m_expectedRequestHeaders.emplace(std::move(header), std::move(value));
 }
