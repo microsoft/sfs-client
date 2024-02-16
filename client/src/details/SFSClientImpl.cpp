@@ -260,7 +260,12 @@ SFS_CATCH_LOG_RETHROW(m_reportingHandler)
 template <typename ConnectionManagerT>
 std::unique_ptr<Connection> SFSClientImpl<ConnectionManagerT>::MakeConnection()
 {
-    return m_connectionManager->MakeConnection();
+    auto connection = m_connectionManager->MakeConnection();
+    if (m_callerApplicationId)
+    {
+        connection->SetCallerApplicationId(*m_callerApplicationId);
+    }
+    return connection;
 }
 
 template <typename ConnectionManagerT>

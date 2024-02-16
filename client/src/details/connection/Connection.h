@@ -3,6 +3,7 @@
 
 #pragma once
 
+#include <optional>
 #include <string>
 
 namespace SFS::details
@@ -42,7 +43,12 @@ class Connection
      */
     std::string Post(const std::string& url);
 
+    void SetCallerApplicationId(std::string callerApplicationId);
+
   protected:
     const ReportingHandler& m_handler;
+
+    /// @brief The caller's application ID. This is sent to the SFS Service via the User-Agent HTTP header.
+    std::optional<std::string> m_callerApplicationId;
 };
 } // namespace SFS::details

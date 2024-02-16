@@ -14,3 +14,8 @@ std::string Connection::Post(const std::string& url)
 {
     return Post(url, {});
 }
+
+void Connection::SetCallerApplicationId(std::string callerApplicationId)
+{
+    m_callerApplicationId = std::move(callerApplicationId);
+}
