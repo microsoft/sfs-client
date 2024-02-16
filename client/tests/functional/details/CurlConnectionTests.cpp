@@ -76,6 +76,10 @@ TEST("Testing CurlConnection()")
     CurlConnectionManager connectionManager(handler);
     auto connection = connectionManager.MakeConnection();
 
+    INFO("Setting User-Agent");
+    connection->SetCallerApplicationId("testId");
+    server.RegisterExpectedHeader("User-Agent", "testId");
+
     SECTION("Testing CurlConnection::Get()")
     {
         const std::string url = SFSUrlComponents::GetSpecificVersionUrl(server.GetBaseUrl(),
@@ -103,6 +107,8 @@ TEST("Testing CurlConnection()")
 
     SECTION("Testing CurlConnection::Post()")
     {
+        server.RegisterExpectedHeader("Content-Type", "application/json");
+
         SECTION("With GetLatestVersion mock")
         {
             const std::string url =

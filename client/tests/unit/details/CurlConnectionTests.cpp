@@ -82,4 +82,9 @@ TEST("Testing CurlConnection()")
         REQUIRE_NOTHROW(out = connection->Post("url", body.dump()));
         REQUIRE(out == response);
     }
+
+    SECTION("Testing CurlConnection::SetCallerApplicationId()")
+    {
+        connection->SetCallerApplicationId("testId");
+    }
 }
