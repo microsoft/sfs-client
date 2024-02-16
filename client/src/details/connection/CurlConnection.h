@@ -35,6 +35,12 @@ class CurlConnection : public Connection
      */
     std::string Post(const std::string& url, const std::string& data) override;
 
+  private:
+    /**
+     * @brief Process retry and perform wait logic before retrying the request
+     */
+    void ProcessRetry(int attempt, bool lastAttempt, long httpCode);
+
   protected:
     /**
      * @brief Perform a REST request to the given @param url with the given @param headers

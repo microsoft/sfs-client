@@ -11,6 +11,7 @@ enum class HttpHeader
 {
     ContentType,
     MSCV,
+    RetryAfter,
 };
 
 std::string ToString(HttpHeader header);

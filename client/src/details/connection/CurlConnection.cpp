@@ -4,11 +4,15 @@
 #include "CurlConnection.h"
 
 #include "../ErrorHandling.h"
+#include "../ReportingHandler.h"
 #include "HttpHeader.h"
 
 #include <curl/curl.h>
 
+#include <chrono>
 #include <cstring>
+#include <optional>
+#include <thread>
 
 #define THROW_IF_CURL_ERROR(curlCall, error)                                                                           \
     do                                                                                                                 \
@@ -114,14 +118,20 @@ Result CurlCodeToResult(CURLcode curlCode, char* errorBuffer)
     return Result(code, std::move(message));
 }
 
+bool IsSuccessfulHttpCode(long httpCode)
+{
+    return httpCode == 200;
+}
+
 Result HttpCodeToResult(long httpCode)
 {
-    switch (httpCode)
-    {
-    case 200:
+    if (IsSuccessfulHttpCode(httpCode))
     {
         return Result::Success;
     }
+
+    switch (httpCode)
+    {
     case 400:
     {
         return Result(Result::HttpBadRequest, "400 Bad Request");
@@ -147,6 +157,75 @@ Result HttpCodeToResult(long httpCode)
         return Result(Result::HttpUnexpected, "Unexpected HTTP code " + std::to_string(httpCode));
     }
     }
+}
+
+bool IsRetriableHttpError(long httpCode, const std::unordered_set<RetriableHttpError>& retriableHttpErrors)
+{
+    for (const auto retriableError : {RetriableHttpError::TooManyRequests,
+                                      RetriableHttpError::InternalServerError,
+                                      RetriableHttpError::BadGateway,
+                                      RetriableHttpError::ServerBusy,
+                                      RetriableHttpError::GatewayTimeout})
+    {
+        if (httpCode == static_cast<long>(retriableError) && retriableHttpErrors.count(retriableError) > 0)
+        {
+            return true;
+        }
+    }
+
+    return false;
+}
+
+std::optional<std::string> GetResponseHeader(CURL* handle,
+                                             HttpHeader httpHeader,
+                                             const ReportingHandler& reportingHandler)
+{
+    const std::string headerName = ToString(httpHeader);
+
+    // This struct only represents data inside the CURL handle, and must not be manually freed
+    struct curl_header* header;
+    const int lastRequest = -1;
+    CURLHcode curlhCode = curl_easy_header(handle, headerName.c_str(), 0 /*index*/, CURLH_HEADER, lastRequest, &header);
+    switch (curlhCode)
+    {
+    case CURLHE_OK:
+        return header->value;
+    case CURLHE_BADINDEX:
+    case CURLHE_MISSING:
+    case CURLHE_NOHEADERS:
+        return std::nullopt;
+    default:
+        THROW_LOG(
+            Result(Result::ConnectionUnexpectedError,
+                   "Failed to get response header " + headerName + " with CURLH code " + std::to_string(curlhCode)),
+            reportingHandler);
+    }
+    return std::nullopt;
+}
+
+int ParseRetryAfterValue(const std::string& retryAfter, const ReportingHandler& reportingHandler)
+{
+    int retryAfterSec = 0;
+    try
+    {
+        retryAfterSec = std::stoi(retryAfter);
+    }
+    catch (std::invalid_argument&)
+    {
+        THROW_LOG(
+            Result(Result::ConnectionUnexpectedError, "Retry-After header value could not be converted to an integer"),
+            reportingHandler);
+    }
+    catch (std::out_of_range&)
+    {
+        THROW_LOG(Result(Result::ConnectionUnexpectedError, "Retry-After header value is not in the expected range"),
+                  reportingHandler);
+    }
+    if (retryAfterSec < 0)
+    {
+        THROW_LOG(Result(Result::ConnectionUnexpectedError, "Invalid Retry-After header value"), reportingHandler);
+    }
+    return retryAfterSec;
 }
 } // namespace
 
@@ -245,18 +324,80 @@ std::string CurlConnection::CurlPerform(const std::string& url, CurlHeaderList& 
     THROW_IF_CURL_SETUP_ERROR(curl_easy_setopt(m_handle, CURLOPT_WRITEFUNCTION, WriteCallback));
     THROW_IF_CURL_SETUP_ERROR(curl_easy_setopt(m_handle, CURLOPT_WRITEDATA, &readBuffer));
 
-    auto result = curl_easy_perform(m_handle);
-    if (result != CURLE_OK)
+    // Retry the connection a specified number of times
+    const unsigned totalAttempts = 1 + m_config.maxRetries;
+    for (unsigned i = 0; i < totalAttempts; i++)
     {
-        THROW_LOG(CurlCodeToResult(result, errorBuffer.Get()), m_handler);
+        const unsigned attempt = i + 1;
+        LOG_INFO(m_handler, "Request attempt %u out of %u", attempt, totalAttempts);
+        const bool lastAttempt = attempt == totalAttempts;
+
+        // Clear the buffer before each attempt
+        readBuffer.clear();
+
+        // Perform the request
+        const auto result = curl_easy_perform(m_handle);
+        if (result != CURLE_OK)
+        {
+            THROW_LOG(CurlCodeToResult(result, errorBuffer.Get()), m_handler);
+        }
+
+        // Check request status to stop or retry
+        long httpCode = 0;
+        THROW_IF_CURL_UNEXPECTED_ERROR(curl_easy_getinfo(m_handle, CURLINFO_RESPONSE_CODE, &httpCode));
+
+        if (IsSuccessfulHttpCode(httpCode))
+        {
+            break;
+        }
+
+        ProcessRetry(attempt, lastAttempt, httpCode);
     }
 
-    // TODO #43: perform retry logic according to response errors
-    // The retry logic should also be opt-out-able by the user
-
-    long httpCode = 0;
-    THROW_IF_CURL_UNEXPECTED_ERROR(curl_easy_getinfo(m_handle, CURLINFO_RESPONSE_CODE, &httpCode));
-    THROW_IF_FAILED_LOG(HttpCodeToResult(httpCode), m_handler);
-
     return readBuffer;
+}
+
+void CurlConnection::ProcessRetry(int attempt, bool lastAttempt, long httpCode)
+{
+    const Result httpResult = HttpCodeToResult(httpCode);
+    if (lastAttempt)
+    {
+        LOG_INFO(m_handler, "No retry as this is the last attempt");
+        THROW_IF_FAILED_LOG(httpResult, m_handler);
+    }
+
+    if (!IsRetriableHttpError(httpCode, m_config.retriableHttpErrors))
+    {
+        LOG_INFO(m_handler, "Error %ld is not retriable, stopping", httpCode);
+        THROW_IF_FAILED_LOG(httpResult, m_handler);
+    }
+
+    using namespace std::chrono;
+
+    // Wait before retrying. Prefer the Retry-After information if available
+    unsigned retryDelayMs = 0;
+    const std::optional<std::string> retryAfter = GetResponseHeader(m_handle, HttpHeader::RetryAfter, m_handler);
+    if (retryAfter)
+    {
+        const int retryAfterSec = ParseRetryAfterValue(*retryAfter, m_handler);
+        if (retryAfterSec > static_cast<int>(m_config.maxSecForRetryAfter))
+        {
+            LOG_INFO(m_handler,
+                     "Retry-After header value %d is larger than the expected value %u, stopping",
+                     retryAfterSec,
+                     m_config.maxSecForRetryAfter);
+            THROW_IF_FAILED_LOG(httpResult, m_handler);
+        }
+
+        retryDelayMs = static_cast<unsigned>(duration_cast<milliseconds>(seconds(retryAfterSec)).count());
+    }
+    else
+    {
+        // Apply exponential back-off with a factor of 2
+        retryDelayMs = m_config.retryDelayMs * (1 << (attempt - 1));
+    }
+
+    LOG_IF_FAILED(httpResult, m_handler);
+    LOG_INFO(m_handler, "Sleeping for %u ms", retryDelayMs);
+    std::this_thread::sleep_for(std::chrono::milliseconds(retryDelayMs));
 }
