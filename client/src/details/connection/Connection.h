@@ -4,6 +4,7 @@
 #pragma once
 
 #include "../CorrelationVector.h"
+#include "ConnectionConfig.h"
 
 #include <string>
 
@@ -49,10 +50,18 @@ class Connection
      */
     void SetCorrelationVector(const std::string& cv);
 
+    /**
+     * @brief Set the connection configuration @param config
+     */
+    void SetConfig(ConnectionConfig config);
+
   protected:
     const ReportingHandler& m_handler;
 
     /// @brief The correlation vector to use for requests
     CorrelationVector m_cv;
+
+    /// @brief Set of configurations for this connection
+    ConnectionConfig m_config{};
 };
 } // namespace SFS::details

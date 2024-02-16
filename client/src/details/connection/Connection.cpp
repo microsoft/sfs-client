@@ -19,3 +19,8 @@ void Connection::SetCorrelationVector(const std::string& cv)
 {
     m_cv = std::move(CorrelationVector(cv, m_handler));
 }
+
+void Connection::SetConfig(ConnectionConfig config)
+{
+    m_config = std::move(config);
+}
