@@ -27,6 +27,7 @@ void DisplayUsage()
         << "  --accountId <id>\t\tAccount ID of the SFS service, used to identify the caller" << std::endl
         << "  --instanceId <id>\t\tA custom SFS instance ID" << std::endl
         << "  --namespace <ns>\t\tA custom SFS namespace" << std::endl
+        << "  --callerApplicationId <ns>\t\tThe caller's application ID" << std::endl
         << "  --customUrl <url>\t\tA custom URL for the SFS service. Library must have been built with SFS_ENABLE_OVERRIDES"
         << std::endl
         << std::endl
@@ -67,6 +68,7 @@ struct Settings
     std::string accountId;
     std::string instanceId;
     std::string nameSpace;
+    std::optional<std::string> callerApplicationId;
     std::string customUrl;
 };
 
@@ -128,6 +130,16 @@ int ParseArguments(const std::vector<std::string_view>& args, Settings& settings
                 return 1;
             }
             settings.nameSpace = args[++i];
+        }
+        else if (args[i].compare("--callerApplicationId") == 0)
+        {
+            if (!validateArg(i,
+                             "callerApplicationId",
+                             settings.callerApplicationId ? *settings.callerApplicationId : ""))
+            {
+                return 1;
+            }
+            settings.callerApplicationId = args[++i];
         }
         else if (args[i].compare("--customUrl") == 0)
         {
@@ -288,8 +300,9 @@ int main(int argc, char* argv[])
              (settings.instanceId.empty() ? "" : ", instanceId: " + settings.instanceId) +
              (settings.nameSpace.empty() ? "" : ", namespace: " + settings.nameSpace));
     std::unique_ptr<SFSClient> sfsClient;
-    auto result =
-        SFSClient::Make({settings.accountId, settings.instanceId, settings.nameSpace, LoggingCallback}, sfsClient);
+    auto result = SFSClient::Make(
+        {settings.accountId, settings.instanceId, settings.nameSpace, settings.callerApplicationId, LoggingCallback},
+        sfsClient);
     if (!result)
     {
         PrintError("Failed to initialize SFSClient.");

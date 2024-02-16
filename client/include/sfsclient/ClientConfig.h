@@ -22,6 +22,9 @@ struct ClientConfig
     /// @brief The namespace of the SFS service
     std::optional<std::string> nameSpace;
 
+    /// @brief The caller's application ID. This is sent to the SFS Service via the User-Agent HTTP header.
+    std::optional<std::string> callerApplicationId;
+
     /**
      * @brief A logging callback function that is called when the SFSClient logs a message
      * @details This function returns logging information from the SFSClient. The caller is responsible for incoporating

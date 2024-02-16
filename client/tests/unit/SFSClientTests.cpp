@@ -52,6 +52,7 @@ TEST("Testing SFSClient::Make()")
     const std::string accountId{"testAccountId"};
     const std::string instanceId{"testInstanceId"};
     const std::string nameSpace{"testNameSpace"};
+    const std::string callerApplicationId{"callerApplicationId"};
 
     std::unique_ptr<SFSClient> sfsClient;
 
@@ -120,53 +121,67 @@ TEST("Testing SFSClient::Make()")
         REQUIRE(sfsClient != nullptr);
     }
 
-    SECTION("Make(accountId, instanceId, namespace, logCallbackFn, out) works")
+    SECTION("Make(accountId, instanceId, namespace, callerApplicationId, out)")
+    {
+        REQUIRE(SFSClient::Make({accountId, instanceId, nameSpace, callerApplicationId}, sfsClient) == Result::Success);
+        REQUIRE(sfsClient != nullptr);
+
+        ClientConfig config{accountId, instanceId, nameSpace, callerApplicationId};
+        REQUIRE(SFSClient::Make(config, sfsClient) == Result::Success);
+        REQUIRE(sfsClient != nullptr);
+    }
+
+    SECTION("Make(accountId, instanceId, namespace, callerApplicationId, logCallbackFn, out) works")
     {
         SECTION("Using a lambda with {} initialization")
         {
-            REQUIRE(SFSClient::Make({accountId, instanceId, nameSpace, [](const LogData&) {}}, sfsClient) ==
-                    Result::Success);
+            REQUIRE(SFSClient::Make({accountId, instanceId, nameSpace, callerApplicationId, [](const LogData&) {}},
+                                    sfsClient) == Result::Success);
             REQUIRE(sfsClient != nullptr);
         }
 
         SECTION("Using a lambda with a ClientConfig object")
         {
-            ClientConfig config{accountId, instanceId, nameSpace, [](const LogData&) {}};
+            ClientConfig config{accountId, instanceId, nameSpace, callerApplicationId, [](const LogData&) {}};
             REQUIRE(SFSClient::Make(config, sfsClient) == Result::Success);
             REQUIRE(sfsClient != nullptr);
         }
 
         SECTION("Using a nullptr with a ClientConfig object")
         {
-            ClientConfig config{accountId, instanceId, nameSpace, nullptr};
+            ClientConfig config{accountId, instanceId, nameSpace, callerApplicationId, nullptr};
             REQUIRE(SFSClient::Make(config, sfsClient) == Result::Success);
             REQUIRE(sfsClient != nullptr);
         }
 
         SECTION("Using a valid empty-namespace function within a ClientConfig object")
         {
-            ClientConfig config{accountId, instanceId, nameSpace, TestLoggingCallback};
+            ClientConfig config{accountId, instanceId, nameSpace, callerApplicationId, TestLoggingCallback};
             REQUIRE(SFSClient::Make(config, sfsClient) == Result::Success);
             REQUIRE(sfsClient != nullptr);
         }
 
         SECTION("Using a valid static function within a ClientConfig object")
         {
-            ClientConfig config{accountId, instanceId, nameSpace, StaticTestLoggingCallback};
+            ClientConfig config{accountId, instanceId, nameSpace, callerApplicationId, StaticTestLoggingCallback};
             REQUIRE(SFSClient::Make(config, sfsClient) == Result::Success);
             REQUIRE(sfsClient != nullptr);
         }
 
         SECTION("Using a valid static member method within a ClientConfig object")
         {
-            ClientConfig config{accountId, instanceId, nameSpace, &TestLoggingCallbackStruct::TestLoggingCallback};
+            ClientConfig config{accountId,
+                                instanceId,
+                                nameSpace,
+                                callerApplicationId,
+                                &TestLoggingCallbackStruct::TestLoggingCallback};
             REQUIRE(SFSClient::Make(config, sfsClient) == Result::Success);
             REQUIRE(sfsClient != nullptr);
         }
 
         SECTION("Can also move a lambda")
         {
-            ClientConfig config{accountId, instanceId, nameSpace, [](const LogData&) {}};
+            ClientConfig config{accountId, instanceId, nameSpace, callerApplicationId, [](const LogData&) {}};
             REQUIRE(SFSClient::Make(std::move(config), sfsClient) == Result::Success);
             REQUIRE(sfsClient != nullptr);
         }

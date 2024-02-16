@@ -80,6 +80,7 @@ class SFSClientImpl : public SFSClientInterface
     std::string m_accountId;
     std::string m_instanceId;
     std::string m_nameSpace;
+    std::optional<std::string> m_callerApplicationId;
 
     std::unique_ptr<ConnectionManagerT> m_connectionManager;
 

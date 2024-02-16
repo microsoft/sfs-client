@@ -39,7 +39,7 @@ TEST("Testing class SFSClientImpl()")
 {
     test::MockWebServer server;
     const std::string ns = "testNameSpace";
-    SFSClientImpl<CurlConnectionManager> sfsClient({"testAccountId", "testInstanceId", ns, LogCallbackToTest});
+    SFSClientImpl<CurlConnectionManager> sfsClient({"testAccountId", "testInstanceId", ns, {}, LogCallbackToTest});
     sfsClient.SetCustomBaseUrl(server.GetBaseUrl());
 
     server.RegisterProduct("productName", "0.0.0.2");

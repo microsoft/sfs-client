@@ -153,6 +153,7 @@ SFSClientImpl<ConnectionManagerT>::SFSClientImpl(ClientConfig&& config)
     , m_instanceId(config.instanceId && !config.instanceId->empty() ? std::move(*config.instanceId)
                                                                     : c_defaultInstanceId)
     , m_nameSpace(config.nameSpace && !config.nameSpace->empty() ? std::move(*config.nameSpace) : c_defaultNameSpace)
+    , m_callerApplicationId(std::move(config.callerApplicationId))
 {
     if (config.logCallbackFn)
     {
