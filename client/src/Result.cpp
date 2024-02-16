@@ -78,6 +78,8 @@ std::string_view SFS::ToString(Result::Code code) noexcept
         return "HttpServiceNotAvailable";
     case Result::HttpTimeout:
         return "HttpTimeout";
+    case Result::HttpTooManyRequests:
+        return "HttpTooManyRequests";
     case Result::HttpUnexpected:
         return "HttpUnexpected";
     case Result::InvalidArg:
