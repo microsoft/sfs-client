@@ -30,7 +30,7 @@ class MockCurlConnection : public CurlConnection
     }
 
   protected:
-    std::string CurlPerform(const std::string&) override
+    std::string CurlPerform(const std::string&, CurlHeaderList&) override
     {
         if (m_responseCode == Result::Success)
         {
