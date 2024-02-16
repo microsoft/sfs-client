@@ -51,7 +51,7 @@ try
 
     // TODO #50: Adapt retrieval to storeapps flow with pre-requisites once that is implemented server-side
 
-    const auto connection = m_impl->GetConnectionManager().MakeConnection();
+    const auto connection = m_impl->MakeConnection();
 
     auto contentId = m_impl->GetLatestVersion(productName, attributes, *connection);
     auto files = m_impl->GetDownloadInfo(productName, contentId->GetVersion(), *connection);

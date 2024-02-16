@@ -257,9 +257,9 @@ try
 SFS_CATCH_LOG_RETHROW(m_reportingHandler)
 
 template <typename ConnectionManagerT>
-ConnectionManager& SFSClientImpl<ConnectionManagerT>::GetConnectionManager()
+std::unique_ptr<Connection> SFSClientImpl<ConnectionManagerT>::MakeConnection()
 {
-    return *m_connectionManager;
+    return m_connectionManager->MakeConnection();
 }
 
 template <typename ConnectionManagerT>
