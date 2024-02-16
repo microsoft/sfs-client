@@ -51,15 +51,10 @@ try
 
     // TODO #50: Adapt retrieval to storeapps flow with pre-requisites once that is implemented server-side
 
-    auto connection = m_impl->GetConnectionManager().MakeConnection();
+    const auto connection = m_impl->GetConnectionManager().MakeConnection();
 
-    std::unique_ptr<ContentId> contentId;
-    RETURN_IF_FAILED_LOG(m_impl->GetLatestVersion(productName, attributes, *connection, contentId),
-                         m_impl->GetReportingHandler());
-
-    std::vector<File> files;
-    RETURN_IF_FAILED_LOG(m_impl->GetDownloadInfo(productName, contentId->GetVersion(), *connection, files),
-                         m_impl->GetReportingHandler());
+    auto contentId = m_impl->GetLatestVersion(productName, attributes, *connection);
+    auto files = m_impl->GetDownloadInfo(productName, contentId->GetVersion(), *connection);
 
     std::unique_ptr<Content> tmp;
     RETURN_IF_FAILED_LOG(Content::Make(std::move(contentId), std::move(files), tmp), m_impl->GetReportingHandler());

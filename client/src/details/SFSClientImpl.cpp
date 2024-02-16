@@ -3,6 +3,7 @@
 
 #include "SFSClientImpl.h"
 
+#include "ContentUtil.h"
 #include "ErrorHandling.h"
 #include "Logging.h"
 #include "SFSUrlComponents.h"
@@ -16,12 +17,10 @@
 #include <nlohmann/json.hpp>
 
 #define SFS_INFO(...) LOG_INFO(m_reportingHandler, __VA_ARGS__)
-#define SFS_RETURN_IF_FAILED(result) RETURN_IF_FAILED_LOG(result, m_reportingHandler)
-#define RETURN_INVALID_RESPONSE_IF_FALSE(condition, message)                                                           \
-    RETURN_CODE_IF(ServiceInvalidResponse, !(condition), message)
 
 using namespace SFS;
 using namespace SFS::details;
+using namespace SFS::details::contentutil;
 using namespace SFS::details::util;
 using json = nlohmann::json;
 
@@ -39,39 +38,26 @@ void LogIfTestOverridesAllowed(const ReportingHandler& handler)
     }
 }
 
-Result ParseServerMethodStringToJson(const std::string& data, const std::string& method, json& out)
+void ThrowInvalidResponseIfFalse(bool condition, const std::string& message, const ReportingHandler& handler)
+{
+    THROW_CODE_IF_LOG(ServiceInvalidResponse, !condition, handler, message);
+}
+
+json ParseServerMethodStringToJson(const std::string& data, const std::string& method, const ReportingHandler& handler)
 {
     try
     {
-        out = json::parse(data);
+        return json::parse(data);
     }
     catch (json::parse_error& ex)
     {
-        return Result(Result::ServiceInvalidResponse, "(" + method + ") JSON Parsing error: " + std::string(ex.what()));
+        THROW_LOG(
+            Result(Result::ServiceInvalidResponse, "(" + method + ") JSON Parsing error: " + std::string(ex.what())),
+            handler);
     }
-    return Result::Success;
 }
 
-Result ContentIdJsonToObj(const nlohmann::json& contentId, std::unique_ptr<ContentId>& out)
-{
-    RETURN_INVALID_RESPONSE_IF_FALSE(contentId.is_object(), "ContentId is not a JSON object");
-
-    RETURN_INVALID_RESPONSE_IF_FALSE(contentId.contains("Namespace"), "Missing ContentId.Namespace in response");
-    RETURN_INVALID_RESPONSE_IF_FALSE(contentId["Namespace"].is_string(), "ContentId.Namespace is not a string");
-    std::string nameSpace = contentId["Namespace"];
-
-    RETURN_INVALID_RESPONSE_IF_FALSE(contentId.contains("Name"), "Missing ContentId.Name in response");
-    RETURN_INVALID_RESPONSE_IF_FALSE(contentId["Name"].is_string(), "ContentId.Name is not a string");
-    std::string name = contentId["Name"];
-
-    RETURN_INVALID_RESPONSE_IF_FALSE(contentId.contains("Version"), "Missing ContentId.Version in response");
-    RETURN_INVALID_RESPONSE_IF_FALSE(contentId["Version"].is_string(), "ContentId.Version is not a string");
-    std::string version = contentId["Version"];
-
-    return ContentId::Make(std::move(nameSpace), std::move(name), std::move(version), out);
-}
-
-Result GetLatestVersionResponseToContentId(const nlohmann::json& data, std::unique_ptr<ContentId>& out)
+std::unique_ptr<ContentId> GetLatestVersionResponseToContentId(const json& data, const ReportingHandler& handler)
 {
     // Expected format:
     // [
@@ -87,17 +73,17 @@ Result GetLatestVersionResponseToContentId(const nlohmann::json& data, std::uniq
     //
     // We only query for one product at a time, so we expect only one result
 
-    RETURN_INVALID_RESPONSE_IF_FALSE(data.is_array(), "Response is not a JSON array");
-    RETURN_INVALID_RESPONSE_IF_FALSE(data.size() == 1, "Response does not have the expected size");
+    ThrowInvalidResponseIfFalse(data.is_array(), "Response is not a JSON array", handler);
+    ThrowInvalidResponseIfFalse(data.size() == 1, "Response does not have the expected size", handler);
 
     const json& firstObj = data[0];
-    RETURN_INVALID_RESPONSE_IF_FALSE(firstObj.is_object(), "Response is not a JSON object");
-    RETURN_INVALID_RESPONSE_IF_FALSE(firstObj.contains("ContentId"), "Missing ContentId in response");
+    ThrowInvalidResponseIfFalse(firstObj.is_object(), "Response is not a JSON object", handler);
+    ThrowInvalidResponseIfFalse(firstObj.contains("ContentId"), "Missing ContentId in response", handler);
 
-    return ContentIdJsonToObj(firstObj["ContentId"], out);
+    return ContentIdJsonToObj(firstObj["ContentId"], handler);
 }
 
-Result GetSpecificVersionResponseToContentId(const nlohmann::json& data, std::unique_ptr<ContentId>& out)
+std::unique_ptr<ContentId> GetSpecificVersionResponseToContentId(const json& data, const ReportingHandler& handler)
 {
     // Expected format:
     // {
@@ -114,61 +100,12 @@ Result GetSpecificVersionResponseToContentId(const nlohmann::json& data, std::un
     //
     // We don't care about Files in this response, so we just ignore them
 
-    RETURN_INVALID_RESPONSE_IF_FALSE(data.is_object(), "Response is not a JSON object");
+    ThrowInvalidResponseIfFalse(data.is_object(), "Response is not a JSON object", handler);
 
-    return ContentIdJsonToObj(data["ContentId"], out);
+    return ContentIdJsonToObj(data["ContentId"], handler);
 }
 
-Result HashTypeFromString(const std::string& hashType, HashType& out)
-{
-    if (AreEqualI(hashType, "Sha1"))
-    {
-        out = HashType::Sha1;
-    }
-    else if (AreEqualI(hashType, "Sha256"))
-    {
-        out = HashType::Sha256;
-    }
-    else
-    {
-        return Result(Result::Unexpected, "Unknown hash type: " + hashType);
-    }
-    return Result::Success;
-}
-
-Result FileJsonToObj(const nlohmann::json& file, std::unique_ptr<File>& out)
-{
-    RETURN_INVALID_RESPONSE_IF_FALSE(file.is_object(), "File is not a JSON object");
-
-    RETURN_INVALID_RESPONSE_IF_FALSE(file.contains("FileId"), "Missing File.FileId in response");
-    RETURN_INVALID_RESPONSE_IF_FALSE(file["FileId"].is_string(), "File.FileId is not a string");
-    std::string fileId = file["FileId"];
-
-    RETURN_INVALID_RESPONSE_IF_FALSE(file.contains("Url"), "Missing File.Url in response");
-    RETURN_INVALID_RESPONSE_IF_FALSE(file["Url"].is_string(), "File.Url is not a string");
-    std::string url = file["Url"];
-
-    RETURN_INVALID_RESPONSE_IF_FALSE(file.contains("SizeInBytes"), "Missing File.SizeInBytes in response");
-    RETURN_INVALID_RESPONSE_IF_FALSE(file["SizeInBytes"].is_number_unsigned(),
-                                     "File.SizeInBytes is not an unsigned number");
-    uint64_t sizeInBytes = file["SizeInBytes"];
-
-    RETURN_INVALID_RESPONSE_IF_FALSE(file.contains("Hashes"), "Missing File.Hashes in response");
-    RETURN_INVALID_RESPONSE_IF_FALSE(file["Hashes"].is_object(), "File.Hashes is not an object");
-    std::unordered_map<HashType, std::string> hashes;
-    for (const auto& [hashType, hashValue] : file["Hashes"].items())
-    {
-        RETURN_INVALID_RESPONSE_IF_FALSE(hashValue.is_string(), "File.Hashes object value is not a string");
-
-        HashType type;
-        RETURN_IF_FAILED(HashTypeFromString(hashType, type));
-        hashes[type] = hashValue;
-    }
-
-    return File::Make(std::move(fileId), std::move(url), sizeInBytes, std::move(hashes), out);
-}
-
-Result GetDownloadInfoResponseToFileVector(const nlohmann::json& data, std::vector<File>& out)
+std::vector<File> GetDownloadInfoResponseToFileVector(const json& data, const ReportingHandler& handler)
 {
     // Expected format:
     // [
@@ -190,23 +127,18 @@ Result GetDownloadInfoResponseToFileVector(const nlohmann::json& data, std::vect
     //   ...
     // ]
 
-    RETURN_INVALID_RESPONSE_IF_FALSE(data.is_array(), "Response is not a JSON array");
+    ThrowInvalidResponseIfFalse(data.is_array(), "Response is not a JSON array", handler);
 
     // TODO #48: For now ignore DeliveryOptimization data. Will implement its separate parsing later
 
     std::vector<File> tmp;
     for (const auto& fileData : data)
     {
-        RETURN_INVALID_RESPONSE_IF_FALSE(fileData.is_object(), "Array element is not a JSON object");
-
-        std::unique_ptr<File> file;
-        RETURN_IF_FAILED(FileJsonToObj(fileData, file));
-        tmp.push_back(std::move(*file));
+        ThrowInvalidResponseIfFalse(fileData.is_object(), "Array element is not a JSON object", handler);
+        tmp.push_back(std::move(*FileJsonToObj(fileData, handler)));
     }
 
-    out = std::move(tmp);
-
-    return Result::Success;
+    return tmp;
 }
 
 bool DoesGetVersionResponseMatchProduct(const ContentId& contentId, std::string_view nameSpace, std::string_view name)
@@ -235,10 +167,9 @@ SFSClientImpl<ConnectionManagerT>::SFSClientImpl(ClientConfig&& config)
 }
 
 template <typename ConnectionManagerT>
-Result SFSClientImpl<ConnectionManagerT>::GetLatestVersion(const std::string& productName,
-                                                           const SearchAttributes& attributes,
-                                                           Connection& connection,
-                                                           std::unique_ptr<ContentId>& contentId) const
+std::unique_ptr<ContentId> SFSClientImpl<ConnectionManagerT>::GetLatestVersion(const std::string& productName,
+                                                                               const SearchAttributes& attributes,
+                                                                               Connection& connection) const
 try
 {
     const std::string url{SFSUrlComponents::GetLatestVersionUrl(GetBaseUrl(), m_instanceId, m_nameSpace)};
@@ -255,31 +186,26 @@ try
 
     SFS_INFO("Request body [%s]", body.dump().c_str());
 
-    const std::string out{connection.Post(url, body.dump())};
+    const std::string postResponse{connection.Post(url, body.dump())};
 
-    json response;
-    SFS_RETURN_IF_FAILED(ParseServerMethodStringToJson(out, "GetLatestVersion", response));
+    const json versionResponse = ParseServerMethodStringToJson(postResponse, "GetLatestVersion", m_reportingHandler);
 
-    std::unique_ptr<ContentId> tmp;
-    SFS_RETURN_IF_FAILED(GetLatestVersionResponseToContentId(response, tmp));
-    RETURN_CODE_IF_LOG(ServiceInvalidResponse,
-                       !DoesGetVersionResponseMatchProduct(*tmp, m_nameSpace, productName),
-                       m_reportingHandler,
-                       "(GetLatestVersion) Response does not match the requested product");
+    auto contentId = GetLatestVersionResponseToContentId(versionResponse, m_reportingHandler);
+    THROW_CODE_IF_LOG(ServiceInvalidResponse,
+                      !DoesGetVersionResponseMatchProduct(*contentId, m_nameSpace, productName),
+                      m_reportingHandler,
+                      "(GetLatestVersion) Response does not match the requested product");
 
-    SFS_INFO("Received a response with version %s", tmp->GetVersion().c_str());
+    SFS_INFO("Received a response with version %s", contentId->GetVersion().c_str());
 
-    contentId = std::move(tmp);
-
-    return Result::Success;
+    return contentId;
 }
 SFS_CATCH_LOG_RETHROW(m_reportingHandler)
 
 template <typename ConnectionManagerT>
-Result SFSClientImpl<ConnectionManagerT>::GetSpecificVersion(const std::string& productName,
-                                                             const std::string& version,
-                                                             Connection& connection,
-                                                             std::unique_ptr<ContentId>& contentId) const
+std::unique_ptr<ContentId> SFSClientImpl<ConnectionManagerT>::GetSpecificVersion(const std::string& productName,
+                                                                                 const std::string& version,
+                                                                                 Connection& connection) const
 try
 {
     const std::string url{
@@ -287,31 +213,26 @@ try
 
     SFS_INFO("Requesting version [%s] of [%s] from URL [%s]", version.c_str(), productName.c_str(), url.c_str());
 
-    const std::string out{connection.Get(url)};
+    const std::string getResponse{connection.Get(url)};
 
-    json response;
-    SFS_RETURN_IF_FAILED(ParseServerMethodStringToJson(out, "GetSpecificVersion", response));
+    const json versionResponse = ParseServerMethodStringToJson(getResponse, "GetSpecificVersion", m_reportingHandler);
 
-    std::unique_ptr<ContentId> tmp;
-    SFS_RETURN_IF_FAILED(GetSpecificVersionResponseToContentId(response, tmp));
-    RETURN_CODE_IF_LOG(ServiceInvalidResponse,
-                       !DoesGetVersionResponseMatchProduct(*tmp, m_nameSpace, productName),
-                       m_reportingHandler,
-                       "(GetSpecificVersion) Response does not match the requested product");
+    auto contentId = GetSpecificVersionResponseToContentId(versionResponse, m_reportingHandler);
+    THROW_CODE_IF_LOG(ServiceInvalidResponse,
+                      !DoesGetVersionResponseMatchProduct(*contentId, m_nameSpace, productName),
+                      m_reportingHandler,
+                      "(GetSpecificVersion) Response does not match the requested product");
 
-    SFS_INFO("Received the expected response with version %s", tmp->GetVersion().c_str());
+    SFS_INFO("Received the expected response with version %s", contentId->GetVersion().c_str());
 
-    contentId = std::move(tmp);
-
-    return Result::Success;
+    return contentId;
 }
 SFS_CATCH_LOG_RETHROW(m_reportingHandler)
 
 template <typename ConnectionManagerT>
-Result SFSClientImpl<ConnectionManagerT>::GetDownloadInfo(const std::string& productName,
-                                                          const std::string& version,
-                                                          Connection& connection,
-                                                          std::vector<File>& files) const
+std::vector<File> SFSClientImpl<ConnectionManagerT>::GetDownloadInfo(const std::string& productName,
+                                                                     const std::string& version,
+                                                                     Connection& connection) const
 try
 {
     const std::string url{
@@ -322,19 +243,16 @@ try
              productName.c_str(),
              url.c_str());
 
-    const std::string out{connection.Post(url)};
+    const std::string postResponse{connection.Post(url)};
 
-    json response;
-    SFS_RETURN_IF_FAILED(ParseServerMethodStringToJson(out, "GetDownloadInfo", response));
+    const json downloadInfoResponse =
+        ParseServerMethodStringToJson(postResponse, "GetDownloadInfo", m_reportingHandler);
 
-    std::vector<File> tmp;
-    SFS_RETURN_IF_FAILED(GetDownloadInfoResponseToFileVector(response, tmp));
+    auto files = GetDownloadInfoResponseToFileVector(downloadInfoResponse, m_reportingHandler);
 
-    SFS_INFO("Received a response with %zu files", tmp.size());
+    SFS_INFO("Received a response with %zu files", files.size());
 
-    files = std::move(tmp);
-
-    return Result::Success;
+    return files;
 }
 SFS_CATCH_LOG_RETHROW(m_reportingHandler)
 
