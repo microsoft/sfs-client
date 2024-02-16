@@ -497,7 +497,7 @@ void MockWebServerImpl::CheckHeaders(const httplib::Request& req)
         if (errorMessage)
         {
             BUFFER_LOG(*errorMessage);
-            throw std::exception(errorMessage->c_str());
+            throw std::runtime_error(errorMessage->c_str());
         }
     }
 }
