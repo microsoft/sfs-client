@@ -1,3 +1,9 @@
+## SFSClient
+
+To start using the SFSClient library, use `SFSClient::Make()` to create an `SFSClient` instance, which allows you to use the SFS APIs.
+The first argument to the factory is a `ClientConfig` struct. Configuring this struct allows you to customize the behavior of the client.
+Refer to the documentation of the `ClientConfig` struct in `ClientConfig.h` to see the available options.
+
 ## Logging Callback
 
 To retrieve logging information from the API, set a logging callback in `ClientConfig::logCallbackFn` when constructing an SFSClient instance with `SFSClient::Make()`.
