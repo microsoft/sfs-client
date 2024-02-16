@@ -62,9 +62,9 @@ class SFSClientImpl : public SFSClientInterface
                                       Connection& connection) const override;
 
     /**
-     * @brief Returns the ConnectionManager to be used by the SFSClient to create Connection objects
+     * @brief Returns a new Connection to be used by the SFSClient to make requests
      */
-    ConnectionManager& GetConnectionManager() override;
+    std::unique_ptr<Connection> MakeConnection() override;
 
     //
     // Configuration methods

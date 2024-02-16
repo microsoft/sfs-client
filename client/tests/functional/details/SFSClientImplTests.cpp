@@ -66,7 +66,7 @@ TEST("Testing class SFSClientImpl()")
     server.RegisterProduct("productName", "0.0.0.2");
     server.RegisterProduct("productName", "0.0.0.1");
 
-    auto connection = sfsClient.GetConnectionManager().MakeConnection();
+    auto connection = sfsClient.MakeConnection();
 
     SECTION("Testing SFSClientImpl::GetLatestVersion()")
     {
