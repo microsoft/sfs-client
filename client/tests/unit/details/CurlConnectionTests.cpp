@@ -6,6 +6,7 @@
 #include "ReportingHandler.h"
 #include "Result.h"
 #include "connection/CurlConnection.h"
+#include "connection/mock/MockConnection.h"
 
 #include <catch2/catch_test_macros.hpp>
 #include <catch2/matchers/catch_matchers_string.hpp>
@@ -93,5 +94,42 @@ TEST("Testing CurlConnection()")
             Catch::Matchers::ContainsSubstring("baseCV is not a valid correlation vector:"));
 
         REQUIRE_NOTHROW(connection->SetCorrelationVector("aaaaaaaaaaaaaaaa.1"));
+    }
+}
+
+TEST("Testing setting ConnectionConfig")
+{
+    ReportingHandler handler;
+    handler.SetLoggingCallback(LogCallbackToTest);
+    std::unique_ptr<Connection> connection = std::make_unique<MockConnection>(handler);
+
+    SECTION("Setting default config")
+    {
+        ConnectionConfig config;
+        REQUIRE_NOTHROW(connection->SetConfig(config));
+    }
+
+    SECTION("Setting default config (moving)")
+    {
+        ConnectionConfig config;
+        REQUIRE_NOTHROW(connection->SetConfig(std::move(config)));
+    }
+
+    SECTION("Multiple sequential set calls")
+    {
+        ConnectionConfig config;
+        config.maxRetries = 2;
+        REQUIRE_NOTHROW(connection->SetConfig(config));
+
+        ConnectionConfig config2;
+        config2.retryDelayMs = 15000;
+        REQUIRE_NOTHROW(connection->SetConfig(config2));
+    }
+
+    SECTION("Can pass empty retriableHttpErrors")
+    {
+        ConnectionConfig config;
+        config.retriableHttpErrors.clear();
+        REQUIRE_NOTHROW(connection->SetConfig(config));
     }
 }
