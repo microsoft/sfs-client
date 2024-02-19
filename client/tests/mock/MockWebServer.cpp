@@ -193,6 +193,7 @@ class MockWebServerImpl
 
     void RegisterProduct(std::string&& name, std::string&& version);
     void RegisterExpectedRequestHeader(std::string&& header, std::string&& value);
+    void SetForcedHttpErrors(std::deque<int> forcedErrors);
 
   private:
     void ConfigureServerSettings();
@@ -224,6 +225,7 @@ class MockWebServerImpl
     std::unordered_map<std::string, VersionList> m_products;
 
     std::unordered_map<std::string, std::string> m_expectedRequestHeaders;
+    std::deque<int> m_forcedHttpErrors;
 
     std::vector<BufferedLogData> m_bufferedLog;
     std::mutex m_logMutex;
@@ -264,6 +266,11 @@ void MockWebServer::RegisterExpectedRequestHeader(HttpHeader header, std::string
 {
     std::string headerName = ToString(header);
     m_impl->RegisterExpectedRequestHeader(std::move(headerName), std::move(value));
+}
+
+void MockWebServer::SetForcedHttpErrors(std::deque<int> forcedErrors)
+{
+    m_impl->SetForcedHttpErrors(std::move(forcedErrors));
 }
 
 void MockWebServerImpl::Start()
@@ -553,25 +560,35 @@ void MockWebServerImpl::RunHttpCallback(const httplib::Request& req,
                                         const std::string& apiVersion,
                                         const std::function<void(const httplib::Request, httplib::Response&)>& callback)
 {
-    try
+    if (m_forcedHttpErrors.size() > 0)
     {
-        BUFFER_LOG("Matched " + methodName);
-        CheckApiVersion(req, apiVersion);
-        CheckRequestHeaders(req);
-        callback(req, res);
-        res.status = static_cast<int>(StatusCode::Ok);
+        res.status = m_forcedHttpErrors.front();
+        m_forcedHttpErrors.pop_front();
+
+        BUFFER_LOG("Forcing HTTP error: " + std::to_string(res.status));
     }
-    catch (const StatusCodeException& ex)
+    else
     {
-        res.status = ex.GetStatusCode();
-    }
-    catch (const std::exception&)
-    {
-        res.status = static_cast<int>(StatusCode::InternalServerError);
-    }
-    catch (...)
-    {
-        res.status = static_cast<int>(StatusCode::InternalServerError);
+        try
+        {
+            BUFFER_LOG("Matched " + methodName);
+            CheckApiVersion(req, apiVersion);
+            CheckRequestHeaders(req);
+            callback(req, res);
+            res.status = static_cast<int>(StatusCode::Ok);
+        }
+        catch (const StatusCodeException& ex)
+        {
+            res.status = ex.GetStatusCode();
+        }
+        catch (const std::exception&)
+        {
+            res.status = static_cast<int>(StatusCode::InternalServerError);
+        }
+        catch (...)
+        {
+            res.status = static_cast<int>(StatusCode::InternalServerError);
+        }
     }
 }
 
@@ -645,4 +662,9 @@ void MockWebServerImpl::RegisterExpectedRequestHeader(std::string&& header, std:
     {
         m_expectedRequestHeaders.emplace(std::move(header), std::move(value));
     }
+}
+
+void MockWebServerImpl::SetForcedHttpErrors(std::deque<int> forcedErrors)
+{
+    m_forcedHttpErrors = std::move(forcedErrors);
 }
