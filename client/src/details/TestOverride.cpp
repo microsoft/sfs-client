@@ -22,6 +22,8 @@ std::string test::GetEnvVarNameFromOverride(TestOverride override)
     {
     case TestOverride::BaseUrl:
         return "SFS_TEST_OVERRIDE_BASE_URL";
+    case TestOverride::NoConnectionConfigLimits:
+        return "SFS_TEST_OVERRIDE_NO_CONNECTION_CONFIG_LIMITS";
     }
     return "";
 }
@@ -34,6 +36,11 @@ std::optional<std::string> test::GetTestOverride(TestOverride override)
     }
 
     return details::env::GetEnv(GetEnvVarNameFromOverride(override));
+}
+
+bool test::HasTestOverride(TestOverride override)
+{
+    return GetTestOverride(override).has_value();
 }
 
 ScopedTestOverride::ScopedTestOverride(TestOverride override, const std::string& value)

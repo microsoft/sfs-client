@@ -14,6 +14,7 @@ If you're using the CMake extension on VSCode, you can set the build options thr
 
 When these test overrides are enabled, a few environment variables can be used to adjust the behavior of the tool:
 
-| Environment Variable       | Description                                                                                 |
-|----------------------------|---------------------------------------------------------------------------------------------|
-| SFS_TEST_OVERRIDE_BASE_URL | Set this to any string value which will be used as the SFS URL rather than the default one. |
+| Environment Variable                          | Description                                                                                 |
+|-----------------------------------------------|---------------------------------------------------------------------------------------------|
+| SFS_TEST_OVERRIDE_BASE_URL                    | Set this to any string value which will be used as the SFS URL rather than the default one. |
+| SFS_TEST_OVERRIDE_NO_CONNECTION_CONFIG_LIMITS | Set this to remove the limitations on the values of ConnectionConfig.                       |

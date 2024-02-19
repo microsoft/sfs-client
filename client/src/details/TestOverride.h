@@ -18,7 +18,8 @@ bool AreTestOverridesAllowed();
 
 enum class TestOverride
 {
-    BaseUrl
+    BaseUrl,                 // String. Allows one to override the base URL used for all requests
+    NoConnectionConfigLimits // Bool. Allows one to disable the ConnectionConfig limits
 };
 
 /**
@@ -32,6 +33,11 @@ std::string GetEnvVarNameFromOverride(TestOverride override);
  * The returned string may be different in Win32 due to the encoding of the environment variables.
  */
 std::optional<std::string> GetTestOverride(TestOverride override);
+
+/**
+ * @return true if the test override is set
+ */
+bool HasTestOverride(TestOverride override);
 
 class ScopedTestOverride
 {
