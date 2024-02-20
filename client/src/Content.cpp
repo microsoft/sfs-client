@@ -4,12 +4,10 @@
 #include "Content.h"
 
 #include "details/ErrorHandling.h"
-#include "details/Util.h"
 
 #include <algorithm>
 
 using namespace SFS;
-using namespace SFS::details::util;
 
 Result ContentId::Make(std::string nameSpace,
                        std::string name,
@@ -43,17 +41,6 @@ const std::string& ContentId::GetName() const noexcept
 const std::string& ContentId::GetVersion() const noexcept
 {
     return m_version;
-}
-
-bool ContentId::operator==(const ContentId& other) const noexcept
-{
-    return AreEqualI(m_nameSpace, other.m_nameSpace) && AreEqualI(m_name, other.m_name) &&
-           AreEqualI(m_version, other.m_version);
-}
-
-bool ContentId::operator!=(const ContentId& other) const noexcept
-{
-    return !(*this == other);
 }
 
 Result File::Make(std::string fileId,
@@ -108,17 +95,6 @@ uint64_t File::GetSizeInBytes() const noexcept
 const std::unordered_map<HashType, std::string>& File::GetHashes() const noexcept
 {
     return m_hashes;
-}
-
-bool File::operator==(const File& other) const noexcept
-{
-    return AreEqualI(m_fileId, other.m_fileId) && AreEqualI(m_url, other.m_url) &&
-           m_sizeInBytes == other.m_sizeInBytes && m_hashes == other.m_hashes;
-}
-
-bool File::operator!=(const File& other) const noexcept
-{
-    return !(*this == other);
 }
 
 Result Content::Make(std::string contentNameSpace,
@@ -196,24 +172,4 @@ const ContentId& Content::GetContentId() const noexcept
 const std::vector<File>& Content::GetFiles() const noexcept
 {
     return m_files;
-}
-
-bool Content::operator==(const Content& other) const noexcept
-try
-{
-    return (m_contentId && other.m_contentId && *m_contentId == *other.m_contentId) &&
-           (std::is_permutation(m_files.begin(),
-                                m_files.end(),
-                                other.m_files.begin(),
-                                other.m_files.end(),
-                                [](const File& lhs, const File& rhs) { return lhs == rhs; }));
-}
-catch (...)
-{
-    return false;
-}
-
-bool Content::operator!=(const Content& other) const noexcept
-{
-    return !(*this == other);
 }

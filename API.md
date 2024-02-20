@@ -33,3 +33,8 @@ Each `GetLatestDownloadInfo()` call will create its own connection and should no
 All API calls are thread-safe.
 
 If a logging callback is set in a multi-threaded environment, and the same `SFSClient()` is reused across different threads, the same callback will be called by all usages of the class. So, make sure the callback itself is also thread-safe.
+
+## Content types
+
+A few data types are provided which abstract contents that can be sent by the SFS Service, such as `Content`, `ContentId`, `File`, `DeliveryOptimizationData`.
+These data types provide `noexcept` methods to interact with member data.

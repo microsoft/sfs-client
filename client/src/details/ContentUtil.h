@@ -15,8 +15,33 @@ class ReportingHandler;
 
 namespace contentutil
 {
+//
+// JSON conversion utilities
+//
+
 std::unique_ptr<ContentId> ContentIdJsonToObj(const nlohmann::json& contentId, const ReportingHandler& handler);
 std::unique_ptr<File> FileJsonToObj(const nlohmann::json& file, const ReportingHandler& handler);
-} // namespace contentutil
 
+//
+// Comparison operators
+//
+
+/// @brief Compares two ContentId objects for equality. The values of members are strictly compared.
+bool operator==(const ContentId& lhs, const ContentId& rhs);
+
+/// @brief Compares two ContentId objects for inequality. The values of members are strictly compared.
+bool operator!=(const ContentId& lhs, const ContentId& rhs);
+
+/// @brief Compares two File objects for equality. The values of members are strictly compared.
+bool operator==(const File& lhs, const File& rhs);
+
+/// @brief Compares two File objects for inequality. The values of members are strictly compared.
+bool operator!=(const File& lhs, const File& rhs);
+
+/// @brief Compares two Content objects for equality. The values of members are strictly compared.
+bool operator==(const Content& lhs, const Content& rhs);
+
+/// @brief Compares two Content objects for inequality. The values of members are strictly compared.
+bool operator!=(const Content& lhs, const Content& rhs);
+} // namespace contentutil
 } // namespace SFS::details

@@ -143,7 +143,7 @@ std::vector<File> GetDownloadInfoResponseToFileVector(const json& data, const Re
 
 bool DoesGetVersionResponseMatchProduct(const ContentId& contentId, std::string_view nameSpace, std::string_view name)
 {
-    return AreEqualI(contentId.GetNameSpace(), nameSpace) && AreEqualI(contentId.GetName(), name);
+    return contentId.GetNameSpace() == nameSpace && contentId.GetName() == name;
 }
 } // namespace
 

@@ -41,9 +41,6 @@ class ContentId
      */
     const std::string& GetVersion() const noexcept;
 
-    bool operator==(const ContentId& other) const noexcept;
-    bool operator!=(const ContentId& other) const noexcept;
-
   private:
     ContentId() = default;
 
@@ -91,9 +88,6 @@ class File
      * @return Dictionary of algorithm type to base64 encoded file hash string
      */
     const std::unordered_map<HashType, std::string>& GetHashes() const noexcept;
-
-    bool operator==(const File& other) const noexcept;
-    bool operator!=(const File& other) const noexcept;
 
   private:
     File() = default;
@@ -145,9 +139,6 @@ class Content
     const ContentId& GetContentId() const noexcept;
 
     const std::vector<File>& GetFiles() const noexcept;
-
-    bool operator==(const Content& other) const noexcept;
-    bool operator!=(const Content& other) const noexcept;
 
   private:
     Content() = default;

@@ -1,6 +1,7 @@
 // Copyright (c) Microsoft Corporation.
 // Licensed under the MIT License.
 
+#include "ContentUtil.h"
 #include "sfsclient/Content.h"
 
 #include <catch2/catch_test_macros.hpp>
@@ -9,6 +10,8 @@
 #define TEST_SCENARIO(...) TEST_CASE("[ContentTests] Scenario: " __VA_ARGS__)
 
 using namespace SFS;
+using namespace SFS::details;
+using namespace SFS::details::contentutil;
 
 namespace
 {
@@ -62,27 +65,27 @@ TEST("Testing ContentId::Make()")
         SECTION("Equal")
         {
             auto CompareContentIdEqual = [&contentId](const std::unique_ptr<ContentId>& sameContentId) {
-                REQUIRE(*contentId == *sameContentId);
-                REQUIRE_FALSE(*contentId != *sameContentId);
+                REQUIRE((*contentId == *sameContentId));
+                REQUIRE_FALSE((*contentId != *sameContentId));
             };
 
             CompareContentIdEqual(GetContentId(nameSpace, name, version));
-            CompareContentIdEqual(GetContentId("MYNAMESPACE", name, version));
-            CompareContentIdEqual(GetContentId(nameSpace, "MYNAME", version));
-            CompareContentIdEqual(GetContentId(nameSpace, name, "MYVERSION"));
         }
 
         SECTION("Not equal")
         {
             auto CompareContentIdNotEqual = [&contentId](const std::unique_ptr<ContentId>& otherContentId) {
-                REQUIRE(*contentId != *otherContentId);
-                REQUIRE_FALSE(*contentId == *otherContentId);
+                REQUIRE((*contentId != *otherContentId));
+                REQUIRE_FALSE((*contentId == *otherContentId));
             };
 
             CompareContentIdNotEqual(GetContentId("", name, version));
             CompareContentIdNotEqual(GetContentId(nameSpace, "", version));
             CompareContentIdNotEqual(GetContentId(nameSpace, name, ""));
             CompareContentIdNotEqual(GetContentId("", "", ""));
+            CompareContentIdNotEqual(GetContentId("MYNAMESPACE", name, version));
+            CompareContentIdNotEqual(GetContentId(nameSpace, "MYNAME", version));
+            CompareContentIdNotEqual(GetContentId(nameSpace, name, "MYVERSION"));
         }
     }
 }
@@ -106,20 +109,18 @@ TEST("Testing File::Make()")
         SECTION("Equal")
         {
             auto CompareFileEqual = [&file](const std::unique_ptr<File>& sameFile) {
-                REQUIRE(*file == *sameFile);
-                REQUIRE_FALSE(*file != *sameFile);
+                REQUIRE((*file == *sameFile));
+                REQUIRE_FALSE((*file != *sameFile));
             };
 
             CompareFileEqual(GetFile(fileId, url, sizeInBytes, hashes));
-            CompareFileEqual(GetFile("MYFILEID", url, sizeInBytes, hashes));
-            CompareFileEqual(GetFile(fileId, "MYURL", sizeInBytes, hashes));
         }
 
         SECTION("Not equal")
         {
             auto CompareFileNotEqual = [&file](const std::unique_ptr<File>& otherFile) {
-                REQUIRE(*file != *otherFile);
-                REQUIRE_FALSE(*file == *otherFile);
+                REQUIRE((*file != *otherFile));
+                REQUIRE_FALSE((*file == *otherFile));
             };
 
             CompareFileNotEqual(GetFile("", url, sizeInBytes, hashes));
@@ -127,6 +128,8 @@ TEST("Testing File::Make()")
             CompareFileNotEqual(GetFile(fileId, url, 0, hashes));
             CompareFileNotEqual(GetFile(fileId, url, sizeInBytes, {}));
             CompareFileNotEqual(GetFile("", "", 0, {}));
+            CompareFileNotEqual(GetFile("MYFILEID", url, sizeInBytes, hashes));
+            CompareFileNotEqual(GetFile(fileId, "MYURL", sizeInBytes, hashes));
         }
     }
 }
@@ -176,7 +179,7 @@ TEST_SCENARIO("Testing Content::Make()")
                     REQUIRE(&files[i] != &copiedContent->GetFiles()[i]);
 
                     // Checking contents
-                    CHECK(files[i] == copiedContent->GetFiles()[i]);
+                    CHECK((files[i] == copiedContent->GetFiles()[i]));
                 }
             }
 
@@ -188,7 +191,7 @@ TEST_SCENARIO("Testing Content::Make()")
                 REQUIRE(movedContent != nullptr);
 
                 // Checking contents
-                CHECK(*copiedContent == *movedContent);
+                CHECK((*copiedContent == *movedContent));
 
                 // Checking underlying pointers are the same since they were moved
                 REQUIRE(filePointers.size() == movedContent->GetFiles().size());
@@ -226,22 +229,19 @@ TEST("Testing Content equality operators")
     SECTION("Equal")
     {
         auto CompareContentEqual = [&content](const std::unique_ptr<Content>& sameContent) {
-            REQUIRE(*content == *sameContent);
-            REQUIRE_FALSE(*content != *sameContent);
+            REQUIRE((*content == *sameContent));
+            REQUIRE_FALSE((*content != *sameContent));
         };
 
         CompareContentEqual(GetContent(contentNameSpace, contentName, contentVersion, files));
         CompareContentEqual(GetContent(contentNameSpace, contentName, contentVersion, clonedFiles));
-        CompareContentEqual(GetContent("MYNAMESPACE", contentName, contentVersion, files));
-        CompareContentEqual(GetContent(contentNameSpace, "MYNAME", contentVersion, files));
-        CompareContentEqual(GetContent(contentNameSpace, contentName, "MYVERSION", files));
     }
 
     SECTION("Not equal")
     {
         auto CompareContentNotEqual = [&content](const std::unique_ptr<Content>& otherContent) {
-            REQUIRE(*content != *otherContent);
-            REQUIRE_FALSE(*content == *otherContent);
+            REQUIRE((*content != *otherContent));
+            REQUIRE_FALSE((*content == *otherContent));
         };
 
         CompareContentNotEqual(GetContent("", contentName, contentVersion, files));
@@ -249,5 +249,8 @@ TEST("Testing Content equality operators")
         CompareContentNotEqual(GetContent(contentNameSpace, contentName, "", files));
         CompareContentNotEqual(GetContent(contentNameSpace, contentName, contentVersion, {}));
         CompareContentNotEqual(GetContent("", "", "", {}));
+        CompareContentNotEqual(GetContent("MYNAMESPACE", contentName, contentVersion, files));
+        CompareContentNotEqual(GetContent(contentNameSpace, "MYNAME", contentVersion, files));
+        CompareContentNotEqual(GetContent(contentNameSpace, contentName, "MYVERSION", files));
     }
 }

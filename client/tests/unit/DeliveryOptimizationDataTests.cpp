@@ -40,7 +40,6 @@ TEST("Testing DeliveryOptimizationData::Make()")
             };
 
             CompareDataEqual(GetData(catalogId, properties));
-            CompareDataEqual(GetData("CATALOGID", properties));
         }
 
         SECTION("Not equal")
@@ -53,6 +52,7 @@ TEST("Testing DeliveryOptimizationData::Make()")
             CompareDataNotEqual(GetData("", properties));
             CompareDataNotEqual(GetData(catalogId, {}));
             CompareDataNotEqual(GetData("", {}));
+            CompareDataNotEqual(GetData("CATALOGID", properties));
         }
     }
 }
