@@ -43,6 +43,9 @@ class Connection
      */
     std::string Post(const std::string& url);
 
+    /**
+     * @brief Set the caller's application ID @param callerApplicationId
+     */
     void SetCallerApplicationId(std::string callerApplicationId);
 
   protected:
