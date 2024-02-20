@@ -15,6 +15,8 @@
 #include <curl/curl.h>
 #include <nlohmann/json.hpp>
 
+#include <chrono>
+
 #define TEST(...) TEST_CASE("[Functional][CurlConnectionTests] " __VA_ARGS__)
 
 // Define included by Win32 headers
@@ -23,6 +25,7 @@
 using namespace SFS;
 using namespace SFS::details;
 using namespace SFS::test;
+using namespace std::chrono;
 using json = nlohmann::json;
 
 const std::string c_instanceId = "default";
@@ -345,4 +348,242 @@ TEST("Testing MS-CV is sent to server")
 
     server.RegisterExpectedRequestHeader(HttpHeader::MSCV, cv + ".2");
     connection->Get(url);
+}
+
+TEST("Testing retry behavior")
+{
+    ReportingHandler handler;
+    handler.SetLoggingCallback(LogCallbackToTest);
+
+    MockWebServer server;
+    CurlConnectionManager connectionManager(handler);
+    auto connection = connectionManager.MakeConnection();
+
+    server.RegisterProduct(c_productName, c_version);
+    const std::string url = SFSUrlComponents::GetSpecificVersionUrl(server.GetBaseUrl(),
+                                                                    c_instanceId,
+                                                                    c_namespace,
+                                                                    c_productName,
+                                                                    c_version);
+
+    SECTION("Test exponential backoff")
+    {
+        INFO("Sets the retry delay to 50ms to speed up the test");
+        ConnectionConfig config;
+        config.retryDelayMs = 50;
+        connection->SetConfig(config);
+
+        REQUIRE(config.retriableHttpErrors.count(RetriableHttpError::ServerBusy) != 0);
+        const int retriableError = static_cast<int>(RetriableHttpError::ServerBusy);
+
+        auto RunTimedGet = [&](bool success = true) -> long long {
+            std::string out;
+            auto begin = steady_clock::now();
+            if (success)
+            {
+                REQUIRE_NOTHROW(out = connection->Get(url));
+                REQUIRE_FALSE(out.empty());
+            }
+            else
+            {
+                REQUIRE_THROWS_CODE(out = connection->Get(url), HttpServiceNotAvailable);
+                REQUIRE(out.empty());
+            }
+            auto end = steady_clock::now();
+            return duration_cast<milliseconds>(end - begin).count();
+        };
+
+        long long allowedTimeDeviation = 200LL;
+        std::queue<HttpCode> forcedHttpErrors({retriableError});
+        SECTION("Should take at least 50ms with a single retriable error")
+        {
+            server.SetForcedHttpErrors(forcedHttpErrors);
+            const auto time = RunTimedGet();
+            REQUIRE(time >= 50LL);
+            REQUIRE(time < 50LL + allowedTimeDeviation);
+        }
+
+        forcedHttpErrors.push(retriableError);
+        SECTION("Should take at least 150ms (50ms + 2*50ms) with two retriable error")
+        {
+            server.SetForcedHttpErrors(forcedHttpErrors);
+            const auto time = RunTimedGet();
+            REQUIRE(time >= 150LL);
+            REQUIRE(time < 150LL + allowedTimeDeviation);
+        }
+
+        forcedHttpErrors.push(retriableError);
+        SECTION("Should take at least 300ms (50ms + 2*50ms + 3*50ms) with three retriable errors")
+        {
+            server.SetForcedHttpErrors(forcedHttpErrors);
+            const auto time = RunTimedGet();
+            REQUIRE(time >= 300LL);
+            REQUIRE(time < 300LL + allowedTimeDeviation);
+        }
+
+        forcedHttpErrors.push(retriableError);
+        SECTION("Should take at least 300ms (50ms + 2*50ms + 3*50ms) with four retriable errors, but fail")
+        {
+            server.SetForcedHttpErrors(forcedHttpErrors);
+            const auto time = RunTimedGet(false /*success*/);
+            REQUIRE(time >= 300LL);
+            REQUIRE(time < 300LL + allowedTimeDeviation);
+        }
+    }
+
+    SECTION("Test retriable errors with Retry-After headers")
+    {
+        INFO("Sets the retry delay to 200ms to speed up the test");
+        ConnectionConfig config;
+        config.retryDelayMs = 200;
+        connection->SetConfig(config);
+
+        REQUIRE(config.retriableHttpErrors.count(RetriableHttpError::ServerBusy) != 0);
+        const int retriableError = static_cast<int>(RetriableHttpError::ServerBusy);
+
+        REQUIRE(config.retriableHttpErrors.count(RetriableHttpError::BadGateway) != 0);
+        const int retriableError2 = static_cast<int>(RetriableHttpError::BadGateway);
+
+        auto RunTimedGet = [&]() -> long long {
+            std::string out;
+            auto begin = steady_clock::now();
+            REQUIRE_NOTHROW(out = connection->Get(url));
+            REQUIRE_FALSE(out.empty());
+            auto end = steady_clock::now();
+            return duration_cast<milliseconds>(end - begin).count();
+        };
+
+        std::unordered_map<HttpCode, HeaderMap> headersByCode;
+        headersByCode[retriableError] = {{"Retry-After", "1"}}; // 1s delay
+        server.SetResponseHeaders(headersByCode);
+
+        long long allowedTimeDeviation = 200LL;
+        std::queue<HttpCode> forcedHttpErrors({retriableError});
+        SECTION("Should take at least 1000ms with a single retriable error with 1s in Retry-After")
+        {
+            server.SetForcedHttpErrors(forcedHttpErrors);
+            const auto time = RunTimedGet();
+            REQUIRE(time >= 1000LL);
+            REQUIRE(time < 1000LL + allowedTimeDeviation);
+        }
+
+        SECTION(
+            "Should take at least 1000ms + 200ms with a retriable error with 1s in Retry-After and one with 200ms*2 as default value")
+        {
+            forcedHttpErrors.push(retriableError2);
+            server.SetForcedHttpErrors(forcedHttpErrors);
+            const auto time = RunTimedGet();
+            REQUIRE(time >= 1400LL);
+            REQUIRE(time < 1400LL + allowedTimeDeviation);
+        }
+    }
+
+    SECTION("Test maxRetries")
+    {
+        INFO("Sets the retry delay to 1ms to speed up the test");
+        ConnectionConfig config;
+        config.retryDelayMs = 1;
+        connection->SetConfig(config);
+
+        REQUIRE(config.retriableHttpErrors.count(RetriableHttpError::ServerBusy) != 0);
+        const int retriableError = static_cast<int>(RetriableHttpError::ServerBusy);
+
+        SECTION("Should pass with 3 errors")
+        {
+            server.SetForcedHttpErrors(std::queue<HttpCode>({retriableError, retriableError, retriableError}));
+            REQUIRE_NOTHROW(connection->Get(url));
+        }
+
+        SECTION("Should fail with 4 errors")
+        {
+            server.SetForcedHttpErrors(
+                std::queue<HttpCode>({retriableError, retriableError, retriableError, retriableError}));
+            REQUIRE_THROWS_CODE(connection->Get(url), HttpServiceNotAvailable);
+        }
+
+        SECTION("Reducing retries to 2")
+        {
+            config.maxRetries = 2;
+            connection->SetConfig(config);
+
+            SECTION("Should pass with 2 errors")
+            {
+                server.SetForcedHttpErrors(std::queue<HttpCode>({retriableError, retriableError}));
+                REQUIRE_NOTHROW(connection->Get(url));
+            }
+
+            SECTION("Should fail with 3 errors")
+            {
+                server.SetForcedHttpErrors(std::queue<HttpCode>({retriableError, retriableError, retriableError}));
+                REQUIRE_THROWS_CODE(connection->Get(url), HttpServiceNotAvailable);
+            }
+        }
+
+        SECTION("Reducing retries to 0")
+        {
+            config.maxRetries = 0;
+            connection->SetConfig(config);
+
+            SECTION("Should pass with no errors")
+            {
+                REQUIRE_NOTHROW(connection->Get(url));
+            }
+
+            SECTION("Should fail with 1 error")
+            {
+                server.SetForcedHttpErrors(std::queue<HttpCode>({retriableError}));
+                REQUIRE_THROWS_CODE(connection->Get(url), HttpServiceNotAvailable);
+            }
+        }
+    }
+
+    SECTION("Test retriable errors")
+    {
+        INFO("Sets the retry delay to 1ms to speed up the test");
+        ConnectionConfig config;
+        config.retryDelayMs = 1;
+        connection->SetConfig(config);
+
+        SECTION("Should pass with default errors")
+        {
+            for (const auto& error : config.retriableHttpErrors)
+            {
+                server.SetForcedHttpErrors(std::queue<HttpCode>({static_cast<int>(error)}));
+                REQUIRE_NOTHROW(connection->Get(url));
+            }
+
+            SECTION("Unless max retries is set to 0")
+            {
+                config.maxRetries = 0;
+                connection->SetConfig(config);
+
+                for (const auto& error : config.retriableHttpErrors)
+                {
+                    server.SetForcedHttpErrors(std::queue<HttpCode>({static_cast<int>(error)}));
+                    REQUIRE_THROWS_AS(connection->Get(url), SFSException);
+                }
+            }
+        }
+
+        SECTION("Removing error from list makes it fail")
+        {
+            config.retriableHttpErrors.erase(RetriableHttpError::ServerBusy);
+            connection->SetConfig(config);
+            server.SetForcedHttpErrors(std::queue<HttpCode>({static_cast<int>(RetriableHttpError::ServerBusy)}));
+            REQUIRE_THROWS_CODE(connection->Get(url), HttpServiceNotAvailable);
+        }
+
+        SECTION("Should fail with default errors if erase list")
+        {
+            const auto originalSet = config.retriableHttpErrors;
+            config.retriableHttpErrors.clear();
+            connection->SetConfig(config);
+
+            for (const auto& error : originalSet)
+            {
+                server.SetForcedHttpErrors(std::queue<HttpCode>({static_cast<int>(error)}));
+                REQUIRE_THROWS_AS(connection->Get(url), SFSException);
+            }
+        }
+    }
 }

@@ -8,10 +8,13 @@
 
 #include <catch2/catch_test_macros.hpp>
 
+#include <chrono>
+
 #define TEST(...) TEST_CASE("[Functional][SFSClientTests] " __VA_ARGS__)
 
 using namespace SFS;
 using namespace SFS::test;
+using namespace std::chrono;
 
 const std::string c_instanceId = "testInstanceId";
 const std::string c_namespace = "testNamespace";
@@ -104,6 +107,258 @@ TEST("Testing SFSClient::GetLatestDownloadInfo()")
             REQUIRE(sfsClient->GetLatestDownloadInfo(params, content) == Result::Success);
             REQUIRE(content);
             CheckMockContent(*content, c_nextVersion);
+        }
+    }
+}
+
+TEST("Testing SFSClient retry behavior")
+{
+    if (!AreTestOverridesAllowed())
+    {
+        return;
+    }
+
+    MockWebServer server;
+    ScopedTestOverride urlOverride(TestOverride::BaseUrl, server.GetBaseUrl());
+    ScopedTestOverride connectionOverride(test::TestOverride::NoConnectionConfigLimits, "true");
+
+    server.RegisterProduct(c_productName, c_version);
+    RequestParams params;
+    params.productRequests = {{c_productName, {}}};
+    std::unique_ptr<Content> content;
+
+    std::unique_ptr<SFSClient> sfsClient;
+    ClientConfig clientConfig{"testAccountId", c_instanceId, c_namespace, {}, LogCallbackToTest};
+
+    SECTION("Test exponential backoff")
+    {
+        INFO("Sets the retry delay to 50ms to speed up the test");
+
+        clientConfig.connectionConfig.retryDelayMs = 50;
+        REQUIRE(SFSClient::Make(clientConfig, sfsClient));
+        REQUIRE(sfsClient != nullptr);
+
+        REQUIRE(clientConfig.connectionConfig.retriableHttpErrors.count(RetriableHttpError::ServerBusy) != 0);
+        const int retriableError = static_cast<int>(RetriableHttpError::ServerBusy);
+
+        auto RunTimedGet = [&](bool success = true) -> long long {
+            auto begin = steady_clock::now();
+            if (success)
+            {
+                REQUIRE(sfsClient->GetLatestDownloadInfo(params, content));
+                REQUIRE(content);
+            }
+            else
+            {
+                REQUIRE(sfsClient->GetLatestDownloadInfo(params, content) == Result::HttpServiceNotAvailable);
+                REQUIRE_FALSE(content);
+            }
+            auto end = steady_clock::now();
+            return duration_cast<milliseconds>(end - begin).count();
+        };
+
+        long long allowedTimeDeviation = 200LL;
+        std::queue<HttpCode> forcedHttpErrors({retriableError});
+        SECTION("Should take at least 50ms with a single retriable error")
+        {
+            server.SetForcedHttpErrors(forcedHttpErrors);
+            const auto time = RunTimedGet();
+            REQUIRE(time >= 50LL);
+            REQUIRE(time < 50LL + allowedTimeDeviation);
+        }
+
+        forcedHttpErrors.push(retriableError);
+        SECTION("Should take at least 150ms (50ms + 2*50ms) with two retriable error")
+        {
+            server.SetForcedHttpErrors(forcedHttpErrors);
+            const auto time = RunTimedGet();
+            REQUIRE(time >= 150LL);
+            REQUIRE(time < 150LL + allowedTimeDeviation);
+        }
+
+        forcedHttpErrors.push(retriableError);
+        SECTION("Should take at least 300ms (50ms + 2*50ms + 3*50ms) with three retriable errors")
+        {
+            server.SetForcedHttpErrors(forcedHttpErrors);
+            const auto time = RunTimedGet();
+            REQUIRE(time >= 300LL);
+            REQUIRE(time < 300LL + allowedTimeDeviation);
+        }
+
+        forcedHttpErrors.push(retriableError);
+        SECTION("Should take at least 300ms (50ms + 2*50ms + 3*50ms) with four retriable errors, but fail")
+        {
+            server.SetForcedHttpErrors(forcedHttpErrors);
+            const auto time = RunTimedGet(false /*success*/);
+            REQUIRE(time >= 300LL);
+            REQUIRE(time < 300LL + allowedTimeDeviation);
+        }
+    }
+
+    SECTION("Test retriable errors with Retry-After headers")
+    {
+        INFO("Sets the retry delay to 200ms to speed up the test");
+
+        clientConfig.connectionConfig.retryDelayMs = 200;
+        REQUIRE(SFSClient::Make(clientConfig, sfsClient));
+        REQUIRE(sfsClient != nullptr);
+
+        REQUIRE(clientConfig.connectionConfig.retriableHttpErrors.count(RetriableHttpError::ServerBusy) != 0);
+        const int retriableError = static_cast<int>(RetriableHttpError::ServerBusy);
+
+        REQUIRE(clientConfig.connectionConfig.retriableHttpErrors.count(RetriableHttpError::BadGateway) != 0);
+        const int retriableError2 = static_cast<int>(RetriableHttpError::BadGateway);
+
+        auto RunTimedGet = [&]() -> long long {
+            auto begin = steady_clock::now();
+            REQUIRE(sfsClient->GetLatestDownloadInfo(params, content));
+            REQUIRE(content);
+            auto end = steady_clock::now();
+            return duration_cast<milliseconds>(end - begin).count();
+        };
+
+        std::unordered_map<HttpCode, HeaderMap> headersByCode;
+        headersByCode[retriableError] = {{"Retry-After", "1"}}; // 1s delay
+        server.SetResponseHeaders(headersByCode);
+
+        long long allowedTimeDeviation = 200LL;
+        std::queue<HttpCode> forcedHttpErrors({retriableError});
+        SECTION("Should take at least 1000ms with a single retriable error with 1s in Retry-After")
+        {
+            server.SetForcedHttpErrors(forcedHttpErrors);
+            const auto time = RunTimedGet();
+            REQUIRE(time >= 1000LL);
+            REQUIRE(time < 1000LL + allowedTimeDeviation);
+        }
+
+        SECTION(
+            "Should take at least 1000ms + 200ms with a retriable error with 1s in Retry-After and one with 200ms*2 as default value")
+        {
+            forcedHttpErrors.push(retriableError2);
+            server.SetForcedHttpErrors(forcedHttpErrors);
+            const auto time = RunTimedGet();
+            REQUIRE(time >= 1400LL);
+            REQUIRE(time < 1400LL + allowedTimeDeviation);
+        }
+    }
+
+    SECTION("Test maxRetries")
+    {
+        INFO("Sets the retry delay to 1ms to speed up the test");
+        clientConfig.connectionConfig.retryDelayMs = 1;
+
+        REQUIRE(clientConfig.connectionConfig.retriableHttpErrors.count(RetriableHttpError::ServerBusy) != 0);
+        const int retriableError = static_cast<int>(RetriableHttpError::ServerBusy);
+
+        SECTION("With default retries")
+        {
+            REQUIRE(SFSClient::Make(clientConfig, sfsClient));
+            REQUIRE(sfsClient != nullptr);
+
+            SECTION("Should pass with 3 errors")
+            {
+                server.SetForcedHttpErrors(std::queue<HttpCode>({retriableError, retriableError, retriableError}));
+                REQUIRE(sfsClient->GetLatestDownloadInfo(params, content));
+            }
+
+            SECTION("Should fail with 4 errors")
+            {
+                server.SetForcedHttpErrors(
+                    std::queue<HttpCode>({retriableError, retriableError, retriableError, retriableError}));
+                REQUIRE(sfsClient->GetLatestDownloadInfo(params, content) == Result::HttpServiceNotAvailable);
+            }
+        }
+
+        SECTION("Reducing retries to 2")
+        {
+            clientConfig.connectionConfig.maxRetries = 2;
+            REQUIRE(SFSClient::Make(clientConfig, sfsClient));
+            REQUIRE(sfsClient != nullptr);
+
+            SECTION("Should pass with 2 errors")
+            {
+                server.SetForcedHttpErrors(std::queue<HttpCode>({retriableError, retriableError}));
+                REQUIRE(sfsClient->GetLatestDownloadInfo(params, content));
+            }
+
+            SECTION("Should fail with 3 errors")
+            {
+                server.SetForcedHttpErrors(std::queue<HttpCode>({retriableError, retriableError, retriableError}));
+                REQUIRE(sfsClient->GetLatestDownloadInfo(params, content) == Result::HttpServiceNotAvailable);
+            }
+        }
+
+        SECTION("Reducing retries to 0")
+        {
+            clientConfig.connectionConfig.maxRetries = 0;
+            REQUIRE(SFSClient::Make(clientConfig, sfsClient));
+            REQUIRE(sfsClient != nullptr);
+
+            SECTION("Should pass with no errors")
+            {
+                REQUIRE(sfsClient->GetLatestDownloadInfo(params, content));
+            }
+
+            SECTION("Should fail with 1 error")
+            {
+                server.SetForcedHttpErrors(std::queue<HttpCode>({retriableError}));
+                REQUIRE(sfsClient->GetLatestDownloadInfo(params, content) == Result::HttpServiceNotAvailable);
+            }
+        }
+    }
+
+    SECTION("Test retriable errors")
+    {
+        INFO("Sets the retry delay to 1ms to speed up the test");
+        clientConfig.connectionConfig.retryDelayMs = 1;
+
+        SECTION("Should pass with default errors")
+        {
+            REQUIRE(SFSClient::Make(clientConfig, sfsClient));
+            REQUIRE(sfsClient != nullptr);
+
+            for (const auto& error : clientConfig.connectionConfig.retriableHttpErrors)
+            {
+                server.SetForcedHttpErrors(std::queue<HttpCode>({static_cast<int>(error)}));
+                REQUIRE(sfsClient->GetLatestDownloadInfo(params, content));
+            }
+
+            SECTION("Unless max retries is set to 0")
+            {
+                clientConfig.connectionConfig.maxRetries = 0;
+                REQUIRE(SFSClient::Make(clientConfig, sfsClient));
+                REQUIRE(sfsClient != nullptr);
+
+                for (const auto& error : clientConfig.connectionConfig.retriableHttpErrors)
+                {
+                    server.SetForcedHttpErrors(std::queue<HttpCode>({static_cast<int>(error)}));
+                    REQUIRE(!sfsClient->GetLatestDownloadInfo(params, content));
+                }
+            }
+        }
+
+        SECTION("Removing error from list makes it fail")
+        {
+            clientConfig.connectionConfig.retriableHttpErrors.erase(RetriableHttpError::ServerBusy);
+            REQUIRE(SFSClient::Make(clientConfig, sfsClient));
+            REQUIRE(sfsClient != nullptr);
+
+            server.SetForcedHttpErrors(std::queue<HttpCode>({static_cast<int>(RetriableHttpError::ServerBusy)}));
+            REQUIRE(sfsClient->GetLatestDownloadInfo(params, content) == Result::HttpServiceNotAvailable);
+        }
+
+        SECTION("Should fail with default errors if erase list")
+        {
+            const auto originalSet = clientConfig.connectionConfig.retriableHttpErrors;
+            clientConfig.connectionConfig.retriableHttpErrors.clear();
+            REQUIRE(SFSClient::Make(clientConfig, sfsClient));
+            REQUIRE(sfsClient != nullptr);
+
+            for (const auto& error : originalSet)
+            {
+                server.SetForcedHttpErrors(std::queue<HttpCode>({static_cast<int>(error)}));
+                REQUIRE(!sfsClient->GetLatestDownloadInfo(params, content));
+            }
         }
     }
 }
