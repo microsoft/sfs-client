@@ -147,24 +147,3 @@ class Content
     std::vector<File> m_files;
 };
 } // namespace SFS
-
-namespace SFS::details
-{
-/// @brief Compares two ContentId objects for equality. The values of members are strictly compared.
-bool operator==(const ContentId& lhs, const ContentId& rhs);
-
-/// @brief Compares two ContentId objects for inequality. The values of members are strictly compared.
-bool operator!=(const ContentId& lhs, const ContentId& rhs);
-
-/// @brief Compares two File objects for equality. The values of members are strictly compared.
-bool operator==(const File& lhs, const File& rhs);
-
-/// @brief Compares two File objects for inequality. The values of members are strictly compared.
-bool operator!=(const File& lhs, const File& rhs);
-
-/// @brief Compares two Content objects for equality. The values of members are strictly compared.
-bool operator==(const Content& lhs, const Content& rhs);
-
-/// @brief Compares two Content objects for inequality. The values of members are strictly compared.
-bool operator!=(const Content& lhs, const Content& rhs);
-} // namespace SFS::details

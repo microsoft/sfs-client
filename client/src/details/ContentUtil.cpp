@@ -92,3 +92,42 @@ std::unique_ptr<File> contentutil::FileJsonToObj(const json& file, const Reporti
 
     return tmp;
 }
+
+bool contentutil::operator==(const ContentId& lhs, const ContentId& rhs)
+{
+    // String characters can be UTF-8 encoded, so we need to compare them in a case-sensitive manner.
+    return lhs.GetNameSpace() == rhs.GetNameSpace() && lhs.GetName() == rhs.GetName() &&
+           lhs.GetVersion() == rhs.GetVersion();
+}
+
+bool contentutil::operator!=(const ContentId& lhs, const ContentId& rhs)
+{
+    return !(lhs == rhs);
+}
+
+bool contentutil::operator==(const File& lhs, const File& rhs)
+{
+    // String characters can be UTF-8 encoded, so we need to compare them in a case-sensitive manner.
+    return lhs.GetFileId() == rhs.GetFileId() && lhs.GetUrl() == rhs.GetUrl() &&
+           lhs.GetSizeInBytes() == rhs.GetSizeInBytes() && lhs.GetHashes() == rhs.GetHashes();
+}
+
+bool contentutil::operator!=(const File& lhs, const File& rhs)
+{
+    return !(lhs == rhs);
+}
+
+bool contentutil::operator==(const Content& lhs, const Content& rhs)
+{
+    return lhs.GetContentId() == rhs.GetContentId() &&
+           (std::is_permutation(lhs.GetFiles().begin(),
+                                lhs.GetFiles().end(),
+                                rhs.GetFiles().begin(),
+                                rhs.GetFiles().end(),
+                                [](const File& flhs, const File& frhs) { return flhs == frhs; }));
+}
+
+bool contentutil::operator!=(const Content& lhs, const Content& rhs)
+{
+    return !(lhs == rhs);
+}

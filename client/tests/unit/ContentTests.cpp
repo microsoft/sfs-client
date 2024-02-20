@@ -1,6 +1,7 @@
 // Copyright (c) Microsoft Corporation.
 // Licensed under the MIT License.
 
+#include "ContentUtil.h"
 #include "sfsclient/Content.h"
 
 #include <catch2/catch_test_macros.hpp>
@@ -10,6 +11,7 @@
 
 using namespace SFS;
 using namespace SFS::details;
+using namespace SFS::details::contentutil;
 
 namespace
 {
