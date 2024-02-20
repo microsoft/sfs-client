@@ -38,3 +38,7 @@ If a logging callback is set in a multi-threaded environment, and the same `SFSC
 
 A few data types are provided which abstract contents that can be sent by the SFS Service, such as `Content`, `ContentId`, `File`, `DeliveryOptimizationData`.
 These data types provide `noexcept` methods to interact with member data.
+
+## Security
+
+The library uses TLS with Certificate Pinning over HTTPS to communicate with the SFS Service.
