@@ -8,6 +8,7 @@
 #include <deque>
 #include <memory>
 #include <string>
+#include <unordered_map>
 
 namespace SFS::details
 {
@@ -20,6 +21,10 @@ namespace details
 {
 class MockWebServerImpl;
 }
+
+using HttpCode = int;
+using HeaderMap = std::unordered_map<std::string, std::string>;
+
 class MockWebServer
 {
   public:
@@ -43,7 +48,10 @@ class MockWebServer
      * @brief Registers a sequence of HTTP error codes that will be sent by the server in the order in which they are
      * passed.
      */
-    void SetForcedHttpErrors(std::deque<int> forcedErrors);
+    void SetForcedHttpErrors(std::deque<HttpCode> forcedErrors);
+
+    /// @brief Registers a set of headers that will be sent depending on the HTTP code
+    void SetResponseHeaders(std::unordered_map<HttpCode, HeaderMap> headersByCode);
 
   private:
     std::unique_ptr<details::MockWebServerImpl> m_impl;

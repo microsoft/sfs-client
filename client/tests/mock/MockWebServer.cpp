@@ -193,7 +193,8 @@ class MockWebServerImpl
 
     void RegisterProduct(std::string&& name, std::string&& version);
     void RegisterExpectedRequestHeader(std::string&& header, std::string&& value);
-    void SetForcedHttpErrors(std::deque<int> forcedErrors);
+    void SetForcedHttpErrors(std::deque<HttpCode> forcedErrors);
+    void SetResponseHeaders(std::unordered_map<HttpCode, HeaderMap> headersByCode);
 
   private:
     void ConfigureServerSettings();
@@ -225,7 +226,8 @@ class MockWebServerImpl
     std::unordered_map<std::string, VersionList> m_products;
 
     std::unordered_map<std::string, std::string> m_expectedRequestHeaders;
-    std::deque<int> m_forcedHttpErrors;
+    std::deque<HttpCode> m_forcedHttpErrors;
+    std::unordered_map<HttpCode, HeaderMap> m_headersByCode;
 
     std::vector<BufferedLogData> m_bufferedLog;
     std::mutex m_logMutex;
@@ -268,9 +270,14 @@ void MockWebServer::RegisterExpectedRequestHeader(HttpHeader header, std::string
     m_impl->RegisterExpectedRequestHeader(std::move(headerName), std::move(value));
 }
 
-void MockWebServer::SetForcedHttpErrors(std::deque<int> forcedErrors)
+void MockWebServer::SetForcedHttpErrors(std::deque<HttpCode> forcedErrors)
 {
     m_impl->SetForcedHttpErrors(std::move(forcedErrors));
+}
+
+void MockWebServer::SetResponseHeaders(std::unordered_map<HttpCode, HeaderMap> headersByCode)
+{
+    m_impl->SetResponseHeaders(std::move(headersByCode));
 }
 
 void MockWebServerImpl::Start()
@@ -590,6 +597,16 @@ void MockWebServerImpl::RunHttpCallback(const httplib::Request& req,
             res.status = static_cast<int>(StatusCode::InternalServerError);
         }
     }
+
+    if (m_headersByCode.count(res.status) > 0)
+    {
+        BUFFER_LOG("HTTP code " + std::to_string(res.status) + " has response headers to be sent");
+        for (const auto& header : m_headersByCode[res.status])
+        {
+            BUFFER_LOG("Adding header [" + header.first + "] with value [" + header.second + "]");
+            res.set_header(header.first, header.second);
+        }
+    }
 }
 
 void MockWebServerImpl::CheckRequestHeaders(const httplib::Request& req)
@@ -667,4 +684,9 @@ void MockWebServerImpl::RegisterExpectedRequestHeader(std::string&& header, std:
 void MockWebServerImpl::SetForcedHttpErrors(std::deque<int> forcedErrors)
 {
     m_forcedHttpErrors = std::move(forcedErrors);
+}
+
+void MockWebServerImpl::SetResponseHeaders(std::unordered_map<HttpCode, HeaderMap> headersByCode)
+{
+    m_headersByCode = std::move(headersByCode);
 }
