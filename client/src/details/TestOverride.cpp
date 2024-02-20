@@ -22,6 +22,8 @@ std::string test::GetEnvVarNameFromOverride(TestOverride override)
     {
     case TestOverride::BaseUrl:
         return "SFS_TEST_OVERRIDE_BASE_URL";
+    case TestOverride::PublicKey:
+        return "SFS_TEST_OVERRIDE_PUBLIC_KEY";
     }
     return "";
 }

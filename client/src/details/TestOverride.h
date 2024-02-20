@@ -18,7 +18,8 @@ bool AreTestOverridesAllowed();
 
 enum class TestOverride
 {
-    BaseUrl
+    BaseUrl,
+    PublicKey,
 };
 
 /**

@@ -14,6 +14,7 @@ If you're using the CMake extension on VSCode, you can set the build options thr
 
 When these test overrides are enabled, a few environment variables can be used to adjust the behavior of the tool:
 
-| Environment Variable       | Description                                                                                 |
-|----------------------------|---------------------------------------------------------------------------------------------|
-| SFS_TEST_OVERRIDE_BASE_URL | Set this to any string value which will be used as the SFS URL rather than the default one. |
+| Environment Variable         | Description                                                                                                               |
+|------------------------------|---------------------------------------------------------------------------------------------------------------------------|
+| SFS_TEST_OVERRIDE_BASE_URL   | Set this to any string value which will be used as the SFS URL rather than the default one.                               |
+| SFS_TEST_OVERRIDE_PUBLIC_KEY | Set this to override the default public Sha256 cert key for the SFS URL, when the base URL is set to a non-default value. |

@@ -4,6 +4,7 @@
 #include "CurlConnection.h"
 
 #include "../ErrorHandling.h"
+#include "../TestOverride.h"
 
 #include <curl/curl.h>
 
@@ -25,6 +26,7 @@
 
 using namespace SFS;
 using namespace SFS::details;
+using namespace SFS::test;
 
 const std::string c_sha256Prefix = "sha256//";
 const std::string c_publicServerKey = "byLaJREYC4rFrGkdjtCJWWpynkp7G9XOH7A2g6C5FOM=";
@@ -203,9 +205,12 @@ CurlConnection::CurlConnection(const ReportingHandler& handler) : Connection(han
                       m_handler,
                       "Failed to set up curl");
 
-    const std::string publicServerKey = c_sha256Prefix + c_publicServerKey;
+    // Setting up pinned public key for the server - may be overriden by test override
+    const auto overridePublicKey = GetTestOverride(TestOverride::PublicKey);
+    const std::string pinnedPublicKey = c_sha256Prefix + overridePublicKey.value_or(c_publicServerKey);
+
     THROW_CODE_IF_LOG(ConnectionSetupFailed,
-                      curl_easy_setopt(m_handle, CURLOPT_PINNEDPUBLICKEY, publicServerKey.c_str()) != CURLE_OK,
+                      curl_easy_setopt(m_handle, CURLOPT_PINNEDPUBLICKEY, pinnedPublicKey.c_str()) != CURLE_OK,
                       m_handler,
                       "Failed to set up pinned public key for curl");
 
