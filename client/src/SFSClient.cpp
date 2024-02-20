@@ -11,6 +11,17 @@
 using namespace SFS;
 using namespace SFS::details;
 
+namespace
+{
+void ValidateConnectionConfig(const ConnectionConfig& config)
+{
+    THROW_CODE_IF(InvalidArg, config.maxRetries > 3, "maxRetries must be <= 3");
+    THROW_CODE_IF(InvalidArg,
+                  config.retryDelayMs < 15000 || config.retryDelayMs > 60000,
+                  "timeoutMs must be between 15000 and 60000");
+}
+} // namespace
+
 // Defining the constructor and destructor here allows us to use a unique_ptr to SFSClientImpl in the header file
 SFSClient::SFSClient() noexcept = default;
 SFSClient::~SFSClient() noexcept = default;
@@ -22,6 +33,7 @@ try
     {
         return Result(Result::InvalidArg, "ClientConfig::accountId cannot be empty");
     }
+    ValidateConnectionConfig(config.connectionConfig);
 
     out.reset();
     std::unique_ptr<SFSClient> tmp(new SFSClient());

@@ -94,7 +94,7 @@ void CheckDownloadInfo(const std::vector<File>& files, const std::string& name)
 TEST("Testing class SFSClientImpl()")
 {
     const std::string ns = "testNameSpace";
-    SFSClientImpl<CurlConnectionManager> sfsClient({"testAccountId", "testInstanceId", ns, LogCallbackToTest});
+    SFSClientImpl<CurlConnectionManager> sfsClient({"testAccountId", "testInstanceId", ns, {}, LogCallbackToTest});
 
     Result::Code responseCode = Result::Success;
     std::string getResponse;
@@ -267,7 +267,9 @@ TEST("Testing class SFSClientImpl()")
 
 TEST("Testing SFSClientImpl::SetCustomBaseUrl()")
 {
-    SFSClientImpl<MockConnectionManager> sfsClient({"testAccountId", "testInstanceId", "testNameSpace", std::nullopt});
+    ClientConfig config;
+    config.accountId = "testAccountId";
+    SFSClientImpl<MockConnectionManager> sfsClient(std::move(config));
 
     REQUIRE(sfsClient.GetBaseUrl() == "https://testAccountId.api.cdp.microsoft.com");
 
@@ -277,7 +279,9 @@ TEST("Testing SFSClientImpl::SetCustomBaseUrl()")
 
 TEST("Testing test override SFS_TEST_OVERRIDE_BASE_URL")
 {
-    SFSClientImpl<MockConnectionManager> sfsClient({"testAccountId", "testInstanceId", "testNameSpace", std::nullopt});
+    ClientConfig config;
+    config.accountId = "testAccountId";
+    SFSClientImpl<MockConnectionManager> sfsClient(std::move(config));
 
     REQUIRE(sfsClient.GetBaseUrl() == "https://testAccountId.api.cdp.microsoft.com");
 
@@ -319,6 +323,6 @@ TEST("Testing test override SFS_TEST_OVERRIDE_BASE_URL")
 TEST("Testing passing a logging callback to constructor of SFSClientImpl")
 {
     SFSClientImpl<MockConnectionManager> sfsClient(
-        {"testAccountId", "testInstanceId", "testNameSpace", [](const LogData&) {}});
-    SFSClientImpl<MockConnectionManager> sfsClient2({"testAccountId", "testInstanceId", "testNameSpace", nullptr});
+        {"testAccountId", "testInstanceId", "testNameSpace", {}, [](const LogData&) {}});
+    SFSClientImpl<MockConnectionManager> sfsClient2({"testAccountId", "testInstanceId", "testNameSpace", {}, nullptr});
 }

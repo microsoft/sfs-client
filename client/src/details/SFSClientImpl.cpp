@@ -156,6 +156,7 @@ SFSClientImpl<ConnectionManagerT>::SFSClientImpl(ClientConfig&& config)
     , m_instanceId(config.instanceId && !config.instanceId->empty() ? std::move(*config.instanceId)
                                                                     : c_defaultInstanceId)
     , m_nameSpace(config.nameSpace && !config.nameSpace->empty() ? std::move(*config.nameSpace) : c_defaultNameSpace)
+    , m_connectionConfig(std::move(config.connectionConfig))
 {
     if (config.logCallbackFn)
     {
@@ -311,6 +312,7 @@ std::unique_ptr<Connection> SFSClientImpl<ConnectionManagerT>::MakeConnection(co
         connection->SetCorrelationVector(*cv);
     }
 
+    connection->SetConfig(m_connectionConfig);
     return connection;
 }
 
