@@ -16,6 +16,7 @@ namespace
 {
 void DisplayUsage()
 {
+    const std::string overrideWarning = " Library must have been built with SFS_ENABLE_OVERRIDES";
     std::cout
         << "Usage: SFSClientTool --productName <name> [options]" << std::endl
         << std::endl
@@ -27,8 +28,8 @@ void DisplayUsage()
         << "  --accountId <id>\t\tAccount ID of the SFS service, used to identify the caller" << std::endl
         << "  --instanceId <id>\t\tA custom SFS instance ID" << std::endl
         << "  --namespace <ns>\t\tA custom SFS namespace" << std::endl
-        << "  --customUrl <url>\t\tA custom URL for the SFS service. Library must have been built with SFS_ENABLE_OVERRIDES"
-        << std::endl
+        << "  --customUrl <url>\t\tA custom URL for the SFS service." << overrideWarning << std::endl
+        << "  --customPublicKey <url>\t\tA custom Sha256 public key for the SFS URL." << overrideWarning << std::endl
         << std::endl
         << "Example:" << std::endl
         << "  SFSClientTool --productName \"Microsoft.WindowsStore_12011.1001.1.0_x64__8wekyb3d8bbwe\" --accountId test"
@@ -68,6 +69,7 @@ struct Settings
     std::string instanceId;
     std::string nameSpace;
     std::string customUrl;
+    std::string customPublicKey;
 };
 
 int ParseArguments(const std::vector<std::string_view>& args, Settings& settings)
@@ -136,6 +138,14 @@ int ParseArguments(const std::vector<std::string_view>& args, Settings& settings
                 return 1;
             }
             settings.customUrl = args[++i];
+        }
+        else if (args[i].compare("--customPublicKey") == 0)
+        {
+            if (!validateArg(i, "customPublicKey", settings.customPublicKey))
+            {
+                return 1;
+            }
+            settings.customPublicKey = args[++i];
         }
         else
         {
@@ -259,6 +269,22 @@ bool SetEnv(const std::string& varName, const std::string& value)
     return setenv(varName.c_str(), value.c_str(), 1 /*overwrite*/) == 0;
 #endif
 }
+
+void SetOverride(const std::string& overrideVarName, const std::string& value, const std::string& prettyName)
+{
+    if (!value.empty())
+    {
+        SetEnv(overrideVarName, value);
+        PrintLog("Using " + prettyName + ": " + value);
+        PrintLog("Note that the library must have been built with SFS_ENABLE_OVERRIDES to override behavior.");
+    }
+}
+
+void SetOverrides(const Settings& settings)
+{
+    SetOverride("SFS_TEST_OVERRIDE_BASE_URL", settings.customUrl, "custom URL");
+    SetOverride("SFS_TEST_OVERRIDE_PUBLIC_KEY", settings.customPublicKey, "custom public key");
+}
 } // namespace
 
 int main(int argc, char* argv[])
@@ -276,12 +302,7 @@ int main(int argc, char* argv[])
         return 0;
     }
 
-    if (!settings.customUrl.empty())
-    {
-        SetEnv("SFS_TEST_OVERRIDE_BASE_URL", settings.customUrl);
-        PrintLog("Using custom URL: " + settings.customUrl);
-        PrintLog("Note that the library must have been built with SFS_ENABLE_OVERRIDES to use a custom URL.");
-    }
+    SetOverrides(settings);
 
     // Initialize SFSClient
     PrintLog("Initializing SFSClient with accountId: " + settings.accountId +
