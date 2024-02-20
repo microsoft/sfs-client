@@ -6,6 +6,7 @@
 #include "../../util/TestHelper.h"
 #include "ReportingHandler.h"
 #include "SFSUrlComponents.h"
+#include "TestOverride.h"
 #include "connection/CurlConnection.h"
 #include "connection/CurlConnectionManager.h"
 
@@ -312,4 +313,37 @@ TEST("Testing a response over the limit fails the operation")
     REQUIRE_THROWS_CODE_MSG(connection->Post(url, body.dump()),
                             ConnectionUnexpectedError,
                             "Failure writing output to destination");
+}
+
+TEST("Testing public key pinning")
+{
+    if (!AreTestOverridesAllowed())
+    {
+        return;
+    }
+
+    INFO("Will be using https://example.com for this test to check cert pinning");
+    const std::string url = "https://example.com";
+
+    // Check https://curl.se/libcurl/c/CURLOPT_PINNEDPUBLICKEY.html to see how to extract a public key
+    const std::string correctSha256Key = "zKePnjF2yATEC6NGgoKvBjb5NkyDDN3mPGtRspV6vBc=";
+    const std::string badSha256Key = "zKePnjF2yATEC6NGgoKvBjb5NkyDDN3mPGtRspV6vBd=";
+
+    ReportingHandler handler;
+    handler.SetLoggingCallback(LogCallbackToTest);
+    CurlConnectionManager connectionManager(handler);
+
+    SECTION("Works with correct public key")
+    {
+        ScopedTestOverride override(TestOverride::PublicKey, correctSha256Key);
+        REQUIRE_NOTHROW(connectionManager.MakeConnection()->Get(url));
+    }
+
+    SECTION("Now use bad public key to make sure the connection fails as the pinned key does not match")
+    {
+        ScopedTestOverride override(TestOverride::PublicKey, badSha256Key);
+        REQUIRE_THROWS_CODE_MSG(connectionManager.MakeConnection()->Get(url),
+                                ConnectionUnexpectedError,
+                                "SSL: public key does not match pinned public key");
+    }
 }
