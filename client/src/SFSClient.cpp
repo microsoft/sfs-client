@@ -71,8 +71,8 @@ Result SFSClient::GetDeliveryOptimizationData(
     [[maybe_unused]] std::unique_ptr<DeliveryOptimizationData>& data) const noexcept
 try
 {
-    // return m_impl->GetDeliveryOptimizationData(...);
-    return Result::NotImpl;
+    data = m_impl->GetDeliveryOptimizationData(contentId, file);
+    return Result::Success;
 }
 SFS_CATCH_RETURN()
 

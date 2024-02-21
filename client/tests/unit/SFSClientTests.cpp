@@ -231,14 +231,16 @@ TEST_SCENARIO("Testing SFSClient::GetDeliveryOptimizationData()")
     {
         auto sfsClient = GetSFSClient();
 
-        THEN("SFSClient::GetDeliveryOptimizationData() is not implemented")
+        THEN("SFSClient::GetDeliveryOptimizationData() returns NotSet for non-registered values")
         {
             const SearchAttributes attributes{{"attr1", "value"}};
 
             std::unique_ptr<ContentId> contentId;
+            REQUIRE(ContentId::Make({}, {}, {}, contentId));
             std::unique_ptr<File> file;
+            REQUIRE(File::Make({}, {}, 0, {}, file));
             std::unique_ptr<DeliveryOptimizationData> data;
-            REQUIRE(sfsClient->GetDeliveryOptimizationData(*contentId, *file, data) == Result::NotImpl);
+            REQUIRE(sfsClient->GetDeliveryOptimizationData(*contentId, *file, data) == Result::NotSet);
         }
     }
 }
