@@ -31,7 +31,7 @@ class SFSClientInterface
      * @return ContentId for the latest version of the product
      * @throws SFSException if the request fails
      */
-    virtual std::vector<ContentId> GetLatestVersionBatch(const std::vector<ProductRequest> productRequests,
+    virtual std::vector<ContentId> GetLatestVersionBatch(const std::vector<ProductRequest>& productRequests,
                                                          Connection& connection) const = 0;
 
     /**

@@ -173,7 +173,7 @@ SFSClientImpl<ConnectionManagerT>::SFSClientImpl(ClientConfig&& config)
 
 template <typename ConnectionManagerT>
 std::vector<ContentId> SFSClientImpl<ConnectionManagerT>::GetLatestVersionBatch(
-    const std::vector<ProductRequest> productRequests,
+    const std::vector<ProductRequest>& productRequests,
     Connection& connection) const
 try
 {
