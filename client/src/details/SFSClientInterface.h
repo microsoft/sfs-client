@@ -10,7 +10,11 @@
 #include <memory>
 #include <string>
 
-namespace SFS::details
+namespace SFS
+{
+class DeliveryOptimizationData;
+
+namespace details
 {
 class Connection;
 class ConnectionManager;
@@ -61,6 +65,13 @@ class SFSClientInterface
                                               Connection& connection) const = 0;
 
     /**
+     * @brief Returns the DeliveryOptimizationData for a given ContentId and File
+     * @throws SFSException if the request fails or the data is not available (Result::NotSet)
+     */
+    virtual std::unique_ptr<DeliveryOptimizationData> GetDeliveryOptimizationData(const ContentId& contentId,
+                                                                                  const File& file) const = 0;
+
+    /**
      * @brief Returns the ConnectionManager to be used by the SFSClient to create Connection objects
      */
     virtual ConnectionManager& GetConnectionManager() = 0;
@@ -73,4 +84,5 @@ class SFSClientInterface
   protected:
     ReportingHandler m_reportingHandler;
 };
-} // namespace SFS::details
+} // namespace details
+} // namespace SFS

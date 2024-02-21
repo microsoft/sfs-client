@@ -45,6 +45,14 @@ void ThrowInvalidResponseIfFalse(bool condition, const std::string& message, con
     THROW_CODE_IF_LOG(ServiceInvalidResponse, !condition, handler, message);
 }
 
+DOCacheKey GetDOCacheKey(const std::string& productName,
+                         const std::string& version,
+                         const std::string& nameSpace,
+                         const std::string& fileId)
+{
+    return std::hash<std::string>{}(productName + version + nameSpace + fileId);
+}
+
 json ParseServerMethodStringToJson(const std::string& data, const std::string& method, const ReportingHandler& handler)
 {
     try
@@ -130,7 +138,12 @@ std::unique_ptr<ContentId> ConvertSpecificVersionResponseToContentId(const json&
     return ContentIdJsonToObj(data["ContentId"], handler);
 }
 
-std::vector<File> ConvertDownloadInfoResponseToFileVector(const json& data, const ReportingHandler& handler)
+std::vector<File> ConvertDownloadInfoResponseToFileVector(const json& data,
+                                                          const std::string& productName,
+                                                          const std::string& version,
+                                                          const std::string& nameSpace,
+                                                          DODataCache& DOCache,
+                                                          const ReportingHandler& handler)
 {
     // Expected format:
     // [
@@ -154,13 +167,13 @@ std::vector<File> ConvertDownloadInfoResponseToFileVector(const json& data, cons
 
     ThrowInvalidResponseIfFalse(data.is_array(), "Response is not a JSON array", handler);
 
-    // TODO #48: For now ignore DeliveryOptimization data. Will implement its separate parsing later
-
     std::vector<File> tmp;
     for (const auto& fileData : data)
     {
         ThrowInvalidResponseIfFalse(fileData.is_object(), "Array element is not a JSON object", handler);
         tmp.push_back(std::move(*FileJsonToObj(fileData, handler)));
+        DOCache.emplace(GetDOCacheKey(productName, version, nameSpace, tmp.back().GetFileId()),
+                        std::move(*FileJsonToDODataObj(fileData, handler)));
     }
 
     return tmp;
@@ -316,13 +329,37 @@ try
     const json downloadInfoResponse =
         ParseServerMethodStringToJson(postResponse, "GetDownloadInfo", m_reportingHandler);
 
-    auto files = ConvertDownloadInfoResponseToFileVector(downloadInfoResponse, m_reportingHandler);
+    auto files = ConvertDownloadInfoResponseToFileVector(downloadInfoResponse,
+                                                         productName,
+                                                         version,
+                                                         m_nameSpace,
+                                                         m_DODataCache,
+                                                         m_reportingHandler);
 
     SFS_INFO("Received a response with %zu files", files.size());
 
     return files;
 }
 SFS_CATCH_LOG_RETHROW(m_reportingHandler)
+
+template <typename ConnectionManagerT>
+std::unique_ptr<DeliveryOptimizationData> SFSClientImpl<ConnectionManagerT>::GetDeliveryOptimizationData(
+    const ContentId& contentId,
+    const File& file) const
+{
+    if (const auto it = m_DODataCache.find(
+            GetDOCacheKey(contentId.GetName(), contentId.GetVersion(), contentId.GetNameSpace(), file.GetFileId()));
+        it != m_DODataCache.end())
+    {
+        std::unique_ptr<DeliveryOptimizationData> doData;
+        const DeliveryOptimizationData& data = it->second;
+        THROW_IF_FAILED_LOG(DeliveryOptimizationData::Make(data.GetCatalogId(), data.GetProperties(), doData),
+                            m_reportingHandler);
+        return doData;
+    }
+    THROW_LOG(Result(Result::NotSet, "No DeliveryOptimizationData found for the given ContentId and File"),
+              m_reportingHandler);
+}
 
 template <typename ConnectionManagerT>
 ConnectionManager& SFSClientImpl<ConnectionManagerT>::GetConnectionManager()
