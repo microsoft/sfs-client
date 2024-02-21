@@ -73,6 +73,7 @@ std::unique_ptr<ContentId> ConvertSingleProductVersionResponseToContentId(const 
     //
 
     ThrowInvalidResponseIfFalse(data.is_object(), "Response is not a JSON object", handler);
+    ThrowInvalidResponseIfFalse(data.contains("ContentId"), "Missing ContentId in response", handler);
 
     return ContentIdJsonToObj(data["ContentId"], handler);
 }
@@ -124,6 +125,7 @@ std::unique_ptr<ContentId> ConvertSpecificVersionResponseToContentId(const json&
     // We don't care about Files in this response, so we just ignore them
 
     ThrowInvalidResponseIfFalse(data.is_object(), "Response is not a JSON object", handler);
+    ThrowInvalidResponseIfFalse(data.contains("ContentId"), "Missing ContentId in response", handler);
 
     return ContentIdJsonToObj(data["ContentId"], handler);
 }
