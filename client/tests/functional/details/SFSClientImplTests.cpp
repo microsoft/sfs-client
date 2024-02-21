@@ -219,18 +219,36 @@ TEST("Testing class SFSClientImpl()")
     {
         std::vector<File> files;
 
-        SECTION("Getting 0.0.0.1")
+        SECTION("Succesful operations")
         {
-            REQUIRE_NOTHROW(files = sfsClient.GetDownloadInfo("productName", "0.0.0.1", *connection));
-            REQUIRE(!files.empty());
-            CheckDownloadInfo(files, "productName");
-        }
+            std::string version;
+            SECTION("Getting 0.0.0.1")
+            {
+                version = "0.0.0.1";
+            }
 
-        SECTION("Getting 0.0.0.2")
-        {
-            REQUIRE_NOTHROW(files = sfsClient.GetDownloadInfo("productName", "0.0.0.2", *connection));
+            SECTION("Getting 0.0.0.2")
+            {
+                version = "0.0.0.2";
+            }
+
+            REQUIRE_NOTHROW(files = sfsClient.GetDownloadInfo("productName", version, *connection));
             REQUIRE(!files.empty());
             CheckDownloadInfo(files, "productName");
+
+            INFO("Checking DOData is present");
+            std::unique_ptr<ContentId> contentId;
+            REQUIRE(ContentId::Make(ns, "productName", version, contentId));
+            for (const auto& file : files)
+            {
+                std::unique_ptr<DeliveryOptimizationData> data;
+                REQUIRE_NOTHROW(data = sfsClient.GetDeliveryOptimizationData(*contentId, file));
+                REQUIRE(data);
+
+                INFO("We only know the server doesn't send the catalogId and properties empty");
+                REQUIRE(!data->GetCatalogId().empty());
+                REQUIRE(!data->GetProperties().empty());
+            }
         }
 
         SECTION("Wrong product name")

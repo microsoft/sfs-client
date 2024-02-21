@@ -3,8 +3,9 @@
 
 #include "../mock/MockWebServer.h"
 #include "../util/TestHelper.h"
+#include "DeliveryOptimizationData.h"
+#include "SFSClient.h"
 #include "TestOverride.h"
-#include "sfsclient/SFSClient.h"
 
 #include <catch2/catch_test_macros.hpp>
 
@@ -63,19 +64,40 @@ TEST("Testing SFSClient::GetLatestDownloadInfo()")
 
     std::unique_ptr<Content> content;
 
-    SECTION("No attributes")
+    SECTION("Successful operations")
     {
-        REQUIRE(sfsClient->GetLatestDownloadInfo(c_productName, content) == Result::Success);
-        REQUIRE(content);
-        CheckMockContent(*content, c_version);
-    }
+        SECTION("No attributes")
+        {
+            REQUIRE(sfsClient->GetLatestDownloadInfo(c_productName, content) == Result::Success);
+        }
 
-    SECTION("With attributes")
-    {
-        const SearchAttributes attributes{{"attr1", "value"}};
-        REQUIRE(sfsClient->GetLatestDownloadInfo(c_productName, attributes, content) == Result::Success);
+        SECTION("With attributes")
+        {
+            const SearchAttributes attributes{{"attr1", "value"}};
+            REQUIRE(sfsClient->GetLatestDownloadInfo(c_productName, attributes, content) == Result::Success);
+        }
+
         REQUIRE(content);
         CheckMockContent(*content, c_version);
+
+        INFO("Checking DOData is present");
+        for (const auto& file : content->GetFiles())
+        {
+            std::unique_ptr<DeliveryOptimizationData> data;
+            REQUIRE(sfsClient->GetDeliveryOptimizationData(content->GetContentId(), file, data));
+            REQUIRE(data);
+
+            INFO("We only know the server doesn't send the catalogId and properties empty");
+            REQUIRE(!data->GetCatalogId().empty());
+            REQUIRE(!data->GetProperties().empty());
+        }
+
+        INFO("Checking DOData for a fake file but valid ContentId returns NotSet");
+        std::unique_ptr<File> file;
+        REQUIRE(File::Make({}, {}, 0, {}, file));
+
+        std::unique_ptr<DeliveryOptimizationData> data;
+        REQUIRE(sfsClient->GetDeliveryOptimizationData(content->GetContentId(), *file, data) == Result::NotSet);
     }
 
     SECTION("Wrong product name")

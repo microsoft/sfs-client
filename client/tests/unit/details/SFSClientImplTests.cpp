@@ -89,6 +89,17 @@ void CheckDownloadInfo(const std::vector<File>& files, const std::string& name)
     REQUIRE(files[1].GetFileId() == (name + ".bin"));
     REQUIRE(files[1].GetUrl() == ("http://localhost/2.bin"));
 }
+
+void CheckDOData(const DeliveryOptimizationData& data, json doJsonData)
+{
+    REQUIRE(data.GetCatalogId() == doJsonData["CatalogId"]);
+    for (const auto& [key, value] : data.GetProperties())
+    {
+        const auto& jsonProps = doJsonData["Properties"];
+        REQUIRE(jsonProps.contains(key));
+        REQUIRE(value == jsonProps[key].dump());
+    }
+}
 } // namespace
 
 TEST("Testing class SFSClientImpl()")
@@ -251,8 +262,20 @@ TEST("Testing class SFSClientImpl()")
         SECTION("Getting version")
         {
             REQUIRE_NOTHROW(files = sfsClient.GetDownloadInfo(productName, expectedVersion, *connection));
-            REQUIRE(!files.empty());
+            REQUIRE(files.size() == 2);
             CheckDownloadInfo(files, productName);
+
+            INFO("Checking DOData is present");
+            std::unique_ptr<ContentId> contentId;
+            REQUIRE(ContentId::Make(ns, productName, expectedVersion, contentId));
+
+            std::unique_ptr<DeliveryOptimizationData> data1;
+            REQUIRE_NOTHROW(data1 = sfsClient.GetDeliveryOptimizationData(*contentId, files[0]));
+            CheckDOData(*data1, downloadInfoResponse[0]["DeliveryOptimization"]);
+
+            std::unique_ptr<DeliveryOptimizationData> data2;
+            REQUIRE_NOTHROW(data2 = sfsClient.GetDeliveryOptimizationData(*contentId, files[1]));
+            CheckDOData(*data2, downloadInfoResponse[1]["DeliveryOptimization"]);
         }
 
         SECTION("Failing")
