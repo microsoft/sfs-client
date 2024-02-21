@@ -38,3 +38,5 @@ If a logging callback is set in a multi-threaded environment, and the same `SFSC
 
 A few data types are provided which abstract contents that can be sent by the SFS Service, such as `Content`, `ContentId`, `File`, `DeliveryOptimizationData`.
 These data types provide `noexcept` methods to interact with member data.
+
+The `DeliveryOptimizationData` class exposes the CatalogId (also known as Content Id) data element though `GetCatalogId()`, which uniquely identifies a content to be downloaded. Other DO properties may be present in the opaque map exposed through `GetProperties()`. This is a map of property name by JSON dump of the property value. Refer to the Delivery Optimization API documentation to use certain types of properties. The SFS Service reserves the right to add/remove key pairs without changing the API version.
