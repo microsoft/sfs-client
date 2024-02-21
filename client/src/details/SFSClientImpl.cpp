@@ -59,6 +59,24 @@ json ParseServerMethodStringToJson(const std::string& data, const std::string& m
     }
 }
 
+std::unique_ptr<ContentId> ConvertSingleProductVersionResponseToContentId(const json& data,
+                                                                          const ReportingHandler& handler)
+{
+    // Expected format:
+    // {
+    //   "ContentId": {
+    //     "Namespace": <ns>,
+    //     "Name": <name>,
+    //     "Version": <version>
+    //   }
+    // }
+    //
+
+    ThrowInvalidResponseIfFalse(data.is_object(), "Response is not a JSON object", handler);
+
+    return ContentIdJsonToObj(data["ContentId"], handler);
+}
+
 std::vector<ContentId> ConvertLatestVersionBatchResponseToContentIds(const json& data, const ReportingHandler& handler)
 {
     // Expected format:
@@ -170,6 +188,32 @@ SFSClientImpl<ConnectionManagerT>::SFSClientImpl(ClientConfig&& config)
 
     LogIfTestOverridesAllowed(m_reportingHandler);
 }
+
+template <typename ConnectionManagerT>
+std::unique_ptr<ContentId> SFSClientImpl<ConnectionManagerT>::GetLatestVersion(const ProductRequest& productRequest,
+                                                                               Connection& connection) const
+try
+{
+    const auto& [productName, attributes] = productRequest;
+    const std::string url{SFSUrlComponents::GetLatestVersionUrl(GetBaseUrl(), m_instanceId, m_nameSpace, productName)};
+
+    SFS_INFO("Requesting latest version of [%s] from URL [%s]", productName.c_str(), url.c_str());
+
+    const json body = {{"TargetingAttributes", attributes}};
+    SFS_INFO("Request body [%s]", body.dump().c_str());
+
+    const std::string postResponse{connection.Post(url, body.dump())};
+    const json versionResponse = ParseServerMethodStringToJson(postResponse, "GetLatestVersion", m_reportingHandler);
+
+    auto contentIds = ConvertSingleProductVersionResponseToContentId(versionResponse, m_reportingHandler);
+    THROW_CODE_IF_LOG(ServiceInvalidResponse,
+                      !DoesGetVersionResponseMatchProduct(*contentId, m_nameSpace, productName),
+                      m_reportingHandler,
+                      "(GetLatestVersion) Response does not match the requested product");
+
+    return contentId;
+}
+SFS_CATCH_LOG_RETHROW(m_reportingHandler)
 
 template <typename ConnectionManagerT>
 std::vector<ContentId> SFSClientImpl<ConnectionManagerT>::GetLatestVersionBatch(
