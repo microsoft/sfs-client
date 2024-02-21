@@ -59,7 +59,7 @@ json ParseServerMethodStringToJson(const std::string& data, const std::string& m
     }
 }
 
-std::vector<ContentId> GetLatestVersionBatchResponseToContentIds(const json& data, const ReportingHandler& handler)
+std::vector<ContentId> ConvertLatestVersionBatchResponseToContentIds(const json& data, const ReportingHandler& handler)
 {
     // Expected format:
     // [
@@ -88,7 +88,7 @@ std::vector<ContentId> GetLatestVersionBatchResponseToContentIds(const json& dat
     return contentIds;
 }
 
-std::unique_ptr<ContentId> GetSpecificVersionResponseToContentId(const json& data, const ReportingHandler& handler)
+std::unique_ptr<ContentId> ConvertSpecificVersionResponseToContentId(const json& data, const ReportingHandler& handler)
 {
     // Expected format:
     // {
@@ -110,7 +110,7 @@ std::unique_ptr<ContentId> GetSpecificVersionResponseToContentId(const json& dat
     return ContentIdJsonToObj(data["ContentId"], handler);
 }
 
-std::vector<File> GetDownloadInfoResponseToFileVector(const json& data, const ReportingHandler& handler)
+std::vector<File> ConvertDownloadInfoResponseToFileVector(const json& data, const ReportingHandler& handler)
 {
     // Expected format:
     // [
@@ -146,7 +146,7 @@ std::vector<File> GetDownloadInfoResponseToFileVector(const json& data, const Re
     return tmp;
 }
 
-bool DoesGetVersionResponseMatchProduct(const ContentId& contentId, std::string_view nameSpace, std::string_view name)
+bool VerifyVersionResponseMatchesProduct(const ContentId& contentId, std::string_view nameSpace, std::string_view name)
 {
     return AreEqualI(contentId.GetNameSpace(), nameSpace) && AreEqualI(contentId.GetName(), name);
 }
@@ -204,7 +204,7 @@ try
     const json versionResponse =
         ParseServerMethodStringToJson(postResponse, "GetLatestVersionBatch", m_reportingHandler);
 
-    auto contentIds = GetLatestVersionBatchResponseToContentIds(versionResponse, m_reportingHandler);
+    auto contentIds = ConvertLatestVersionBatchResponseToContentIds(versionResponse, m_reportingHandler);
 
     // Validating responses
     for (const auto& contentId : contentIds)
@@ -244,9 +244,9 @@ try
 
     const json versionResponse = ParseServerMethodStringToJson(getResponse, "GetSpecificVersion", m_reportingHandler);
 
-    auto contentId = GetSpecificVersionResponseToContentId(versionResponse, m_reportingHandler);
+    auto contentId = ConvertSpecificVersionResponseToContentId(versionResponse, m_reportingHandler);
     THROW_CODE_IF_LOG(ServiceInvalidResponse,
-                      !DoesGetVersionResponseMatchProduct(*contentId, m_nameSpace, productName),
+                      !VerifyVersionResponseMatchesProduct(*contentId, m_nameSpace, productName),
                       m_reportingHandler,
                       "(GetSpecificVersion) Response does not match the requested product");
 
@@ -275,7 +275,7 @@ try
     const json downloadInfoResponse =
         ParseServerMethodStringToJson(postResponse, "GetDownloadInfo", m_reportingHandler);
 
-    auto files = GetDownloadInfoResponseToFileVector(downloadInfoResponse, m_reportingHandler);
+    auto files = ConvertDownloadInfoResponseToFileVector(downloadInfoResponse, m_reportingHandler);
 
     SFS_INFO("Received a response with %zu files", files.size());
 
