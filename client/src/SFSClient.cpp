@@ -53,10 +53,7 @@ try
 
     const auto connection = m_impl->GetConnectionManager().MakeConnection();
 
-    auto contentIds = m_impl->GetLatestVersionBatch({{productName, attributes}}, *connection);
-    auto contentId = std::make_unique<ContentId>(std::move(contentIds.back()));
-    contentIds.pop_back();
-
+    auto contentId = m_impl->GetLatestVersion({productName, attributes}, *connection);
     auto files = m_impl->GetDownloadInfo(productName, contentId->GetVersion(), *connection);
 
     std::unique_ptr<Content> tmp;
