@@ -28,6 +28,7 @@ using namespace SFS::details::util;
 using namespace SFS::test;
 using namespace SFS::test::details;
 using namespace std::string_literals;
+using httplib::StatusCode;
 using json = nlohmann::json;
 
 #define BUILD_BUFFERED_LOG_DATA(message)                                                                               \
@@ -42,36 +43,9 @@ const char* c_listenHostName = "localhost";
 
 namespace
 {
-// TODO: Check if possible to update to new httplib enums after v0.14.3 https://github.com/microsoft/vcpkg/pull/36264
-enum class StatusCode
-{
-    Ok = 200,
-    BadRequest = 400,
-    NotFound = 404,
-    MethodNotAllowed = 405,
-    InternalServerError = 500,
-    ServiceUnavailable = 503,
-};
-
 std::string ToString(StatusCode status)
 {
-    switch (status)
-    {
-    case StatusCode::Ok:
-        return "200 OK";
-    case StatusCode::BadRequest:
-        return "400 Bad Request";
-    case StatusCode::NotFound:
-        return "404 Not Found";
-    case StatusCode::MethodNotAllowed:
-        return "405 Method Not Allowed";
-    case StatusCode::ServiceUnavailable:
-        return "503 Service Unavailable";
-    case StatusCode::InternalServerError:
-        return "500 Internal Server Error";
-    }
-
-    return "";
+    return std::to_string(status) + " " + std::string(status_message(status));
 }
 
 class StatusCodeException : public std::exception
@@ -86,9 +60,9 @@ class StatusCodeException : public std::exception
         return ToString(m_status).c_str();
     }
 
-    int GetStatusCode() const
+    StatusCode GetStatusCode() const
     {
-        return static_cast<int>(m_status);
+        return m_status;
     }
 
   private:
@@ -170,7 +144,7 @@ void CheckApiVersion(const httplib::Request& req, std::string_view apiVersion)
 {
     if (util::AreNotEqualI(req.path_params.at("apiVersion"), apiVersion))
     {
-        throw StatusCodeException(StatusCode::NotFound);
+        throw StatusCodeException(StatusCode::NotFound_404);
     }
 }
 } // namespace
@@ -295,7 +269,8 @@ void MockWebServerImpl::ConfigureServerSettings()
         BUFFER_LOG("Request: " + req.method + " " + req.path + " " + req.version);
         BUFFER_LOG("Request Body: " + req.body);
 
-        BUFFER_LOG("Response: " + res.version + " " + ToString(static_cast<StatusCode>(res.status)) + " " + res.reason);
+        BUFFER_LOG("Response: " + res.version + " " + ::ToString(static_cast<StatusCode>(res.status)) + " " +
+                   res.reason);
         BUFFER_LOG("Response body: " + res.body);
     });
 
@@ -315,7 +290,7 @@ void MockWebServerImpl::ConfigureServerSettings()
 
         ProcessBufferedLogs();
 
-        res.status = static_cast<int>(StatusCode::InternalServerError);
+        res.status = StatusCode::InternalServerError_500;
     });
 
     // Keeping this interval to a minimum ensures tests run quicker
@@ -341,14 +316,14 @@ void MockWebServerImpl::ConfigurePostLatestVersion()
             if (!req.has_param("action") || util::AreNotEqualI(req.get_param_value("action"), "select"))
             {
                 // TODO: SFS might throw a different error when the query string is unexpected
-                throw StatusCodeException(StatusCode::NotFound);
+                throw StatusCodeException(StatusCode::NotFound_404);
             }
 
             // Checking body has expected format, but won't use it for the response
             {
                 if (req.body.empty())
                 {
-                    throw StatusCodeException(StatusCode::BadRequest);
+                    throw StatusCodeException(StatusCode::BadRequest_400);
                 }
 
                 json body;
@@ -359,14 +334,14 @@ void MockWebServerImpl::ConfigurePostLatestVersion()
                 catch (const json::parse_error& ex)
                 {
                     BUFFER_LOG("JSON parse error: " + std::string(ex.what()));
-                    throw StatusCodeException(StatusCode::BadRequest);
+                    throw StatusCodeException(StatusCode::BadRequest_400);
                 }
 
                 // The GetLatestVersion API expects an object as a body, with a "TargetingAttributes" object element.
                 if (!body.is_object() || !body.contains("TargetingAttributes") ||
                     !body["TargetingAttributes"].is_object())
                 {
-                    throw StatusCodeException(StatusCode::BadRequest);
+                    throw StatusCodeException(StatusCode::BadRequest_400);
                 }
             }
 
@@ -374,13 +349,13 @@ void MockWebServerImpl::ConfigurePostLatestVersion()
             auto it = m_products.find(name);
             if (it == m_products.end())
             {
-                throw StatusCodeException(StatusCode::NotFound);
+                throw StatusCodeException(StatusCode::NotFound_404);
             }
 
             const VersionList& versions = it->second;
             if (versions.empty())
             {
-                throw StatusCodeException(StatusCode::InternalServerError);
+                throw StatusCodeException(StatusCode::InternalServerError_500);
             }
 
             const std::string ns = req.path_params.at("ns");
@@ -409,12 +384,12 @@ void MockWebServerImpl::ConfigurePostLatestVersionBatch()
                 if (!req.has_param("action") || util::AreNotEqualI(req.get_param_value("action"), "BatchUpdates"))
                 {
                     // TODO: SFS might throw a different error when the query string is unexpected
-                    throw StatusCodeException(StatusCode::NotFound);
+                    throw StatusCodeException(StatusCode::NotFound_404);
                 }
 
                 if (req.body.empty())
                 {
-                    throw StatusCodeException(StatusCode::BadRequest);
+                    throw StatusCodeException(StatusCode::BadRequest_400);
                 }
 
                 json body;
@@ -425,7 +400,7 @@ void MockWebServerImpl::ConfigurePostLatestVersionBatch()
                 catch (const json::parse_error& ex)
                 {
                     BUFFER_LOG("JSON parse error: " + std::string(ex.what()));
-                    throw StatusCodeException(StatusCode::BadRequest);
+                    throw StatusCodeException(StatusCode::BadRequest_400);
                 }
 
                 // The BatchUpdates API returns an array of objects, each with a "Product" key.
@@ -433,7 +408,7 @@ void MockWebServerImpl::ConfigurePostLatestVersionBatch()
                 // TODO: We are ignoring the TargetingAttributes for now.
                 if (!body.is_array())
                 {
-                    throw StatusCodeException(StatusCode::BadRequest);
+                    throw StatusCodeException(StatusCode::BadRequest_400);
                 }
 
                 // Iterate over the array and collect the unique products
@@ -443,7 +418,7 @@ void MockWebServerImpl::ConfigurePostLatestVersionBatch()
                     if (!productRequest.is_object() || !productRequest.contains("Product") ||
                         !productRequest["Product"].is_string() || !productRequest.contains("TargetingAttributes"))
                     {
-                        throw StatusCodeException(StatusCode::BadRequest);
+                        throw StatusCodeException(StatusCode::BadRequest_400);
                     }
                     if (requestedProducts.count(productRequest["Product"]))
                     {
@@ -466,8 +441,7 @@ void MockWebServerImpl::ConfigurePostLatestVersionBatch()
                     const VersionList& versions = it->second;
                     if (versions.empty())
                     {
-                        res.status = static_cast<int>(StatusCode::InternalServerError);
-                        return;
+                        throw StatusCodeException(StatusCode::InternalServerError_500);
                     }
 
                     const std::string ns = req.path_params.at("ns");
@@ -478,7 +452,7 @@ void MockWebServerImpl::ConfigurePostLatestVersionBatch()
 
                 if (response.empty())
                 {
-                    throw StatusCodeException(StatusCode::NotFound);
+                    throw StatusCodeException(StatusCode::NotFound_404);
                 }
 
                 res.set_content(response.dump(), "application/json");
@@ -498,19 +472,19 @@ void MockWebServerImpl::ConfigureGetSpecificVersion()
             auto it = m_products.find(name);
             if (it == m_products.end())
             {
-                throw StatusCodeException(StatusCode::NotFound);
+                throw StatusCodeException(StatusCode::NotFound_404);
             }
 
             const VersionList& versions = it->second;
             if (versions.empty())
             {
-                throw StatusCodeException(StatusCode::InternalServerError);
+                throw StatusCodeException(StatusCode::InternalServerError_500);
             }
 
             const std::string& version = req.path_params.at("version");
             if (version.empty() || !versions.count(version))
             {
-                throw StatusCodeException(StatusCode::NotFound);
+                throw StatusCodeException(StatusCode::NotFound_404);
             }
 
             const std::string ns = req.path_params.at("ns");
@@ -533,26 +507,26 @@ void MockWebServerImpl::ConfigurePostDownloadInfo()
             if (!req.has_param("action") || util::AreNotEqualI(req.get_param_value("action"), "GenerateDownloadInfo"))
             {
                 // TODO: SFS might throw a different error when the query string is unexpected
-                throw StatusCodeException(StatusCode::NotFound);
+                throw StatusCodeException(StatusCode::NotFound_404);
             }
 
             const std::string& name = req.path_params.at("name");
             auto it = m_products.find(name);
             if (it == m_products.end())
             {
-                throw StatusCodeException(StatusCode::NotFound);
+                throw StatusCodeException(StatusCode::NotFound_404);
             }
 
             const VersionList& versions = it->second;
             if (versions.empty())
             {
-                throw StatusCodeException(StatusCode::InternalServerError);
+                throw StatusCodeException(StatusCode::InternalServerError_500);
             }
 
             const std::string& version = req.path_params.at("version");
             if (version.empty() || !versions.count(version))
             {
-                throw StatusCodeException(StatusCode::NotFound);
+                throw StatusCodeException(StatusCode::NotFound_404);
             }
 
             // Response is a dummy, doesn't use the version above
@@ -582,7 +556,7 @@ void MockWebServerImpl::RunHttpCallback(const httplib::Request& req,
             CheckApiVersion(req, apiVersion);
             CheckRequestHeaders(req);
             callback(req, res);
-            res.status = static_cast<int>(StatusCode::Ok);
+            res.status = StatusCode::OK_200;
         }
         catch (const StatusCodeException& ex)
         {
@@ -590,11 +564,11 @@ void MockWebServerImpl::RunHttpCallback(const httplib::Request& req,
         }
         catch (const std::exception&)
         {
-            res.status = static_cast<int>(StatusCode::InternalServerError);
+            res.status = StatusCode::InternalServerError_500;
         }
         catch (...)
         {
-            res.status = static_cast<int>(StatusCode::InternalServerError);
+            res.status = StatusCode::InternalServerError_500;
         }
     }
 
