@@ -59,6 +59,25 @@ json ParseServerMethodStringToJson(const std::string& data, const std::string& m
     }
 }
 
+std::unique_ptr<ContentId> ConvertSingleProductVersionResponseToContentId(const json& data,
+                                                                          const ReportingHandler& handler)
+{
+    // Expected format:
+    // {
+    //   "ContentId": {
+    //     "Namespace": <ns>,
+    //     "Name": <name>,
+    //     "Version": <version>
+    //   }
+    // }
+    //
+
+    ThrowInvalidResponseIfFalse(data.is_object(), "Response is not a JSON object", handler);
+    ThrowInvalidResponseIfFalse(data.contains("ContentId"), "Missing ContentId in response", handler);
+
+    return ContentIdJsonToObj(data["ContentId"], handler);
+}
+
 std::vector<ContentId> ConvertLatestVersionBatchResponseToContentIds(const json& data, const ReportingHandler& handler)
 {
     // Expected format:
@@ -106,6 +125,7 @@ std::unique_ptr<ContentId> ConvertSpecificVersionResponseToContentId(const json&
     // We don't care about Files in this response, so we just ignore them
 
     ThrowInvalidResponseIfFalse(data.is_object(), "Response is not a JSON object", handler);
+    ThrowInvalidResponseIfFalse(data.contains("ContentId"), "Missing ContentId in response", handler);
 
     return ContentIdJsonToObj(data["ContentId"], handler);
 }
@@ -172,6 +192,32 @@ SFSClientImpl<ConnectionManagerT>::SFSClientImpl(ClientConfig&& config)
 }
 
 template <typename ConnectionManagerT>
+std::unique_ptr<ContentId> SFSClientImpl<ConnectionManagerT>::GetLatestVersion(const ProductRequest& productRequest,
+                                                                               Connection& connection) const
+try
+{
+    const auto& [productName, attributes] = productRequest;
+    const std::string url{SFSUrlComponents::GetLatestVersionUrl(GetBaseUrl(), m_instanceId, m_nameSpace, productName)};
+
+    SFS_INFO("Requesting latest version of [%s] from URL [%s]", productName.c_str(), url.c_str());
+
+    const json body = {{"TargetingAttributes", attributes}};
+    SFS_INFO("Request body [%s]", body.dump().c_str());
+
+    const std::string postResponse{connection.Post(url, body.dump())};
+    const json versionResponse = ParseServerMethodStringToJson(postResponse, "GetLatestVersion", m_reportingHandler);
+
+    auto contentId = ConvertSingleProductVersionResponseToContentId(versionResponse, m_reportingHandler);
+    THROW_CODE_IF_LOG(ServiceInvalidResponse,
+                      !VerifyVersionResponseMatchesProduct(*contentId, m_nameSpace, productName),
+                      m_reportingHandler,
+                      "(GetLatestVersion) Response does not match the requested product");
+
+    return contentId;
+}
+SFS_CATCH_LOG_RETHROW(m_reportingHandler)
+
+template <typename ConnectionManagerT>
 std::vector<ContentId> SFSClientImpl<ConnectionManagerT>::GetLatestVersionBatch(
     const std::vector<ProductRequest>& productRequests,
     Connection& connection) const
@@ -189,12 +235,7 @@ try
         SFS_INFO("Product #%zu: [%s]", body.size() + size_t{1}, productName.c_str());
         productNames.insert(productName);
 
-        json targettingAttributes = json::object();
-        for (const auto& [key, value] : attributes)
-        {
-            targettingAttributes[key] = value;
-        }
-        body.push_back({{"TargetingAttributes", targettingAttributes}, {"Product", productName}});
+        body.push_back({{"TargetingAttributes", attributes}, {"Product", productName}});
     }
 
     SFS_INFO("Request body [%s]", body.dump().c_str());

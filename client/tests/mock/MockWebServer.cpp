@@ -93,23 +93,17 @@ json GenerateGetSpecificVersionResponse(const std::string& name, const std::stri
     return response;
 }
 
-json GeneratePostLatestVersionBatchElementResponse(const std::string& name,
-                                                   const std::string& latestVersion,
-                                                   const std::string& ns)
+json GenerateContentIdJsonObject(const std::string& name, const std::string& latestVersion, const std::string& ns)
 {
-    // [
-    //   {
-    //     "ContentId": {
-    //       "Namespace": <ns>,
-    //       "Name": <name>,
-    //       "Version": <version>
-    //     }
-    //   },
-    //   ...
-    // ]
+    // {
+    //   "ContentId": {
+    //     "Namespace": <ns>,
+    //     "Name": <name>,
+    //     "Version": <version>
+    //   }
+    // }
 
-    json response = {{"ContentId", {{"Namespace", ns}, {"Name", name}, {"Version", latestVersion}}}};
-    return response;
+    return {{"ContentId", {{"Namespace", ns}, {"Name", name}, {"Version", latestVersion}}}};
 }
 
 json GeneratePostDownloadInfo(const std::string& name)
@@ -193,6 +187,7 @@ class MockWebServerImpl
     void ConfigureServerSettings();
     void ConfigureRequestHandlers();
 
+    void ConfigurePostLatestVersion();
     void ConfigurePostLatestVersionBatch();
     void ConfigureGetSpecificVersion();
     void ConfigurePostDownloadInfo();
@@ -285,9 +280,85 @@ void MockWebServerImpl::ConfigureServerSettings()
 
 void MockWebServerImpl::ConfigureRequestHandlers()
 {
+    ConfigurePostLatestVersion();
     ConfigurePostLatestVersionBatch();
     ConfigureGetSpecificVersion();
     ConfigurePostDownloadInfo();
+}
+
+void MockWebServerImpl::ConfigurePostLatestVersion()
+{
+    // Path: /api/<apiVersion:v2>/contents/<instanceId>/namespaces/<ns>/names/<name>/versions/latest?action=select
+    const std::string pattern = "/api/:apiVersion/contents/:instanceId/namespaces/:ns/names/:name/versions/latest";
+    m_server.Post(pattern, [&](const httplib::Request& req, httplib::Response& res) {
+        BUFFER_LOG("Matched PostLatestVersion");
+
+        if (util::AreNotEqualI(req.path_params.at("apiVersion"), "v2"))
+        {
+            res.status = static_cast<int>(StatusCode::NotFound);
+            return;
+        }
+
+        // TODO: Ignoring instanceId for now
+
+        if (!req.has_param("action") || util::AreNotEqualI(req.get_param_value("action"), "select"))
+        {
+            // TODO: SFS might throw a different error when the query string is unexpected
+            res.status = static_cast<int>(StatusCode::NotFound);
+            return;
+        }
+
+        // Checking body has expected format, but won't use it for the response
+        {
+            if (req.body.empty())
+            {
+                res.status = static_cast<int>(StatusCode::BadRequest);
+                return;
+            }
+
+            json body;
+            try
+            {
+                body = json::parse(req.body);
+            }
+            catch (const json::parse_error& ex)
+            {
+                BUFFER_LOG("JSON parse error: " + std::string(ex.what()));
+                res.status = static_cast<int>(StatusCode::BadRequest);
+                return;
+            }
+
+            // The GetLatestVersion API expects an object as a body, with a "TargetingAttributes" object element.
+            if (!body.is_object() || !body.contains("TargetingAttributes") || !body["TargetingAttributes"].is_object())
+            {
+                res.status = static_cast<int>(StatusCode::BadRequest);
+                return;
+            }
+        }
+
+        const std::string& name = req.path_params.at("name");
+        auto it = m_products.find(name);
+        if (it == m_products.end())
+        {
+            res.status = static_cast<int>(StatusCode::NotFound);
+            return;
+        }
+
+        const VersionList& versions = it->second;
+        if (versions.empty())
+        {
+            res.status = static_cast<int>(StatusCode::InternalServerError);
+            return;
+        }
+
+        const std::string ns = req.path_params.at("ns");
+        const auto& latestVersion = *versions.rbegin();
+
+        const json response = GenerateContentIdJsonObject(name, latestVersion, ns);
+
+        res.status = static_cast<int>(StatusCode::Ok);
+        res.set_content(response.dump(), "application/json");
+    });
 }
 
 void MockWebServerImpl::ConfigurePostLatestVersionBatch()
@@ -378,7 +449,7 @@ void MockWebServerImpl::ConfigurePostLatestVersionBatch()
             const auto& latestVersion = *versions.rbegin();
 
             res.status = static_cast<int>(StatusCode::Ok);
-            response.push_back(GeneratePostLatestVersionBatchElementResponse(name, latestVersion, ns));
+            response.push_back(GenerateContentIdJsonObject(name, latestVersion, ns));
         }
 
         if (response.empty())

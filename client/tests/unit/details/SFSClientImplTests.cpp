@@ -108,6 +108,68 @@ TEST("Testing class SFSClientImpl()")
 
     const std::string productName = "productName";
     const std::string expectedVersion = "0.0.0.2";
+
+    SECTION("Testing SFSClientImpl::GetLatestVersion()")
+    {
+        expectEmptyPostBody = false;
+        std::unique_ptr<ContentId> contentId;
+
+        SECTION("Expected response")
+        {
+            const json latestVersionResponse = {
+                {"ContentId", {{"Namespace", ns}, {"Name", productName}, {"Version", expectedVersion}}}};
+            postResponse = latestVersionResponse.dump();
+            SECTION("No attributes")
+            {
+                REQUIRE_NOTHROW(contentId = sfsClient.GetLatestVersion({productName, {}}, *connection));
+                REQUIRE(contentId);
+                CheckProduct(*contentId, ns, productName, expectedVersion);
+            }
+
+            SECTION("With attributes")
+            {
+                const SearchAttributes attributes{{"attr1", "value"}};
+                REQUIRE_NOTHROW(contentId = sfsClient.GetLatestVersion({productName, attributes}, *connection));
+                REQUIRE(contentId);
+                CheckProduct(*contentId, ns, productName, expectedVersion);
+            }
+
+            SECTION("Failing")
+            {
+                responseCode = Result::HttpNotFound;
+                REQUIRE_THROWS_CODE(contentId = sfsClient.GetLatestVersion({"badName", {}}, *connection), HttpNotFound);
+                REQUIRE(!contentId);
+
+                const SearchAttributes attributes{{"attr1", "value"}};
+                REQUIRE_THROWS_CODE(contentId = sfsClient.GetLatestVersion({"badName", attributes}, *connection),
+                                    HttpNotFound);
+                REQUIRE(!contentId);
+            }
+        }
+
+        SECTION("Unexpected response")
+        {
+            SECTION("Wrong ns")
+            {
+                const json latestVersionResponse = {
+                    {"ContentId", {{"Namespace", "wrong"}, {"Name", productName}, {"Version", expectedVersion}}}};
+                postResponse = latestVersionResponse.dump();
+            }
+
+            SECTION("Wrong name")
+            {
+                const json latestVersionResponse = {
+                    {"ContentId", {{"Namespace", ns}, {"Name", "wrong"}, {"Version", expectedVersion}}}};
+                postResponse = latestVersionResponse.dump();
+            }
+
+            REQUIRE_THROWS_CODE_MSG(contentId = sfsClient.GetLatestVersion({productName, {}}, *connection),
+                                    ServiceInvalidResponse,
+                                    "(GetLatestVersion) Response does not match the requested product");
+            REQUIRE(!contentId);
+        }
+    }
+
     SECTION("Testing SFSClientImpl::GetLatestVersionBatch()")
     {
         expectEmptyPostBody = false;
