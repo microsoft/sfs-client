@@ -70,13 +70,15 @@ class SFSClient
     //
 
     /**
-     * @brief Retrieve Delivery Optimization data for a given piece of content, if existing
+     * @brief Retrieve Delivery Optimization data for a given file, if existing
      * @details If the Delivery Optimization data is not available, the result code will be set to Result::NotSet
-     * and the param data will not be modified
-     * @param content A content object that was returned from a previous call to GetDownloadInfo
+     * and the @param data will not be modified
+     * @param contentId A contentId object that was returned from a previous call to GetDownloadInfo
+     * @param file A file object that was returned from a previous call to GetDownloadInfo
      * @param data A DeliveryOptimizationData object that is populated with the result
      */
-    [[nodiscard]] Result GetDeliveryOptimizationData(const Content& content,
+    [[nodiscard]] Result GetDeliveryOptimizationData(const ContentId& contentId,
+                                                     const File& file,
                                                      std::unique_ptr<DeliveryOptimizationData>& data) const noexcept;
 
     /**

@@ -66,7 +66,8 @@ try
 SFS_CATCH_RETURN()
 
 Result SFSClient::GetDeliveryOptimizationData(
-    [[maybe_unused]] const Content& content,
+    [[maybe_unused]] const ContentId& contentId,
+    [[maybe_unused]] const File& file,
     [[maybe_unused]] std::unique_ptr<DeliveryOptimizationData>& data) const noexcept
 try
 {

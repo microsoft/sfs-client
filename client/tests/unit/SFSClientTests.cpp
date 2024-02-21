@@ -235,9 +235,10 @@ TEST_SCENARIO("Testing SFSClient::GetDeliveryOptimizationData()")
         {
             const SearchAttributes attributes{{"attr1", "value"}};
 
-            std::unique_ptr<Content> content;
+            std::unique_ptr<ContentId> contentId;
+            std::unique_ptr<File> file;
             std::unique_ptr<DeliveryOptimizationData> data;
-            REQUIRE(sfsClient->GetDeliveryOptimizationData(*content, data) == Result::NotImpl);
+            REQUIRE(sfsClient->GetDeliveryOptimizationData(*contentId, *file, data) == Result::NotImpl);
         }
     }
 }
