@@ -28,6 +28,13 @@ try
 }
 SFS_CATCH_RETURN()
 
+ContentId::ContentId(ContentId&& other) noexcept
+{
+    m_nameSpace = std::move(other.m_nameSpace);
+    m_name = std::move(other.m_name);
+    m_version = std::move(other.m_version);
+}
+
 const std::string& ContentId::GetNameSpace() const noexcept
 {
     return m_nameSpace;

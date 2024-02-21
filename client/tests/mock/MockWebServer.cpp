@@ -19,6 +19,7 @@
 #include <mutex>
 #include <optional>
 #include <thread>
+#include <unordered_map>
 
 using namespace SFS;
 using namespace SFS::details;
@@ -92,7 +93,9 @@ json GenerateGetSpecificVersionResponse(const std::string& name, const std::stri
     return response;
 }
 
-json GeneratePostLatestVersionResponse(const std::string& name, const std::string& latestVersion, const std::string& ns)
+json GeneratePostLatestVersionBatchElementResponse(const std::string& name,
+                                                   const std::string& latestVersion,
+                                                   const std::string& ns)
 {
     // [
     //   {
@@ -105,9 +108,7 @@ json GeneratePostLatestVersionResponse(const std::string& name, const std::strin
     //   ...
     // ]
 
-    json response;
-    response = json::array();
-    response.push_back({{"ContentId", {{"Namespace", ns}, {"Name", name}, {"Version", latestVersion}}}});
+    json response = {{"ContentId", {{"Namespace", ns}, {"Name", name}, {"Version", latestVersion}}}};
     return response;
 }
 
@@ -192,7 +193,7 @@ class MockWebServerImpl
     void ConfigureServerSettings();
     void ConfigureRequestHandlers();
 
-    void ConfigurePostLatestVersion();
+    void ConfigurePostLatestVersionBatch();
     void ConfigureGetSpecificVersion();
     void ConfigurePostDownloadInfo();
 
@@ -284,17 +285,17 @@ void MockWebServerImpl::ConfigureServerSettings()
 
 void MockWebServerImpl::ConfigureRequestHandlers()
 {
-    ConfigurePostLatestVersion();
+    ConfigurePostLatestVersionBatch();
     ConfigureGetSpecificVersion();
     ConfigurePostDownloadInfo();
 }
 
-void MockWebServerImpl::ConfigurePostLatestVersion()
+void MockWebServerImpl::ConfigurePostLatestVersionBatch()
 {
     // Path: /api/<apiVersion:v2>/contents/<instanceId>/namespaces/<ns>/names?action=BatchUpdates
     const std::string pattern = "/api/:apiVersion/contents/:instanceId/namespaces/:ns/names";
     m_server.Post(pattern, [&](const httplib::Request& req, httplib::Response& res) {
-        BUFFER_LOG("Matched PostLatestVersion");
+        BUFFER_LOG("Matched PostLatestVersionBatch");
 
         if (util::AreNotEqualI(req.path_params.at("apiVersion"), "v2"))
         {
@@ -330,38 +331,63 @@ void MockWebServerImpl::ConfigurePostLatestVersion()
         }
 
         // The BatchUpdates API returns an array of objects, each with a "Product" key.
-        // For this mock we're only interested in the first one.
-        // In the future we may want to support multiple products in a single request.
-        std::string name;
-        if (body.is_array() && body[0].is_object() && body[0].contains("Product"))
-        {
-            name = body[0]["Product"];
-        }
-        else
+        // If repeated, the same product is only returned once.
+        // TODO: We are ignoring the TargetingAttributes for now.
+        if (!body.is_array())
         {
             res.status = static_cast<int>(StatusCode::BadRequest);
             return;
         }
 
-        auto it = m_products.find(name);
-        if (it == m_products.end())
+        // Iterate over the array and collect the unique products
+        std::unordered_map<std::string, json> requestedProducts;
+        for (const auto& productRequest : body)
+        {
+            if (!productRequest.is_object() || !productRequest.contains("Product") ||
+                !productRequest["Product"].is_string() || !productRequest.contains("TargetingAttributes"))
+            {
+                res.status = static_cast<int>(StatusCode::BadRequest);
+                return;
+            }
+            if (requestedProducts.count(productRequest["Product"]))
+            {
+                continue;
+            }
+            requestedProducts.emplace(productRequest["Product"], productRequest["TargetingAttributes"]);
+        }
+
+        // If at least one product exists, we will return a 200 OK with that. Non-existing products are ignored.
+        // Otherwise, a 404 is sent.
+        json response = json::array();
+        for (const auto& [name, _] : requestedProducts)
+        {
+            auto it = m_products.find(name);
+            if (it == m_products.end())
+            {
+                continue;
+            }
+
+            const VersionList& versions = it->second;
+            if (versions.empty())
+            {
+                res.status = static_cast<int>(StatusCode::InternalServerError);
+                return;
+            }
+
+            const std::string ns = req.path_params.at("ns");
+            const auto& latestVersion = *versions.rbegin();
+
+            res.status = static_cast<int>(StatusCode::Ok);
+            response.push_back(GeneratePostLatestVersionBatchElementResponse(name, latestVersion, ns));
+        }
+
+        if (response.empty())
         {
             res.status = static_cast<int>(StatusCode::NotFound);
             return;
         }
 
-        const VersionList& versions = it->second;
-        if (versions.empty())
-        {
-            res.status = static_cast<int>(StatusCode::InternalServerError);
-            return;
-        }
-
-        const std::string ns = req.path_params.at("ns");
-        const auto& latestVersion = *versions.rbegin();
-
-        res.status = static_cast<int>(StatusCode::Ok);
-        res.set_content(GeneratePostLatestVersionResponse(name, latestVersion, ns).dump(), "application/json");
+        res.set_content(response.dump(), "application/json");
     });
 }
 

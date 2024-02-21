@@ -10,6 +10,8 @@
 
 #include <catch2/catch_test_macros.hpp>
 
+#include <set>
+
 #define TEST(...) TEST_CASE("[Functional][SFSClientImplTests] " __VA_ARGS__)
 
 using namespace SFS;
@@ -23,6 +25,24 @@ void CheckProduct(const ContentId& contentId, std::string_view ns, std::string_v
     REQUIRE(contentId.GetNameSpace() == ns);
     REQUIRE(contentId.GetName() == name);
     REQUIRE(contentId.GetVersion() == version);
+}
+
+void CheckProducts(const std::vector<ContentId>& contentIds,
+                   std::string_view ns,
+                   const std::set<std::pair<std::string, std::string>>& nameVersionPairs)
+{
+    // json arrays don't guarantee order, and they are the underlying structure, so we need to check using sets
+    std::set<std::pair<std::string, std::string>> uniqueNameVersionPairs;
+    for (const auto& contentId : contentIds)
+    {
+        REQUIRE(contentId.GetNameSpace() == ns);
+        uniqueNameVersionPairs.emplace(contentId.GetName(), contentId.GetVersion());
+    }
+
+    for (const auto& nameVersionPair : nameVersionPairs)
+    {
+        REQUIRE(uniqueNameVersionPairs.count(nameVersionPair));
+    }
 }
 
 void CheckDownloadInfo(const std::vector<File>& files, const std::string& name)
@@ -47,34 +67,87 @@ TEST("Testing class SFSClientImpl()")
 
     auto connection = sfsClient.GetConnectionManager().MakeConnection();
 
-    SECTION("Testing SFSClientImpl::GetLatestVersion()")
+    SECTION("Testing SFSClientImpl::GetLatestVersionBatch()")
     {
-        std::unique_ptr<ContentId> contentId;
+        std::vector<ContentId> contentIds;
 
         SECTION("No attributes")
         {
-            REQUIRE_NOTHROW(contentId = sfsClient.GetLatestVersion("productName", {}, *connection));
-            REQUIRE(contentId);
-            CheckProduct(*contentId, ns, "productName", "0.0.0.2");
+            REQUIRE_NOTHROW(contentIds = sfsClient.GetLatestVersionBatch({{"productName", {}}}, *connection));
+            REQUIRE(!contentIds.empty());
+            CheckProduct(contentIds[0], ns, "productName", "0.0.0.2");
         }
 
         SECTION("With attributes")
         {
             const SearchAttributes attributes{{"attr1", "value"}};
-            REQUIRE_NOTHROW(contentId = sfsClient.GetLatestVersion("productName", attributes, *connection));
-            REQUIRE(contentId);
-            CheckProduct(*contentId, ns, "productName", "0.0.0.2");
+            REQUIRE_NOTHROW(contentIds = sfsClient.GetLatestVersionBatch({{"productName", attributes}}, *connection));
+            REQUIRE(!contentIds.empty());
+            CheckProduct(contentIds[0], ns, "productName", "0.0.0.2");
         }
 
         SECTION("Wrong product name")
         {
-            REQUIRE_THROWS_CODE(contentId = sfsClient.GetLatestVersion("badName", {}, *connection), HttpNotFound);
-            REQUIRE(!contentId);
+            REQUIRE_THROWS_CODE(contentIds = sfsClient.GetLatestVersionBatch({{"badName", {}}}, *connection),
+                                HttpNotFound);
+            REQUIRE(contentIds.empty());
 
             const SearchAttributes attributes{{"attr1", "value"}};
-            REQUIRE_THROWS_CODE(contentId = sfsClient.GetLatestVersion("badName", attributes, *connection),
+            REQUIRE_THROWS_CODE(contentIds = sfsClient.GetLatestVersionBatch({{"badName", attributes}}, *connection),
                                 HttpNotFound);
-            REQUIRE(!contentId);
+            REQUIRE(contentIds.empty());
+        }
+
+        SECTION("Multiple unique products")
+        {
+            server.RegisterProduct("productName2", "0.0.0.3");
+
+            REQUIRE_NOTHROW(
+                contentIds = sfsClient.GetLatestVersionBatch({{"productName", {}}, {"productName2", {}}}, *connection));
+            REQUIRE(contentIds.size() == 2);
+            CheckProducts(contentIds, ns, {{"productName", "0.0.0.2"}, {"productName2", "0.0.0.3"}});
+
+            server.RegisterProduct("productName3", "0.0.0.4");
+
+            REQUIRE_NOTHROW(contentIds = sfsClient.GetLatestVersionBatch(
+                                {{"productName", {}}, {"productName2", {}}, {"productName3", {}}},
+                                *connection));
+            REQUIRE(contentIds.size() == 3);
+            CheckProducts(contentIds,
+                          ns,
+                          {{"productName", "0.0.0.2"}, {"productName2", "0.0.0.3"}, {"productName3", "0.0.0.4"}});
+        }
+
+        SECTION("Multiple repeated products")
+        {
+            REQUIRE_NOTHROW(
+                contentIds = sfsClient.GetLatestVersionBatch({{"productName", {}}, {"productName", {}}}, *connection));
+            REQUIRE(contentIds.size() == 1);
+            CheckProduct(contentIds[0], ns, "productName", "0.0.0.2");
+
+            server.RegisterProduct("productName2", "0.0.0.3");
+
+            REQUIRE_NOTHROW(contentIds = sfsClient.GetLatestVersionBatch(
+                                {{"productName", {}}, {"productName", {}}, {"productName2", {}}, {"productName2", {}}},
+                                *connection));
+            REQUIRE(contentIds.size() == 2);
+            CheckProducts(contentIds, ns, {{"productName", "0.0.0.2"}, {"productName2", "0.0.0.3"}});
+        }
+
+        SECTION("Multiple wrong products returns 404")
+        {
+            REQUIRE_THROWS_CODE(contentIds =
+                                    sfsClient.GetLatestVersionBatch({{"badName", {}}, {"badName2", {}}}, *connection),
+                                HttpNotFound);
+            REQUIRE(contentIds.empty());
+        }
+
+        SECTION("Multiple products, one wrong returns 200")
+        {
+            REQUIRE_NOTHROW(contentIds =
+                                sfsClient.GetLatestVersionBatch({{"productName", {}}, {"badName", {}}}, *connection));
+            REQUIRE(contentIds.size() == 1);
+            CheckProduct(contentIds[0], ns, "productName", "0.0.0.2");
         }
     }
 

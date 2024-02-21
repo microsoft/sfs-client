@@ -5,9 +5,9 @@
 
 using namespace SFS::details;
 
-std::string SFSUrlComponents::GetLatestVersionUrl(const std::string& baseUrl,
-                                                  const std::string& instanceId,
-                                                  const std::string& nameSpace)
+std::string SFSUrlComponents::GetLatestVersionBatchUrl(const std::string& baseUrl,
+                                                       const std::string& instanceId,
+                                                       const std::string& nameSpace)
 {
     return baseUrl + "/api/v2/contents/" + instanceId + "/namespaces/" + nameSpace + "/names?action=BatchUpdates";
 }
