@@ -67,6 +67,37 @@ TEST("Testing class SFSClientImpl()")
 
     auto connection = sfsClient.GetConnectionManager().MakeConnection();
 
+    SECTION("Testing SFSClientImpl::GetLatestVersion()")
+    {
+        std::unique_ptr<ContentId> contentId;
+
+        SECTION("No attributes")
+        {
+            REQUIRE_NOTHROW(contentId = sfsClient.GetLatestVersion({"productName", {}}, *connection));
+            REQUIRE(contentId);
+            CheckProduct(*contentId, ns, "productName", "0.0.0.2");
+        }
+
+        SECTION("With attributes")
+        {
+            const SearchAttributes attributes{{"attr1", "value"}};
+            REQUIRE_NOTHROW(contentId = sfsClient.GetLatestVersion({"productName", attributes}, *connection));
+            REQUIRE(contentId);
+            CheckProduct(*contentId, ns, "productName", "0.0.0.2");
+        }
+
+        SECTION("Wrong product name")
+        {
+            REQUIRE_THROWS_CODE(contentId = sfsClient.GetLatestVersion({"badName", {}}, *connection), HttpNotFound);
+            REQUIRE(!contentId);
+
+            const SearchAttributes attributes{{"attr1", "value"}};
+            REQUIRE_THROWS_CODE(contentId = sfsClient.GetLatestVersion({"badName", attributes}, *connection),
+                                HttpNotFound);
+            REQUIRE(!contentId);
+        }
+    }
+
     SECTION("Testing SFSClientImpl::GetLatestVersionBatch()")
     {
         std::vector<ContentId> contentIds;

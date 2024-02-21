@@ -205,9 +205,9 @@ try
     const std::string postResponse{connection.Post(url, body.dump())};
     const json versionResponse = ParseServerMethodStringToJson(postResponse, "GetLatestVersion", m_reportingHandler);
 
-    auto contentIds = ConvertSingleProductVersionResponseToContentId(versionResponse, m_reportingHandler);
+    auto contentId = ConvertSingleProductVersionResponseToContentId(versionResponse, m_reportingHandler);
     THROW_CODE_IF_LOG(ServiceInvalidResponse,
-                      !DoesGetVersionResponseMatchProduct(*contentId, m_nameSpace, productName),
+                      !VerifyVersionResponseMatchesProduct(*contentId, m_nameSpace, productName),
                       m_reportingHandler,
                       "(GetLatestVersion) Response does not match the requested product");
 
