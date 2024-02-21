@@ -233,12 +233,7 @@ try
         SFS_INFO("Product #%zu: [%s]", body.size() + size_t{1}, productName.c_str());
         productNames.insert(productName);
 
-        json targettingAttributes = json::object();
-        for (const auto& [key, value] : attributes)
-        {
-            targettingAttributes[key] = value;
-        }
-        body.push_back({{"TargetingAttributes", targettingAttributes}, {"Product", productName}});
+        body.push_back({{"TargetingAttributes", attributes}, {"Product", productName}});
     }
 
     SFS_INFO("Request body [%s]", body.dump().c_str());
