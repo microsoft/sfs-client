@@ -25,6 +25,12 @@ try
 }
 SFS_CATCH_RETURN()
 
+DeliveryOptimizationData::DeliveryOptimizationData(DeliveryOptimizationData&& other) noexcept
+{
+    m_catalogId = std::move(other.m_catalogId);
+    m_properties = std::move(other.m_properties);
+}
+
 const std::string& DeliveryOptimizationData::GetCatalogId() const noexcept
 {
     return m_catalogId;

@@ -20,6 +20,8 @@ class DeliveryOptimizationData
                                      DOProperties properties,
                                      std::unique_ptr<DeliveryOptimizationData>& out) noexcept;
 
+    DeliveryOptimizationData(DeliveryOptimizationData&&) noexcept;
+
     DeliveryOptimizationData(const DeliveryOptimizationData&) = delete;
     DeliveryOptimizationData& operator=(const DeliveryOptimizationData&) = delete;
 
