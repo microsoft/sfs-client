@@ -40,14 +40,3 @@ const DOProperties& DeliveryOptimizationData::GetProperties() const noexcept
 {
     return m_properties;
 }
-
-bool DeliveryOptimizationData::operator==(const DeliveryOptimizationData& other) const noexcept
-{
-    // String characters can be UTF-8 encoded, so we need to compare them in a case-sensitive manner.
-    return m_catalogId == other.m_catalogId && m_properties == other.m_properties;
-}
-
-bool DeliveryOptimizationData::operator!=(const DeliveryOptimizationData& other) const noexcept
-{
-    return !(*this == other);
-}

@@ -173,3 +173,14 @@ bool contentutil::operator!=(const Content& lhs, const Content& rhs)
 {
     return !(lhs == rhs);
 }
+
+bool contentutil::operator==(const DeliveryOptimizationData& lhs, const DeliveryOptimizationData& rhs)
+{
+    // String characters can be UTF-8 encoded, so we need to compare them in a case-sensitive manner.
+    return lhs.GetCatalogId() == rhs.GetCatalogId() && lhs.GetProperties() == rhs.GetProperties();
+}
+
+bool contentutil::operator!=(const DeliveryOptimizationData& lhs, const DeliveryOptimizationData& rhs)
+{
+    return !(lhs == rhs);
+}

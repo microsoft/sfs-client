@@ -1,13 +1,15 @@
 // Copyright (c) Microsoft Corporation.
 // Licensed under the MIT License.
 
-#include "sfsclient/DeliveryOptimizationData.h"
+#include "ContentUtil.h"
+#include "DeliveryOptimizationData.h"
 
 #include <catch2/catch_test_macros.hpp>
 
 #define TEST(...) TEST_CASE("[DeliveryOptimizationDataTests] " __VA_ARGS__)
 
 using namespace SFS;
+using namespace SFS::details::contentutil;
 
 namespace
 {
@@ -35,8 +37,8 @@ TEST("Testing DeliveryOptimizationData::Make()")
         SECTION("Equal")
         {
             auto CompareDataEqual = [&data](const std::unique_ptr<DeliveryOptimizationData>& sameData) {
-                REQUIRE(*data == *sameData);
-                REQUIRE_FALSE(*data != *sameData);
+                REQUIRE((*data == *sameData));
+                REQUIRE_FALSE((*data != *sameData));
             };
 
             CompareDataEqual(GetData(catalogId, properties));
@@ -45,8 +47,8 @@ TEST("Testing DeliveryOptimizationData::Make()")
         SECTION("Not equal")
         {
             auto CompareDataNotEqual = [&data](const std::unique_ptr<DeliveryOptimizationData>& otherData) {
-                REQUIRE(*data != *otherData);
-                REQUIRE_FALSE(*data == *otherData);
+                REQUIRE((*data != *otherData));
+                REQUIRE_FALSE((*data == *otherData));
             };
 
             CompareDataNotEqual(GetData("", properties));
