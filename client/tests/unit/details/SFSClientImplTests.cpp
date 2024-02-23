@@ -128,7 +128,7 @@ TEST("Testing class SFSClientImpl()")
 
             SECTION("With attributes")
             {
-                const SearchAttributes attributes{{"attr1", "value"}};
+                const TargetingAttributes attributes{{"attr1", "value"}};
                 REQUIRE_NOTHROW(contentId = sfsClient.GetLatestVersion({productName, attributes}, *connection));
                 REQUIRE(contentId);
                 CheckProduct(*contentId, ns, productName, expectedVersion);
@@ -140,7 +140,7 @@ TEST("Testing class SFSClientImpl()")
                 REQUIRE_THROWS_CODE(contentId = sfsClient.GetLatestVersion({"badName", {}}, *connection), HttpNotFound);
                 REQUIRE(!contentId);
 
-                const SearchAttributes attributes{{"attr1", "value"}};
+                const TargetingAttributes attributes{{"attr1", "value"}};
                 REQUIRE_THROWS_CODE(contentId = sfsClient.GetLatestVersion({"badName", attributes}, *connection),
                                     HttpNotFound);
                 REQUIRE(!contentId);
@@ -187,7 +187,7 @@ TEST("Testing class SFSClientImpl()")
 
         SECTION("With attributes")
         {
-            const SearchAttributes attributes{{"attr1", "value"}};
+            const TargetingAttributes attributes{{"attr1", "value"}};
             REQUIRE_NOTHROW(contentIds = sfsClient.GetLatestVersionBatch({{productName, attributes}}, *connection));
             REQUIRE(!contentIds.empty());
             CheckProduct(contentIds[0], ns, productName, expectedVersion);
@@ -199,7 +199,7 @@ TEST("Testing class SFSClientImpl()")
             REQUIRE_THROWS_CODE(contentIds = sfsClient.GetLatestVersionBatch({{"badName", {}}}, *connection),
                                 HttpNotFound);
 
-            const SearchAttributes attributes{{"attr1", "value"}};
+            const TargetingAttributes attributes{{"attr1", "value"}};
             REQUIRE_THROWS_CODE(contentIds = sfsClient.GetLatestVersionBatch({{"badName", attributes}}, *connection),
                                 HttpNotFound);
         }

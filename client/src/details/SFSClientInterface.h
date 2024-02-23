@@ -6,6 +6,7 @@
 #include "Content.h"
 #include "Logging.h"
 #include "ReportingHandler.h"
+#include "RequestParams.h"
 
 #include <memory>
 #include <string>

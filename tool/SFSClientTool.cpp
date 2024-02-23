@@ -300,7 +300,7 @@ int main(int argc, char* argv[])
     // Perform operations using SFSClient
     PrintLog("Getting latest download info for product: " + settings.productName);
     std::unique_ptr<Content> content;
-    result = sfsClient->GetLatestDownloadInfo(settings.productName, content);
+    result = sfsClient->GetLatestDownloadInfo({{{settings.productName}}}, content);
     if (!result)
     {
         PrintError("Failed to get latest download info.");

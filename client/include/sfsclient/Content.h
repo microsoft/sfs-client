@@ -13,9 +13,6 @@
 
 namespace SFS
 {
-using SearchAttributes = std::unordered_map<std::string, std::string>;
-using ProductRequest = std::pair<std::string, SearchAttributes>;
-
 class ContentId
 {
   public:

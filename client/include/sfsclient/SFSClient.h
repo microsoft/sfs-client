@@ -6,6 +6,7 @@
 #include "ClientConfig.h"
 #include "Content.h"
 #include "Logging.h"
+#include "RequestParams.h"
 #include "Result.h"
 
 #include <memory>
@@ -48,21 +49,12 @@ class SFSClient
     //
 
     /**
-     * @brief Retrieve combined metadata & download URLs from the latest version of a specified product
-     * @param productName The name or GUID of the product to retrieve
+     * @brief Retrieve combined metadata & download URLs from the latest version of specified products
+     * @note At the moment only a single product request is supported
+     * @param requestParams Parameters that define this request
      * @param content A pointer to a Content instance that is populated with the result
      */
-    [[nodiscard]] Result GetLatestDownloadInfo(const std::string& productName,
-                                               std::unique_ptr<Content>& content) const noexcept;
-
-    /**
-     * @brief Retrieve combined metadata & download URLs from the latest version of a specified product
-     * @param productName The name or GUID of the product to retrieve
-     * @param attributes Attributes to filter the search
-     * @param content A pointer to a Content instance that is populated with the result
-     */
-    [[nodiscard]] Result GetLatestDownloadInfo(const std::string& productName,
-                                               const SearchAttributes& attributes,
+    [[nodiscard]] Result GetLatestDownloadInfo(const RequestParams& requestParams,
                                                std::unique_ptr<Content>& content) const noexcept;
 
     //

@@ -63,37 +63,46 @@ TEST("Testing SFSClient::GetLatestDownloadInfo()")
 
     std::unique_ptr<Content> content;
 
-    SECTION("No attributes")
+    SECTION("Single product request")
     {
-        REQUIRE(sfsClient->GetLatestDownloadInfo(c_productName, content) == Result::Success);
-        REQUIRE(content);
-        CheckMockContent(*content, c_version);
-    }
+        RequestParams params;
+        SECTION("No attributes")
+        {
+            params.productRequests = {{c_productName}};
+            REQUIRE(sfsClient->GetLatestDownloadInfo(params, content) == Result::Success);
+            REQUIRE(content);
+            CheckMockContent(*content, c_version);
+        }
 
-    SECTION("With attributes")
-    {
-        const SearchAttributes attributes{{"attr1", "value"}};
-        REQUIRE(sfsClient->GetLatestDownloadInfo(c_productName, attributes, content) == Result::Success);
-        REQUIRE(content);
-        CheckMockContent(*content, c_version);
-    }
+        SECTION("With attributes")
+        {
+            const TargetingAttributes attributes{{"attr1", "value"}};
+            params.productRequests = {{c_productName, attributes}};
+            REQUIRE(sfsClient->GetLatestDownloadInfo(params, content) == Result::Success);
+            REQUIRE(content);
+            CheckMockContent(*content, c_version);
+        }
 
-    SECTION("Wrong product name")
-    {
-        REQUIRE(sfsClient->GetLatestDownloadInfo("badName", {}, content) == Result::HttpNotFound);
-        REQUIRE(!content);
+        SECTION("Wrong product name")
+        {
+            params.productRequests = {{"badName", {}}};
+            REQUIRE(sfsClient->GetLatestDownloadInfo(params, content) == Result::HttpNotFound);
+            REQUIRE(!content);
 
-        const SearchAttributes attributes{{"attr1", "value"}};
-        REQUIRE(sfsClient->GetLatestDownloadInfo("badName", attributes, content) == Result::HttpNotFound);
-        REQUIRE(!content);
-    }
+            const TargetingAttributes attributes{{"attr1", "value"}};
+            params.productRequests = {{"badName", attributes}};
+            REQUIRE(sfsClient->GetLatestDownloadInfo(params, content) == Result::HttpNotFound);
+            REQUIRE(!content);
+        }
 
-    SECTION("Adding new version")
-    {
-        server.RegisterProduct(c_productName, c_nextVersion);
+        SECTION("Adding new version")
+        {
+            server.RegisterProduct(c_productName, c_nextVersion);
 
-        REQUIRE(sfsClient->GetLatestDownloadInfo(c_productName, content) == Result::Success);
-        REQUIRE(content);
-        CheckMockContent(*content, c_nextVersion);
+            params.productRequests = {{c_productName}};
+            REQUIRE(sfsClient->GetLatestDownloadInfo(params, content) == Result::Success);
+            REQUIRE(content);
+            CheckMockContent(*content, c_nextVersion);
+        }
     }
 }
