@@ -13,7 +13,7 @@ class SFSUrlComponents
     static std::string GetLatestVersionUrl(const std::string& baseUrl,
                                            const std::string& instanceId,
                                            const std::string& nameSpace,
-                                           const std::string& productName);
+                                           const std::string& product);
 
     static std::string GetLatestVersionBatchUrl(const std::string& baseUrl,
                                                 const std::string& instanceId,
@@ -22,13 +22,13 @@ class SFSUrlComponents
     static std::string GetSpecificVersionUrl(const std::string& baseUrl,
                                              const std::string& instanceId,
                                              const std::string& nameSpace,
-                                             const std::string& productName,
+                                             const std::string& product,
                                              const std::string& version);
 
     static std::string GetDownloadInfoUrl(const std::string& baseUrl,
                                           const std::string& instanceId,
                                           const std::string& nameSpace,
-                                          const std::string& productName,
+                                          const std::string& product,
                                           const std::string& version);
 };
 } // namespace SFS::details
