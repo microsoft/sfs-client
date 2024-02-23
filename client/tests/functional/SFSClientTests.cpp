@@ -68,7 +68,7 @@ TEST("Testing SFSClient::GetLatestDownloadInfo()")
         RequestParams params;
         SECTION("No attributes")
         {
-            params.productRequests = {{c_productName}};
+            params.productRequests = {{c_productName, {}}};
             REQUIRE(sfsClient->GetLatestDownloadInfo(params, content) == Result::Success);
             REQUIRE(content);
             CheckMockContent(*content, c_version);
@@ -99,7 +99,7 @@ TEST("Testing SFSClient::GetLatestDownloadInfo()")
         {
             server.RegisterProduct(c_productName, c_nextVersion);
 
-            params.productRequests = {{c_productName}};
+            params.productRequests = {{c_productName, {}}};
             REQUIRE(sfsClient->GetLatestDownloadInfo(params, content) == Result::Success);
             REQUIRE(content);
             CheckMockContent(*content, c_nextVersion);

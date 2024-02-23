@@ -208,14 +208,8 @@ TEST("Testing SFSClient::GetLatestDownloadInfo()")
     {
         std::unique_ptr<Content> content;
         RequestParams params;
-        params.productRequests = {{""}};
-        auto result = sfsClient->GetLatestDownloadInfo(params, content);
-        REQUIRE(result.GetCode() == Result::InvalidArg);
-        REQUIRE(result.GetMessage() == "product cannot be empty");
-        REQUIRE(content == nullptr);
-
         params.productRequests = {{"", {}}};
-        result = sfsClient->GetLatestDownloadInfo(params, content);
+        auto result = sfsClient->GetLatestDownloadInfo(params, content);
         REQUIRE(result.GetCode() == Result::InvalidArg);
         REQUIRE(result.GetMessage() == "product cannot be empty");
         REQUIRE(content == nullptr);
@@ -242,7 +236,7 @@ TEST("Testing SFSClient::GetLatestDownloadInfo()")
     {
         std::unique_ptr<Content> content;
         RequestParams params;
-        params.productRequests = {{"p1"}, {"p2"}};
+        params.productRequests = {{"p1", {}}, {"p2", {}}};
         auto result = sfsClient->GetLatestDownloadInfo(params, content);
         REQUIRE(result.GetCode() == Result::NotImpl);
         REQUIRE(result.GetMessage() == "There cannot be more than 1 productRequest at the moment");
