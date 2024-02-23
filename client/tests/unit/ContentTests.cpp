@@ -1,8 +1,8 @@
 // Copyright (c) Microsoft Corporation.
 // Licensed under the MIT License.
 
+#include "Content.h"
 #include "ContentUtil.h"
-#include "sfsclient/Content.h"
 
 #include <catch2/catch_test_macros.hpp>
 
@@ -86,50 +86,6 @@ TEST("Testing ContentId::Make()")
             CompareContentIdNotEqual(GetContentId("MYNAMESPACE", name, version));
             CompareContentIdNotEqual(GetContentId(nameSpace, "MYNAME", version));
             CompareContentIdNotEqual(GetContentId(nameSpace, name, "MYVERSION"));
-        }
-    }
-}
-
-TEST("Testing File::Make()")
-{
-    const std::string fileId{"myFileId"};
-    const std::string url{"myUrl"};
-    const uint64_t sizeInBytes{1234};
-    const std::unordered_map<HashType, std::string> hashes{{HashType::Sha1, "mySha1"}, {HashType::Sha256, "mySha256"}};
-
-    const std::unique_ptr<File> file = GetFile(fileId, url, sizeInBytes, hashes);
-
-    CHECK(fileId == file->GetFileId());
-    CHECK(url == file->GetUrl());
-    CHECK(sizeInBytes == file->GetSizeInBytes());
-    CHECK(hashes == file->GetHashes());
-
-    SECTION("Testing File equality operators")
-    {
-        SECTION("Equal")
-        {
-            auto CompareFileEqual = [&file](const std::unique_ptr<File>& sameFile) {
-                REQUIRE((*file == *sameFile));
-                REQUIRE_FALSE((*file != *sameFile));
-            };
-
-            CompareFileEqual(GetFile(fileId, url, sizeInBytes, hashes));
-        }
-
-        SECTION("Not equal")
-        {
-            auto CompareFileNotEqual = [&file](const std::unique_ptr<File>& otherFile) {
-                REQUIRE((*file != *otherFile));
-                REQUIRE_FALSE((*file == *otherFile));
-            };
-
-            CompareFileNotEqual(GetFile("", url, sizeInBytes, hashes));
-            CompareFileNotEqual(GetFile(fileId, "", sizeInBytes, hashes));
-            CompareFileNotEqual(GetFile(fileId, url, 0, hashes));
-            CompareFileNotEqual(GetFile(fileId, url, sizeInBytes, {}));
-            CompareFileNotEqual(GetFile("", "", 0, {}));
-            CompareFileNotEqual(GetFile("MYFILEID", url, sizeInBytes, hashes));
-            CompareFileNotEqual(GetFile(fileId, "MYURL", sizeInBytes, hashes));
         }
     }
 }

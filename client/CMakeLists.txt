@@ -30,6 +30,7 @@ target_sources(
             src/details/SFSUrlComponents.cpp
             src/details/TestOverride.cpp
             src/details/Util.cpp
+            src/File.cpp
             src/Logging.cpp
             src/Result.cpp
             src/SFSClient.cpp)
