@@ -15,13 +15,24 @@ using namespace SFS::details::contentutil;
 
 namespace
 {
+std::unique_ptr<DeliveryOptimizationData> GetData(const std::string& catalogId, const DOProperties& properties)
+{
+    std::unique_ptr<DeliveryOptimizationData> data;
+    REQUIRE(DeliveryOptimizationData::Make(catalogId, properties, data) == Result::Success);
+    REQUIRE(data != nullptr);
+    return data;
+};
+
 std::unique_ptr<File> GetFile(const std::string& fileId,
                               const std::string& url,
                               uint64_t sizeInBytes,
+                              const DeliveryOptimizationData& doData,
                               const std::unordered_map<HashType, std::string>& hashes)
 {
+    std::unique_ptr<DeliveryOptimizationData> data = GetData(doData.GetCatalogId(), doData.GetProperties());
+
     std::unique_ptr<File> file;
-    REQUIRE(File::Make(fileId, url, sizeInBytes, hashes, file) == Result::Success);
+    REQUIRE(File::Make(fileId, url, sizeInBytes, hashes, std::move(data), file) == Result::Success);
     REQUIRE(file != nullptr);
     return file;
 };
@@ -34,7 +45,11 @@ TEST("Testing File::Make()")
     const uint64_t sizeInBytes{1234};
     const std::unordered_map<HashType, std::string> hashes{{HashType::Sha1, "mySha1"}, {HashType::Sha256, "mySha256"}};
 
-    const std::unique_ptr<File> file = GetFile(fileId, url, sizeInBytes, hashes);
+    const std::string catalogId{"catalogId"};
+    const DOProperties properties{{"key1", "value1"}, {"key2", "value2"}};
+    const std::unique_ptr<DeliveryOptimizationData> data = GetData(catalogId, properties);
+
+    const std::unique_ptr<File> file = GetFile(fileId, url, sizeInBytes, *data, hashes);
 
     CHECK(fileId == file->GetFileId());
     CHECK(url == file->GetUrl());
@@ -50,7 +65,7 @@ TEST("Testing File::Make()")
                 REQUIRE_FALSE((*file != *sameFile));
             };
 
-            CompareFileEqual(GetFile(fileId, url, sizeInBytes, hashes));
+            CompareFileEqual(GetFile(fileId, url, sizeInBytes, *data, hashes));
         }
 
         SECTION("Not equal")
@@ -60,13 +75,15 @@ TEST("Testing File::Make()")
                 REQUIRE_FALSE((*file == *otherFile));
             };
 
-            CompareFileNotEqual(GetFile("", url, sizeInBytes, hashes));
-            CompareFileNotEqual(GetFile(fileId, "", sizeInBytes, hashes));
-            CompareFileNotEqual(GetFile(fileId, url, 0, hashes));
-            CompareFileNotEqual(GetFile(fileId, url, sizeInBytes, {}));
-            CompareFileNotEqual(GetFile("", "", 0, {}));
-            CompareFileNotEqual(GetFile("MYFILEID", url, sizeInBytes, hashes));
-            CompareFileNotEqual(GetFile(fileId, "MYURL", sizeInBytes, hashes));
+            CompareFileNotEqual(GetFile("", url, sizeInBytes, *data, hashes));
+            CompareFileNotEqual(GetFile(fileId, "", sizeInBytes, *data, hashes));
+            CompareFileNotEqual(GetFile(fileId, url, 0, *data, hashes));
+            CompareFileNotEqual(GetFile(fileId, url, sizeInBytes, *GetData("", properties), hashes));
+            CompareFileNotEqual(GetFile(fileId, url, sizeInBytes, *GetData(catalogId, {}), hashes));
+            CompareFileNotEqual(GetFile(fileId, url, sizeInBytes, *data, {}));
+            CompareFileNotEqual(GetFile("", "", 0, *data, {}));
+            CompareFileNotEqual(GetFile("MYFILEID", url, sizeInBytes, *data, hashes));
+            CompareFileNotEqual(GetFile(fileId, "MYURL", sizeInBytes, *data, hashes));
         }
     }
 }

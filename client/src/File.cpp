@@ -5,14 +5,13 @@
 
 #include "details/ErrorHandling.h"
 
-#include <algorithm>
-
 using namespace SFS;
 
 Result File::Make(std::string fileId,
                   std::string url,
                   uint64_t sizeInBytes,
                   std::unordered_map<HashType, std::string> hashes,
+                  std::unique_ptr<DeliveryOptimizationData>&& doData,
                   std::unique_ptr<File>& out) noexcept
 try
 {
@@ -23,6 +22,7 @@ try
     tmp->m_url = std::move(url);
     tmp->m_sizeInBytes = sizeInBytes;
     tmp->m_hashes = std::move(hashes);
+    tmp->m_doData = std::move(doData);
 
     out = std::move(tmp);
 
@@ -32,7 +32,13 @@ SFS_CATCH_RETURN()
 
 Result File::Clone(std::unique_ptr<File>& out) const noexcept
 {
-    return Make(m_fileId, m_url, m_sizeInBytes, m_hashes, out);
+    std::unique_ptr<DeliveryOptimizationData> clonedDoData;
+    if (m_doData)
+    {
+        RETURN_IF_FAILED(
+            DeliveryOptimizationData::Make(m_doData->GetCatalogId(), m_doData->GetProperties(), clonedDoData));
+    }
+    return Make(m_fileId, m_url, m_sizeInBytes, m_hashes, std::move(clonedDoData), out);
 }
 
 File::File(File&& other) noexcept
@@ -41,6 +47,7 @@ File::File(File&& other) noexcept
     m_url = std::move(other.m_url);
     m_sizeInBytes = other.m_sizeInBytes;
     m_hashes = std::move(other.m_hashes);
+    m_doData = std::move(other.m_doData);
 }
 
 const std::string& File::GetFileId() const noexcept
@@ -61,4 +68,9 @@ uint64_t File::GetSizeInBytes() const noexcept
 const std::unordered_map<HashType, std::string>& File::GetHashes() const noexcept
 {
     return m_hashes;
+}
+
+const std::unique_ptr<DeliveryOptimizationData>& File::GetOptionalDeliveryOptimizationData() const noexcept
+{
+    return m_doData;
 }

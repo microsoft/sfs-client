@@ -3,6 +3,7 @@
 
 #pragma once
 
+#include "DeliveryOptimizationData.h"
 #include "Result.h"
 
 #include <cstdint>
@@ -25,6 +26,7 @@ class File
                                      std::string url,
                                      uint64_t sizeInBytes,
                                      std::unordered_map<HashType, std::string> hashes,
+                                     std::unique_ptr<DeliveryOptimizationData>&& doData,
                                      std::unique_ptr<File>& out) noexcept;
 
     File(File&&) noexcept;
@@ -52,6 +54,12 @@ class File
      */
     const std::unordered_map<HashType, std::string>& GetHashes() const noexcept;
 
+    /**
+     * @brief Returns the optionally published Delivery Optimization data. If not published, this will be nullptr.
+     * @note This method may be subject to change in the future if the Service adds a way to filter received data.
+     */
+    const std::unique_ptr<DeliveryOptimizationData>& GetOptionalDeliveryOptimizationData() const noexcept;
+
   private:
     File() = default;
 
@@ -63,5 +71,7 @@ class File
     std::string m_url;
     uint64_t m_sizeInBytes;
     std::unordered_map<HashType, std::string> m_hashes;
+
+    std::unique_ptr<DeliveryOptimizationData> m_doData;
 };
 } // namespace SFS

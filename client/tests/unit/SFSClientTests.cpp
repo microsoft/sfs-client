@@ -238,7 +238,7 @@ TEST_SCENARIO("Testing SFSClient::GetDeliveryOptimizationData()")
             std::unique_ptr<ContentId> contentId;
             REQUIRE(ContentId::Make({}, {}, {}, contentId));
             std::unique_ptr<File> file;
-            REQUIRE(File::Make({}, {}, 0, {}, file));
+            REQUIRE(File::Make({}, {}, 0, {}, nullptr, file));
             std::unique_ptr<DeliveryOptimizationData> data;
             REQUIRE(sfsClient->GetDeliveryOptimizationData(*contentId, *file, data) == Result::NotSet);
         }

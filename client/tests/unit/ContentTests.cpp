@@ -31,7 +31,7 @@ std::unique_ptr<File> GetFile(const std::string& fileId,
                               const std::unordered_map<HashType, std::string>& hashes)
 {
     std::unique_ptr<File> file;
-    REQUIRE(File::Make(fileId, url, sizeInBytes, hashes, file) == Result::Success);
+    REQUIRE(File::Make(fileId, url, sizeInBytes, hashes, nullptr, file) == Result::Success);
     REQUIRE(file != nullptr);
     return file;
 };
@@ -171,8 +171,9 @@ TEST("Testing Content equality operators")
     std::unique_ptr<File> file = GetFile("fileId", "url", 1 /*sizeInBytes*/, {{HashType::Sha1, "sha1"}});
 
     std::unique_ptr<File> clonedFile;
-    REQUIRE(File::Make(file->GetFileId(), file->GetUrl(), file->GetSizeInBytes(), file->GetHashes(), clonedFile) ==
-            Result::Success);
+    REQUIRE(
+        File::Make(file->GetFileId(), file->GetUrl(), file->GetSizeInBytes(), file->GetHashes(), nullptr, clonedFile) ==
+        Result::Success);
 
     std::vector<File> files;
     files.push_back(std::move(*file));

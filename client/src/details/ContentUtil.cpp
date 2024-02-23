@@ -88,7 +88,8 @@ std::unique_ptr<File> contentutil::FileJsonToObj(const json& file, const Reporti
     }
 
     std::unique_ptr<File> tmp;
-    THROW_IF_FAILED_LOG(File::Make(std::move(fileId), std::move(url), sizeInBytes, std::move(hashes), tmp), handler);
+    THROW_IF_FAILED_LOG(File::Make(std::move(fileId), std::move(url), sizeInBytes, std::move(hashes), nullptr, tmp),
+                        handler);
 
     return tmp;
 }
@@ -149,9 +150,19 @@ bool contentutil::operator!=(const ContentId& lhs, const ContentId& rhs)
 
 bool contentutil::operator==(const File& lhs, const File& rhs)
 {
+    auto isDoDataEqual = [&lhs, &rhs]() {
+        const auto& lhsDoData = lhs.GetOptionalDeliveryOptimizationData();
+        const auto& rhsDoData = rhs.GetOptionalDeliveryOptimizationData();
+        if (lhsDoData && rhsDoData)
+        {
+            return *lhsDoData == *rhsDoData;
+        }
+        return lhsDoData == rhsDoData;
+    };
+
     // String characters can be UTF-8 encoded, so we need to compare them in a case-sensitive manner.
     return lhs.GetFileId() == rhs.GetFileId() && lhs.GetUrl() == rhs.GetUrl() &&
-           lhs.GetSizeInBytes() == rhs.GetSizeInBytes() && lhs.GetHashes() == rhs.GetHashes();
+           lhs.GetSizeInBytes() == rhs.GetSizeInBytes() && lhs.GetHashes() == rhs.GetHashes() && isDoDataEqual();
 }
 
 bool contentutil::operator!=(const File& lhs, const File& rhs)

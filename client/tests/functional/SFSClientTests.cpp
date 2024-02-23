@@ -94,7 +94,7 @@ TEST("Testing SFSClient::GetLatestDownloadInfo()")
 
         INFO("Checking DOData for a fake file but valid ContentId returns NotSet");
         std::unique_ptr<File> file;
-        REQUIRE(File::Make({}, {}, 0, {}, file));
+        REQUIRE(File::Make({}, {}, 0, {}, nullptr, file));
 
         std::unique_ptr<DeliveryOptimizationData> data;
         REQUIRE(sfsClient->GetDeliveryOptimizationData(content->GetContentId(), *file, data) == Result::NotSet);
