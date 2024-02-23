@@ -7,7 +7,6 @@
 
 #include "ClientConfig.h"
 #include "Content.h"
-#include "DeliveryOptimizationData.h"
 #include "Logging.h"
 #include "Result.h"
 
@@ -17,9 +16,6 @@
 
 namespace SFS::details
 {
-using DOCacheKey = std::size_t;
-using DODataCache = std::unordered_map<DOCacheKey, DeliveryOptimizationData>;
-
 template <typename ConnectionManagerT>
 class SFSClientImpl : public SFSClientInterface
 {
@@ -64,12 +60,6 @@ class SFSClientImpl : public SFSClientInterface
     std::vector<File> GetDownloadInfo(const std::string& productName,
                                       const std::string& version,
                                       Connection& connection) const override;
-    /**
-     * @brief Returns the DeliveryOptimizationData for a given ContentId and File
-     * @throws SFSException if the request fails or the data is not available (Result::NotSet)
-     */
-    std::unique_ptr<DeliveryOptimizationData> GetDeliveryOptimizationData(const ContentId& contentId,
-                                                                          const File& file) const override;
 
     /**
      * @brief Returns the ConnectionManager to be used by the SFSClient to create Connection objects
@@ -100,7 +90,5 @@ class SFSClientImpl : public SFSClientInterface
     std::unique_ptr<ConnectionManagerT> m_connectionManager;
 
     std::optional<std::string> m_customBaseUrl;
-
-    mutable DODataCache m_DODataCache;
 };
 } // namespace SFS::details

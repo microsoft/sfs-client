@@ -225,26 +225,6 @@ TEST("Testing SFSClient::GetLatestDownloadInfo()")
     }
 }
 
-TEST_SCENARIO("Testing SFSClient::GetDeliveryOptimizationData()")
-{
-    GIVEN("An SFSClient")
-    {
-        auto sfsClient = GetSFSClient();
-
-        THEN("SFSClient::GetDeliveryOptimizationData() returns NotSet for non-registered values")
-        {
-            const SearchAttributes attributes{{"attr1", "value"}};
-
-            std::unique_ptr<ContentId> contentId;
-            REQUIRE(ContentId::Make({}, {}, {}, contentId));
-            std::unique_ptr<File> file;
-            REQUIRE(File::Make({}, {}, 0, {}, nullptr, file));
-            std::unique_ptr<DeliveryOptimizationData> data;
-            REQUIRE(sfsClient->GetDeliveryOptimizationData(*contentId, *file, data) == Result::NotSet);
-        }
-    }
-}
-
 TEST_SCENARIO("Testing SFSClient::GetApplicabilityDetails()")
 {
     GIVEN("An SFSClient")

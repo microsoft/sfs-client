@@ -29,13 +29,24 @@ void CheckContentId(const ContentId& contentId, const std::string& version)
     REQUIRE(contentId.GetVersion() == version);
 }
 
+void CheckDOData(const DeliveryOptimizationData& data)
+{
+    INFO("We only know the server doesn't send the catalogId and properties empty");
+    REQUIRE(!data.GetCatalogId().empty());
+    REQUIRE(!data.GetProperties().empty());
+}
+
 void CheckFiles(const std::vector<File>& files)
 {
     REQUIRE(files.size() == 2);
     REQUIRE(files[0].GetFileId() == (c_productName + ".json"));
     REQUIRE(files[0].GetUrl() == ("http://localhost/1.json"));
+    REQUIRE(files[0].GetOptionalDeliveryOptimizationData());
+    CheckDOData(*files[0].GetOptionalDeliveryOptimizationData());
     REQUIRE(files[1].GetFileId() == (c_productName + ".bin"));
     REQUIRE(files[1].GetUrl() == ("http://localhost/2.bin"));
+    REQUIRE(files[1].GetOptionalDeliveryOptimizationData());
+    CheckDOData(*files[1].GetOptionalDeliveryOptimizationData());
 }
 
 void CheckMockContent(const Content& content, const std::string& version)
@@ -79,25 +90,6 @@ TEST("Testing SFSClient::GetLatestDownloadInfo()")
 
         REQUIRE(content);
         CheckMockContent(*content, c_version);
-
-        INFO("Checking DOData is present");
-        for (const auto& file : content->GetFiles())
-        {
-            std::unique_ptr<DeliveryOptimizationData> data;
-            REQUIRE(sfsClient->GetDeliveryOptimizationData(content->GetContentId(), file, data));
-            REQUIRE(data);
-
-            INFO("We only know the server doesn't send the catalogId and properties empty");
-            REQUIRE(!data->GetCatalogId().empty());
-            REQUIRE(!data->GetProperties().empty());
-        }
-
-        INFO("Checking DOData for a fake file but valid ContentId returns NotSet");
-        std::unique_ptr<File> file;
-        REQUIRE(File::Make({}, {}, 0, {}, nullptr, file));
-
-        std::unique_ptr<DeliveryOptimizationData> data;
-        REQUIRE(sfsClient->GetDeliveryOptimizationData(content->GetContentId(), *file, data) == Result::NotSet);
     }
 
     SECTION("Wrong product name")

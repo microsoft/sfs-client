@@ -22,8 +22,6 @@ namespace contentutil
 
 std::unique_ptr<ContentId> ContentIdJsonToObj(const nlohmann::json& contentId, const ReportingHandler& handler);
 std::unique_ptr<File> FileJsonToObj(const nlohmann::json& file, const ReportingHandler& handler);
-std::unique_ptr<DeliveryOptimizationData> FileJsonToDODataObj(const nlohmann::json& file,
-                                                              const ReportingHandler& handler);
 
 //
 // Comparison operators

@@ -81,15 +81,6 @@ void CheckProduct(const ContentId& contentId, std::string_view ns, std::string_v
     REQUIRE(contentId.GetVersion() == version);
 }
 
-void CheckDownloadInfo(const std::vector<File>& files, const std::string& name)
-{
-    REQUIRE(files.size() == 2);
-    REQUIRE(files[0].GetFileId() == (name + ".json"));
-    REQUIRE(files[0].GetUrl() == ("http://localhost/1.json"));
-    REQUIRE(files[1].GetFileId() == (name + ".bin"));
-    REQUIRE(files[1].GetUrl() == ("http://localhost/2.bin"));
-}
-
 void CheckDOData(const DeliveryOptimizationData& data, json doJsonData)
 {
     REQUIRE(data.GetCatalogId() == doJsonData["CatalogId"]);
@@ -98,6 +89,38 @@ void CheckDOData(const DeliveryOptimizationData& data, json doJsonData)
         const auto& jsonProps = doJsonData["Properties"];
         REQUIRE(jsonProps.contains(key));
         REQUIRE(value == jsonProps[key].dump());
+    }
+}
+
+void CheckDownloadInfo(const std::vector<File>& files,
+                       const std::string& name,
+                       std::optional<json> doData1 = std::nullopt,
+                       std::optional<json> doData2 = std::nullopt)
+{
+    REQUIRE(files.size() == 2);
+
+    REQUIRE(files[0].GetFileId() == (name + ".json"));
+    REQUIRE(files[0].GetUrl() == ("http://localhost/1.json"));
+    if (doData1)
+    {
+        REQUIRE(files[0].GetOptionalDeliveryOptimizationData());
+        CheckDOData(*files[0].GetOptionalDeliveryOptimizationData(), *doData1);
+    }
+    else
+    {
+        REQUIRE_FALSE(files[0].GetOptionalDeliveryOptimizationData());
+    }
+
+    REQUIRE(files[1].GetFileId() == (name + ".bin"));
+    REQUIRE(files[1].GetUrl() == ("http://localhost/2.bin"));
+    if (doData2)
+    {
+        REQUIRE(files[1].GetOptionalDeliveryOptimizationData());
+        CheckDOData(*files[1].GetOptionalDeliveryOptimizationData(), *doData2);
+    }
+    else
+    {
+        REQUIRE_FALSE(files[1].GetOptionalDeliveryOptimizationData());
     }
 }
 } // namespace
@@ -241,41 +264,39 @@ TEST("Testing class SFSClientImpl()")
     SECTION("Testing SFSClientImpl::GetDownloadInfo()")
     {
         expectEmptyPostBody = true;
-        json downloadInfoResponse;
-        downloadInfoResponse = json::array();
+        json downloadInfoResponse = json::array();
         downloadInfoResponse.push_back({{"Url", "http://localhost/1.json"},
                                         {"FileId", productName + ".json"},
                                         {"SizeInBytes", 100},
                                         {"Hashes", {{"Sha1", "123"}, {"Sha256", "456"}}}});
-        downloadInfoResponse[0]["DeliveryOptimization"] = {{"CatalogId", "789"}};
-        downloadInfoResponse[0]["DeliveryOptimization"]["Properties"] = {
-            {"IntegrityCheckInfo", {{"PiecesHashFileUrl", "http://localhost/1.json"}, {"HashOfHashes", "abc"}}}};
-
         downloadInfoResponse.push_back({{"Url", "http://localhost/2.bin"},
                                         {"FileId", productName + ".bin"},
                                         {"SizeInBytes", 200},
                                         {"Hashes", {{"Sha1", "421"}, {"Sha256", "132"}}}});
-        downloadInfoResponse[1]["DeliveryOptimization"] = downloadInfoResponse[0]["DeliveryOptimization"];
-        postResponse = downloadInfoResponse.dump();
-
         std::vector<File> files;
-        SECTION("Getting version")
+
+        SECTION("Getting version without DO Data")
         {
+            postResponse = downloadInfoResponse.dump();
+
             REQUIRE_NOTHROW(files = sfsClient.GetDownloadInfo(productName, expectedVersion, *connection));
-            REQUIRE(files.size() == 2);
             CheckDownloadInfo(files, productName);
+        }
 
-            INFO("Checking DOData is present");
-            std::unique_ptr<ContentId> contentId;
-            REQUIRE(ContentId::Make(ns, productName, expectedVersion, contentId));
+        SECTION("Getting version with DO Data")
+        {
+            downloadInfoResponse[0]["DeliveryOptimization"] = {{"CatalogId", "789"}};
+            downloadInfoResponse[0]["DeliveryOptimization"]["Properties"] = {
+                {"IntegrityCheckInfo", {{"PiecesHashFileUrl", "http://localhost/1.json"}, {"HashOfHashes", "abc"}}}};
 
-            std::unique_ptr<DeliveryOptimizationData> data1;
-            REQUIRE_NOTHROW(data1 = sfsClient.GetDeliveryOptimizationData(*contentId, files[0]));
-            CheckDOData(*data1, downloadInfoResponse[0]["DeliveryOptimization"]);
+            downloadInfoResponse[1]["DeliveryOptimization"] = downloadInfoResponse[0]["DeliveryOptimization"];
+            postResponse = downloadInfoResponse.dump();
 
-            std::unique_ptr<DeliveryOptimizationData> data2;
-            REQUIRE_NOTHROW(data2 = sfsClient.GetDeliveryOptimizationData(*contentId, files[1]));
-            CheckDOData(*data2, downloadInfoResponse[1]["DeliveryOptimization"]);
+            REQUIRE_NOTHROW(files = sfsClient.GetDownloadInfo(productName, expectedVersion, *connection));
+            CheckDownloadInfo(files,
+                              productName,
+                              downloadInfoResponse[0]["DeliveryOptimization"],
+                              downloadInfoResponse[1]["DeliveryOptimization"]);
         }
 
         SECTION("Failing")

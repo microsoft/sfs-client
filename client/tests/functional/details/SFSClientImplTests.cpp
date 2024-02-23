@@ -45,13 +45,24 @@ void CheckProducts(const std::vector<ContentId>& contentIds,
     }
 }
 
+void CheckDOData(const DeliveryOptimizationData& data)
+{
+    INFO("We only know the server doesn't send the catalogId and properties empty");
+    REQUIRE(!data.GetCatalogId().empty());
+    REQUIRE(!data.GetProperties().empty());
+}
+
 void CheckDownloadInfo(const std::vector<File>& files, const std::string& name)
 {
     REQUIRE(files.size() == 2);
     REQUIRE(files[0].GetFileId() == (name + ".json"));
     REQUIRE(files[0].GetUrl() == ("http://localhost/1.json"));
+    REQUIRE(files[0].GetOptionalDeliveryOptimizationData());
+    CheckDOData(*files[0].GetOptionalDeliveryOptimizationData());
     REQUIRE(files[1].GetFileId() == (name + ".bin"));
     REQUIRE(files[1].GetUrl() == ("http://localhost/2.bin"));
+    REQUIRE(files[1].GetOptionalDeliveryOptimizationData());
+    CheckDOData(*files[1].GetOptionalDeliveryOptimizationData());
 }
 } // namespace
 
@@ -235,20 +246,6 @@ TEST("Testing class SFSClientImpl()")
             REQUIRE_NOTHROW(files = sfsClient.GetDownloadInfo("productName", version, *connection));
             REQUIRE(!files.empty());
             CheckDownloadInfo(files, "productName");
-
-            INFO("Checking DOData is present");
-            std::unique_ptr<ContentId> contentId;
-            REQUIRE(ContentId::Make(ns, "productName", version, contentId));
-            for (const auto& file : files)
-            {
-                std::unique_ptr<DeliveryOptimizationData> data;
-                REQUIRE_NOTHROW(data = sfsClient.GetDeliveryOptimizationData(*contentId, file));
-                REQUIRE(data);
-
-                INFO("We only know the server doesn't send the catalogId and properties empty");
-                REQUIRE(!data->GetCatalogId().empty());
-                REQUIRE(!data->GetProperties().empty());
-            }
         }
 
         SECTION("Wrong product name")
