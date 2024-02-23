@@ -103,6 +103,8 @@ TEST("Testing CurlConnection()")
 
     SECTION("Testing CurlConnection::Post()")
     {
+        server.RegisterExpectedRequestHeader("Content-Type", "application/json");
+
         SECTION("With GetLatestVersionBatch mock")
         {
             const std::string url =
