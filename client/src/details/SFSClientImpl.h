@@ -48,7 +48,7 @@ class SFSClientImpl : public SFSClientInterface
      * @return ContentId for the specific version of the product
      * @throws SFSException if the request fails
      */
-    std::unique_ptr<ContentId> GetSpecificVersion(const std::string& productName,
+    std::unique_ptr<ContentId> GetSpecificVersion(const std::string& product,
                                                   const std::string& version,
                                                   Connection& connection) const override;
 
@@ -57,7 +57,7 @@ class SFSClientImpl : public SFSClientInterface
      * @return vector of File objects for the specific version of the product
      * @throws SFSException if the request fails
      */
-    std::vector<File> GetDownloadInfo(const std::string& productName,
+    std::vector<File> GetDownloadInfo(const std::string& product,
                                       const std::string& version,
                                       Connection& connection) const override;
 

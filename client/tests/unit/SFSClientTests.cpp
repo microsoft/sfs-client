@@ -204,23 +204,42 @@ TEST("Testing SFSClient::GetLatestDownloadInfo()")
 {
     auto sfsClient = GetSFSClient();
 
-    SECTION("SFSClient::GetLatestDownloadInfo() does not allow an empty product")
+    SECTION("Does not allow an empty product")
     {
         std::unique_ptr<Content> content;
-        auto result = sfsClient->GetLatestDownloadInfo("", content);
+        RequestParams params;
+        params.productRequests = {{"", {}}};
+        auto result = sfsClient->GetLatestDownloadInfo(params, content);
         REQUIRE(result.GetCode() == Result::InvalidArg);
-        REQUIRE(result.GetMessage() == "productName cannot be empty");
+        REQUIRE(result.GetMessage() == "product cannot be empty");
         REQUIRE(content == nullptr);
 
-        result = sfsClient->GetLatestDownloadInfo("", {}, content);
+        const TargetingAttributes attributes{{"attr1", "value"}};
+        params.productRequests = {{"", attributes}};
+        result = sfsClient->GetLatestDownloadInfo(params, content);
         REQUIRE(result.GetCode() == Result::InvalidArg);
-        REQUIRE(result.GetMessage() == "productName cannot be empty");
+        REQUIRE(result.GetMessage() == "product cannot be empty");
         REQUIRE(content == nullptr);
+    }
 
-        const SearchAttributes attributes{{"attr1", "value"}};
-        result = sfsClient->GetLatestDownloadInfo("", attributes, content);
+    SECTION("Does not allow an empty request")
+    {
+        std::unique_ptr<Content> content;
+        RequestParams params;
+        auto result = sfsClient->GetLatestDownloadInfo(params, content);
         REQUIRE(result.GetCode() == Result::InvalidArg);
-        REQUIRE(result.GetMessage() == "productName cannot be empty");
+        REQUIRE(result.GetMessage() == "productRequests cannot be empty");
+        REQUIRE(content == nullptr);
+    }
+
+    SECTION("Accepting multiple products is not implemented yet")
+    {
+        std::unique_ptr<Content> content;
+        RequestParams params;
+        params.productRequests = {{"p1", {}}, {"p2", {}}};
+        auto result = sfsClient->GetLatestDownloadInfo(params, content);
+        REQUIRE(result.GetCode() == Result::NotImpl);
+        REQUIRE(result.GetMessage() == "There cannot be more than 1 productRequest at the moment");
         REQUIRE(content == nullptr);
     }
 }
@@ -233,7 +252,7 @@ TEST_SCENARIO("Testing SFSClient::GetDeliveryOptimizationData()")
 
         THEN("SFSClient::GetDeliveryOptimizationData() is not implemented")
         {
-            const SearchAttributes attributes{{"attr1", "value"}};
+            const TargetingAttributes attributes{{"attr1", "value"}};
 
             std::unique_ptr<Content> content;
             std::unique_ptr<DeliveryOptimizationData> data;
@@ -250,7 +269,7 @@ TEST_SCENARIO("Testing SFSClient::GetApplicabilityDetails()")
 
         THEN("SFSClient::GetApplicabilityDetails() is not implemented")
         {
-            const SearchAttributes attributes{{"attr1", "value"}};
+            const TargetingAttributes attributes{{"attr1", "value"}};
 
             std::unique_ptr<Content> content;
             std::unique_ptr<ApplicabilityDetails> details;

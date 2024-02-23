@@ -31,30 +31,33 @@ try
 }
 SFS_CATCH_RETURN()
 
-Result SFSClient::GetLatestDownloadInfo([[maybe_unused]] const std::string& productName,
-                                        [[maybe_unused]] std::unique_ptr<Content>& content) const noexcept
+Result SFSClient::GetLatestDownloadInfo(const RequestParams& requestParams,
+                                        std::unique_ptr<Content>& content) const noexcept
 try
 {
-    return GetLatestDownloadInfo(productName, SearchAttributes(), content);
-}
-SFS_CATCH_RETURN()
-
-Result SFSClient::GetLatestDownloadInfo([[maybe_unused]] const std::string& productName,
-                                        [[maybe_unused]] const SearchAttributes& attributes,
-                                        [[maybe_unused]] std::unique_ptr<Content>& content) const noexcept
-try
-{
-    if (productName.empty())
+    if (requestParams.productRequests.empty())
     {
-        return Result(Result::InvalidArg, "productName cannot be empty");
+        return Result(Result::InvalidArg, "productRequests cannot be empty");
+    }
+
+    // TODO #78: Add support for multiple product requests
+    if (requestParams.productRequests.size() > 1)
+    {
+        return Result(Result::NotImpl, "There cannot be more than 1 productRequest at the moment");
+    }
+
+    const auto& [product, targetingAttributes] = requestParams.productRequests[0];
+    if (product.empty())
+    {
+        return Result(Result::InvalidArg, "product cannot be empty");
     }
 
     // TODO #50: Adapt retrieval to storeapps flow with pre-requisites once that is implemented server-side
 
     const auto connection = m_impl->GetConnectionManager().MakeConnection();
 
-    auto contentId = m_impl->GetLatestVersion({productName, attributes}, *connection);
-    auto files = m_impl->GetDownloadInfo(productName, contentId->GetVersion(), *connection);
+    auto contentId = m_impl->GetLatestVersion(requestParams.productRequests[0], *connection);
+    auto files = m_impl->GetDownloadInfo(product, contentId->GetVersion(), *connection);
 
     std::unique_ptr<Content> tmp;
     RETURN_IF_FAILED_LOG(Content::Make(std::move(contentId), std::move(files), tmp), m_impl->GetReportingHandler());

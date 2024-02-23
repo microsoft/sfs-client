@@ -196,10 +196,10 @@ std::unique_ptr<ContentId> SFSClientImpl<ConnectionManagerT>::GetLatestVersion(c
                                                                                Connection& connection) const
 try
 {
-    const auto& [productName, attributes] = productRequest;
-    const std::string url{SFSUrlComponents::GetLatestVersionUrl(GetBaseUrl(), m_instanceId, m_nameSpace, productName)};
+    const auto& [product, attributes] = productRequest;
+    const std::string url{SFSUrlComponents::GetLatestVersionUrl(GetBaseUrl(), m_instanceId, m_nameSpace, product)};
 
-    SFS_INFO("Requesting latest version of [%s] from URL [%s]", productName.c_str(), url.c_str());
+    SFS_INFO("Requesting latest version of [%s] from URL [%s]", product.c_str(), url.c_str());
 
     const json body = {{"TargetingAttributes", attributes}};
     SFS_INFO("Request body [%s]", body.dump().c_str());
@@ -209,7 +209,7 @@ try
 
     auto contentId = ConvertSingleProductVersionResponseToContentId(versionResponse, m_reportingHandler);
     THROW_CODE_IF_LOG(ServiceInvalidResponse,
-                      !VerifyVersionResponseMatchesProduct(*contentId, m_nameSpace, productName),
+                      !VerifyVersionResponseMatchesProduct(*contentId, m_nameSpace, product),
                       m_reportingHandler,
                       "(GetLatestVersion) Response does not match the requested product");
 
@@ -228,14 +228,14 @@ try
     SFS_INFO("Requesting latest version of multiple products from URL [%s]", url.c_str());
 
     // Creating request body
-    std::unordered_set<std::string> productNames;
+    std::unordered_set<std::string> products;
     json body = json::array();
-    for (const auto& [productName, attributes] : productRequests)
+    for (const auto& [product, attributes] : productRequests)
     {
-        SFS_INFO("Product #%zu: [%s]", body.size() + size_t{1}, productName.c_str());
-        productNames.insert(productName);
+        SFS_INFO("Product #%zu: [%s]", body.size() + size_t{1}, product.c_str());
+        products.insert(product);
 
-        body.push_back({{"TargetingAttributes", attributes}, {"Product", productName}});
+        body.push_back({{"TargetingAttributes", attributes}, {"Product", product}});
     }
 
     SFS_INFO("Request body [%s]", body.dump().c_str());
@@ -251,7 +251,7 @@ try
     for (const auto& contentId : contentIds)
     {
         THROW_CODE_IF_LOG(ServiceInvalidResponse,
-                          productNames.count(contentId.GetName()) == 0,
+                          products.count(contentId.GetName()) == 0,
                           m_reportingHandler,
                           "(GetLatestVersionBatch) Response of product [" + contentId.GetName() +
                               "] does not match the requested products");
@@ -271,15 +271,15 @@ try
 SFS_CATCH_LOG_RETHROW(m_reportingHandler)
 
 template <typename ConnectionManagerT>
-std::unique_ptr<ContentId> SFSClientImpl<ConnectionManagerT>::GetSpecificVersion(const std::string& productName,
+std::unique_ptr<ContentId> SFSClientImpl<ConnectionManagerT>::GetSpecificVersion(const std::string& product,
                                                                                  const std::string& version,
                                                                                  Connection& connection) const
 try
 {
     const std::string url{
-        SFSUrlComponents::GetSpecificVersionUrl(GetBaseUrl(), m_instanceId, m_nameSpace, productName, version)};
+        SFSUrlComponents::GetSpecificVersionUrl(GetBaseUrl(), m_instanceId, m_nameSpace, product, version)};
 
-    SFS_INFO("Requesting version [%s] of [%s] from URL [%s]", version.c_str(), productName.c_str(), url.c_str());
+    SFS_INFO("Requesting version [%s] of [%s] from URL [%s]", version.c_str(), product.c_str(), url.c_str());
 
     const std::string getResponse{connection.Get(url)};
 
@@ -287,7 +287,7 @@ try
 
     auto contentId = ConvertSpecificVersionResponseToContentId(versionResponse, m_reportingHandler);
     THROW_CODE_IF_LOG(ServiceInvalidResponse,
-                      !VerifyVersionResponseMatchesProduct(*contentId, m_nameSpace, productName),
+                      !VerifyVersionResponseMatchesProduct(*contentId, m_nameSpace, product),
                       m_reportingHandler,
                       "(GetSpecificVersion) Response does not match the requested product");
 
@@ -298,17 +298,17 @@ try
 SFS_CATCH_LOG_RETHROW(m_reportingHandler)
 
 template <typename ConnectionManagerT>
-std::vector<File> SFSClientImpl<ConnectionManagerT>::GetDownloadInfo(const std::string& productName,
+std::vector<File> SFSClientImpl<ConnectionManagerT>::GetDownloadInfo(const std::string& product,
                                                                      const std::string& version,
                                                                      Connection& connection) const
 try
 {
     const std::string url{
-        SFSUrlComponents::GetDownloadInfoUrl(GetBaseUrl(), m_instanceId, m_nameSpace, productName, version)};
+        SFSUrlComponents::GetDownloadInfoUrl(GetBaseUrl(), m_instanceId, m_nameSpace, product, version)};
 
     SFS_INFO("Requesting download info of version [%s] of [%s] from URL [%s]",
              version.c_str(),
-             productName.c_str(),
+             product.c_str(),
              url.c_str());
 
     const std::string postResponse{connection.Post(url)};

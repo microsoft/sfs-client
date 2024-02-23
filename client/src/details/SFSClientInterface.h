@@ -6,6 +6,7 @@
 #include "Content.h"
 #include "Logging.h"
 #include "ReportingHandler.h"
+#include "RequestParams.h"
 
 #include <memory>
 #include <string>
@@ -47,7 +48,7 @@ class SFSClientInterface
      * @return ContentId for the specific version of the product
      * @throws SFSException if the request fails
      */
-    virtual std::unique_ptr<ContentId> GetSpecificVersion(const std::string& productName,
+    virtual std::unique_ptr<ContentId> GetSpecificVersion(const std::string& product,
                                                           const std::string& version,
                                                           Connection& connection) const = 0;
 
@@ -56,7 +57,7 @@ class SFSClientInterface
      * @return vector of File objects for the specific version of the product
      * @throws SFSException if the request fails
      */
-    virtual std::vector<File> GetDownloadInfo(const std::string& productName,
+    virtual std::vector<File> GetDownloadInfo(const std::string& product,
                                               const std::string& version,
                                               Connection& connection) const = 0;
 

@@ -17,10 +17,10 @@ namespace
 void DisplayUsage()
 {
     std::cout
-        << "Usage: SFSClientTool --productName <name> [options]" << std::endl
+        << "Usage: SFSClientTool --product <identifier> [options]" << std::endl
         << std::endl
         << "Required:" << std::endl
-        << "  --productName <name>\t\tName of the product to be retrieved" << std::endl
+        << "  --product <identifier>\t\tName or GUID of the product to be retrieved" << std::endl
         << std::endl
         << "Options:" << std::endl
         << "  -h, --help\t\t\tDisplay this help message" << std::endl
@@ -31,7 +31,7 @@ void DisplayUsage()
         << std::endl
         << std::endl
         << "Example:" << std::endl
-        << "  SFSClientTool --productName \"Microsoft.WindowsStore_12011.1001.1.0_x64__8wekyb3d8bbwe\" --accountId test"
+        << "  SFSClientTool --product \"Microsoft.WindowsStore_12011.1001.1.0_x64__8wekyb3d8bbwe\" --accountId test"
         << std::endl;
 }
 
@@ -63,7 +63,7 @@ void PrintLog(std::string_view message)
 struct Settings
 {
     bool displayHelp{true};
-    std::string productName;
+    std::string product;
     std::string accountId;
     std::string instanceId;
     std::string nameSpace;
@@ -97,13 +97,13 @@ int ParseArguments(const std::vector<std::string_view>& args, Settings& settings
         {
             settings.displayHelp = true;
         }
-        else if (args[i].compare("--productName") == 0)
+        else if (args[i].compare("--product") == 0)
         {
-            if (!validateArg(i, "productName", settings.productName))
+            if (!validateArg(i, "product", settings.product))
             {
                 return 1;
             }
-            settings.productName = args[++i];
+            settings.product = args[++i];
         }
         else if (args[i].compare("--accountId") == 0)
         {
@@ -270,7 +270,7 @@ int main(int argc, char* argv[])
         return 1;
     }
 
-    if (settings.displayHelp || settings.productName.empty())
+    if (settings.displayHelp || settings.product.empty())
     {
         DisplayHelp();
         return 0;
@@ -298,9 +298,9 @@ int main(int argc, char* argv[])
     }
 
     // Perform operations using SFSClient
-    PrintLog("Getting latest download info for product: " + settings.productName);
+    PrintLog("Getting latest download info for product: " + settings.product);
     std::unique_ptr<Content> content;
-    result = sfsClient->GetLatestDownloadInfo(settings.productName, content);
+    result = sfsClient->GetLatestDownloadInfo({{{settings.product, {}}}}, content);
     if (!result)
     {
         PrintError("Failed to get latest download info.");
