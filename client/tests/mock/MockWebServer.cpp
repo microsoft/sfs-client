@@ -6,6 +6,7 @@
 #include "../util/TestHelper.h"
 #include "ErrorHandling.h"
 #include "Util.h"
+#include "connection/HttpHeader.h"
 
 #ifdef _WIN32
 #define WIN32_LEAN_AND_MEAN
@@ -72,6 +73,27 @@ std::string ToString(StatusCode status)
 
     return "";
 }
+
+class StatusCodeException : public std::exception
+{
+  public:
+    StatusCodeException(StatusCode status) : m_status(status)
+    {
+    }
+
+    const char* what() const noexcept override
+    {
+        return ToString(m_status).c_str();
+    }
+
+    int GetStatusCode() const
+    {
+        return static_cast<int>(m_status);
+    }
+
+  private:
+    StatusCode m_status;
+};
 
 json GenerateGetSpecificVersionResponse(const std::string& name, const std::string& version, const std::string& ns)
 {
@@ -163,6 +185,14 @@ LogData ToLogData(const BufferedLogData& data)
 {
     return {LogSeverity::Info, data.message.c_str(), data.file.c_str(), data.line, data.function.c_str(), data.time};
 }
+
+void CheckApiVersion(const httplib::Request& req, std::string_view apiVersion)
+{
+    if (util::AreNotEqualI(req.path_params.at("apiVersion"), apiVersion))
+    {
+        throw StatusCodeException(StatusCode::NotFound);
+    }
+}
 } // namespace
 
 namespace SFS::test::details
@@ -182,6 +212,7 @@ class MockWebServerImpl
     std::string GetUrl() const;
 
     void RegisterProduct(std::string&& name, std::string&& version);
+    void RegisterExpectedRequestHeader(std::string&& header, std::string&& value);
 
   private:
     void ConfigureServerSettings();
@@ -192,7 +223,13 @@ class MockWebServerImpl
     void ConfigureGetSpecificVersion();
     void ConfigurePostDownloadInfo();
 
+    void RunHttpCallback(const httplib::Request& req,
+                         httplib::Response& res,
+                         const std::function<void(const httplib::Request, httplib::Response&)>& callback);
+    void CheckRequestHeaders(const httplib::Request& req);
+
     void BufferLog(const BufferedLogData& data);
+    void ProcessBufferedLogs();
 
     httplib::Server m_server;
     int m_port{-1};
@@ -203,6 +240,8 @@ class MockWebServerImpl
 
     using VersionList = std::set<std::string>;
     std::unordered_map<std::string, VersionList> m_products;
+
+    std::unordered_map<std::string, std::string> m_expectedRequestHeaders;
 
     std::vector<BufferedLogData> m_bufferedLog;
     std::mutex m_logMutex;
@@ -239,6 +278,12 @@ void MockWebServer::RegisterProduct(std::string name, std::string version)
     m_impl->RegisterProduct(std::move(name), std::move(version));
 }
 
+void MockWebServer::RegisterExpectedRequestHeader(HttpHeader header, std::string value)
+{
+    std::string headerName = ToString(header);
+    m_impl->RegisterExpectedRequestHeader(std::move(headerName), std::move(value));
+}
+
 void MockWebServerImpl::Start()
 {
     ConfigureServerSettings();
@@ -271,6 +316,9 @@ void MockWebServerImpl::ConfigureServerSettings()
         {
             m_lastException = Result(Result::HttpUnexpected, "Unknown Exception");
         }
+
+        ProcessBufferedLogs();
+
         res.status = static_cast<int>(StatusCode::InternalServerError);
     });
 
@@ -291,29 +339,89 @@ void MockWebServerImpl::ConfigurePostLatestVersion()
     // Path: /api/<apiVersion:v2>/contents/<instanceId>/namespaces/<ns>/names/<name>/versions/latest?action=select
     const std::string pattern = "/api/:apiVersion/contents/:instanceId/namespaces/:ns/names/:name/versions/latest";
     m_server.Post(pattern, [&](const httplib::Request& req, httplib::Response& res) {
-        BUFFER_LOG("Matched PostLatestVersion");
+        RunHttpCallback(req, res, [&](const httplib::Request& req, httplib::Response& res) {
+            BUFFER_LOG("Matched PostLatestVersion");
 
-        if (util::AreNotEqualI(req.path_params.at("apiVersion"), "v2"))
-        {
-            res.status = static_cast<int>(StatusCode::NotFound);
-            return;
-        }
+            CheckApiVersion(req, "v2");
 
-        // TODO: Ignoring instanceId for now
+            // TODO: Ignoring instanceId for now
 
-        if (!req.has_param("action") || util::AreNotEqualI(req.get_param_value("action"), "select"))
-        {
-            // TODO: SFS might throw a different error when the query string is unexpected
-            res.status = static_cast<int>(StatusCode::NotFound);
-            return;
-        }
+            if (!req.has_param("action") || util::AreNotEqualI(req.get_param_value("action"), "select"))
+            {
+                // TODO: SFS might throw a different error when the query string is unexpected
+                throw StatusCodeException(StatusCode::NotFound);
+            }
 
-        // Checking body has expected format, but won't use it for the response
-        {
+            // Checking body has expected format, but won't use it for the response
+            {
+                if (req.body.empty())
+                {
+                    throw StatusCodeException(StatusCode::BadRequest);
+                }
+
+                json body;
+                try
+                {
+                    body = json::parse(req.body);
+                }
+                catch (const json::parse_error& ex)
+                {
+                    BUFFER_LOG("JSON parse error: " + std::string(ex.what()));
+                    throw StatusCodeException(StatusCode::BadRequest);
+                }
+
+                // The GetLatestVersion API expects an object as a body, with a "TargetingAttributes" object element.
+                if (!body.is_object() || !body.contains("TargetingAttributes") ||
+                    !body["TargetingAttributes"].is_object())
+                {
+                    throw StatusCodeException(StatusCode::BadRequest);
+                }
+            }
+
+            const std::string& name = req.path_params.at("name");
+            auto it = m_products.find(name);
+            if (it == m_products.end())
+            {
+                throw StatusCodeException(StatusCode::NotFound);
+            }
+
+            const VersionList& versions = it->second;
+            if (versions.empty())
+            {
+                throw StatusCodeException(StatusCode::InternalServerError);
+            }
+
+            const std::string ns = req.path_params.at("ns");
+            const auto& latestVersion = *versions.rbegin();
+
+            const json response = GenerateContentIdJsonObject(name, latestVersion, ns);
+
+            res.set_content(response.dump(), "application/json");
+        });
+    });
+}
+
+void MockWebServerImpl::ConfigurePostLatestVersionBatch()
+{
+    // Path: /api/<apiVersion:v2>/contents/<instanceId>/namespaces/<ns>/names?action=BatchUpdates
+    const std::string pattern = "/api/:apiVersion/contents/:instanceId/namespaces/:ns/names";
+    m_server.Post(pattern, [&](const httplib::Request& req, httplib::Response& res) {
+        RunHttpCallback(req, res, [&](const httplib::Request& req, httplib::Response& res) {
+            BUFFER_LOG("Matched PostLatestVersionBatch");
+
+            CheckApiVersion(req, "v2");
+
+            // TODO: Ignoring instanceId for now
+
+            if (!req.has_param("action") || util::AreNotEqualI(req.get_param_value("action"), "BatchUpdates"))
+            {
+                // TODO: SFS might throw a different error when the query string is unexpected
+                throw StatusCodeException(StatusCode::NotFound);
+            }
+
             if (req.body.empty())
             {
-                res.status = static_cast<int>(StatusCode::BadRequest);
-                return;
+                throw StatusCodeException(StatusCode::BadRequest);
             }
 
             json body;
@@ -324,141 +432,64 @@ void MockWebServerImpl::ConfigurePostLatestVersion()
             catch (const json::parse_error& ex)
             {
                 BUFFER_LOG("JSON parse error: " + std::string(ex.what()));
-                res.status = static_cast<int>(StatusCode::BadRequest);
-                return;
+                throw StatusCodeException(StatusCode::BadRequest);
             }
 
-            // The GetLatestVersion API expects an object as a body, with a "TargetingAttributes" object element.
-            if (!body.is_object() || !body.contains("TargetingAttributes") || !body["TargetingAttributes"].is_object())
+            // The BatchUpdates API returns an array of objects, each with a "Product" key.
+            // If repeated, the same product is only returned once.
+            // TODO: We are ignoring the TargetingAttributes for now.
+            if (!body.is_array())
             {
-                res.status = static_cast<int>(StatusCode::BadRequest);
-                return;
+                throw StatusCodeException(StatusCode::BadRequest);
             }
-        }
 
-        const std::string& name = req.path_params.at("name");
-        auto it = m_products.find(name);
-        if (it == m_products.end())
-        {
-            res.status = static_cast<int>(StatusCode::NotFound);
-            return;
-        }
-
-        const VersionList& versions = it->second;
-        if (versions.empty())
-        {
-            res.status = static_cast<int>(StatusCode::InternalServerError);
-            return;
-        }
-
-        const std::string ns = req.path_params.at("ns");
-        const auto& latestVersion = *versions.rbegin();
-
-        const json response = GenerateContentIdJsonObject(name, latestVersion, ns);
-
-        res.status = static_cast<int>(StatusCode::Ok);
-        res.set_content(response.dump(), "application/json");
-    });
-}
-
-void MockWebServerImpl::ConfigurePostLatestVersionBatch()
-{
-    // Path: /api/<apiVersion:v2>/contents/<instanceId>/namespaces/<ns>/names?action=BatchUpdates
-    const std::string pattern = "/api/:apiVersion/contents/:instanceId/namespaces/:ns/names";
-    m_server.Post(pattern, [&](const httplib::Request& req, httplib::Response& res) {
-        BUFFER_LOG("Matched PostLatestVersionBatch");
-
-        if (util::AreNotEqualI(req.path_params.at("apiVersion"), "v2"))
-        {
-            res.status = static_cast<int>(StatusCode::NotFound);
-            return;
-        }
-
-        // TODO: Ignoring instanceId for now
-
-        if (!req.has_param("action") || util::AreNotEqualI(req.get_param_value("action"), "BatchUpdates"))
-        {
-            // TODO: SFS might throw a different error when the query string is unexpected
-            res.status = static_cast<int>(StatusCode::NotFound);
-            return;
-        }
-
-        if (req.body.empty())
-        {
-            res.status = static_cast<int>(StatusCode::BadRequest);
-            return;
-        }
-
-        json body;
-        try
-        {
-            body = json::parse(req.body);
-        }
-        catch (const json::parse_error& ex)
-        {
-            BUFFER_LOG("JSON parse error: " + std::string(ex.what()));
-            res.status = static_cast<int>(StatusCode::BadRequest);
-            return;
-        }
-
-        // The BatchUpdates API returns an array of objects, each with a "Product" key.
-        // If repeated, the same product is only returned once.
-        // TODO: We are ignoring the TargetingAttributes for now.
-        if (!body.is_array())
-        {
-            res.status = static_cast<int>(StatusCode::BadRequest);
-            return;
-        }
-
-        // Iterate over the array and collect the unique products
-        std::unordered_map<std::string, json> requestedProducts;
-        for (const auto& productRequest : body)
-        {
-            if (!productRequest.is_object() || !productRequest.contains("Product") ||
-                !productRequest["Product"].is_string() || !productRequest.contains("TargetingAttributes"))
+            // Iterate over the array and collect the unique products
+            std::unordered_map<std::string, json> requestedProducts;
+            for (const auto& productRequest : body)
             {
-                res.status = static_cast<int>(StatusCode::BadRequest);
-                return;
+                if (!productRequest.is_object() || !productRequest.contains("Product") ||
+                    !productRequest["Product"].is_string() || !productRequest.contains("TargetingAttributes"))
+                {
+                    throw StatusCodeException(StatusCode::BadRequest);
+                }
+                if (requestedProducts.count(productRequest["Product"]))
+                {
+                    continue;
+                }
+                requestedProducts.emplace(productRequest["Product"], productRequest["TargetingAttributes"]);
             }
-            if (requestedProducts.count(productRequest["Product"]))
+
+            // If at least one product exists, we will return a 200 OK with that. Non-existing products are ignored.
+            // Otherwise, a 404 is sent.
+            json response = json::array();
+            for (const auto& [name, _] : requestedProducts)
             {
-                continue;
-            }
-            requestedProducts.emplace(productRequest["Product"], productRequest["TargetingAttributes"]);
-        }
+                auto it = m_products.find(name);
+                if (it == m_products.end())
+                {
+                    continue;
+                }
 
-        // If at least one product exists, we will return a 200 OK with that. Non-existing products are ignored.
-        // Otherwise, a 404 is sent.
-        json response = json::array();
-        for (const auto& [name, _] : requestedProducts)
-        {
-            auto it = m_products.find(name);
-            if (it == m_products.end())
+                const VersionList& versions = it->second;
+                if (versions.empty())
+                {
+                    res.status = static_cast<int>(StatusCode::InternalServerError);
+                    return;
+                }
+
+                const std::string ns = req.path_params.at("ns");
+                const auto& latestVersion = *versions.rbegin();
+
+                response.push_back(GenerateContentIdJsonObject(name, latestVersion, ns));
+            }
+
+            if (response.empty())
             {
-                continue;
+                throw StatusCodeException(StatusCode::NotFound);
             }
 
-            const VersionList& versions = it->second;
-            if (versions.empty())
-            {
-                res.status = static_cast<int>(StatusCode::InternalServerError);
-                return;
-            }
-
-            const std::string ns = req.path_params.at("ns");
-            const auto& latestVersion = *versions.rbegin();
-
-            res.status = static_cast<int>(StatusCode::Ok);
-            response.push_back(GenerateContentIdJsonObject(name, latestVersion, ns));
-        }
-
-        if (response.empty())
-        {
-            res.status = static_cast<int>(StatusCode::NotFound);
-            return;
-        }
-
-        res.set_content(response.dump(), "application/json");
+            res.set_content(response.dump(), "application/json");
+        });
     });
 }
 
@@ -467,42 +498,36 @@ void MockWebServerImpl::ConfigureGetSpecificVersion()
     // Path: /api/<apiVersion:v1>/contents/<instanceId>/namespaces/<ns>/names/<name>/versions/<version>
     const std::string pattern = "/api/:apiVersion/contents/:instanceId/namespaces/:ns/names/:name/versions/:version";
     m_server.Get(pattern, [&](const httplib::Request& req, httplib::Response& res) {
-        BUFFER_LOG("Matched GetSpecificVersion");
+        RunHttpCallback(req, res, [&](const httplib::Request& req, httplib::Response& res) {
+            BUFFER_LOG("Matched GetSpecificVersion");
 
-        if (util::AreNotEqualI(req.path_params.at("apiVersion"), "v1"))
-        {
-            res.status = static_cast<int>(StatusCode::NotFound);
-            return;
-        }
+            CheckApiVersion(req, "v1");
 
-        // TODO: Ignoring instanceId for now
+            // TODO: Ignoring instanceId for now
 
-        const std::string& name = req.path_params.at("name");
-        auto it = m_products.find(name);
-        if (it == m_products.end())
-        {
-            res.status = static_cast<int>(StatusCode::NotFound);
-            return;
-        }
+            const std::string& name = req.path_params.at("name");
+            auto it = m_products.find(name);
+            if (it == m_products.end())
+            {
+                throw StatusCodeException(StatusCode::NotFound);
+            }
 
-        const VersionList& versions = it->second;
-        if (versions.empty())
-        {
-            res.status = static_cast<int>(StatusCode::InternalServerError);
-            return;
-        }
+            const VersionList& versions = it->second;
+            if (versions.empty())
+            {
+                throw StatusCodeException(StatusCode::InternalServerError);
+            }
 
-        const std::string& version = req.path_params.at("version");
-        if (version.empty() || !versions.count(version))
-        {
-            res.status = static_cast<int>(StatusCode::NotFound);
-            return;
-        }
+            const std::string& version = req.path_params.at("version");
+            if (version.empty() || !versions.count(version))
+            {
+                throw StatusCodeException(StatusCode::NotFound);
+            }
 
-        const std::string ns = req.path_params.at("ns");
+            const std::string ns = req.path_params.at("ns");
 
-        res.status = static_cast<int>(StatusCode::Ok);
-        res.set_content(GenerateGetSpecificVersionResponse(name, version, ns).dump(), "application/json");
+            res.set_content(GenerateGetSpecificVersionResponse(name, version, ns).dump(), "application/json");
+        });
     });
 }
 
@@ -513,56 +538,104 @@ void MockWebServerImpl::ConfigurePostDownloadInfo()
     const std::string pattern =
         "/api/:apiVersion/contents/:instanceId/namespaces/:ns/names/:name/versions/:version/files";
     m_server.Post(pattern, [&](const httplib::Request& req, httplib::Response& res) {
-        BUFFER_LOG("Matched PostDownloadInfo");
+        RunHttpCallback(req, res, [&](const httplib::Request& req, httplib::Response& res) {
+            BUFFER_LOG("Matched PostDownloadInfo");
 
-        if (util::AreNotEqualI(req.path_params.at("apiVersion"), "v1"))
-        {
-            res.status = static_cast<int>(StatusCode::NotFound);
-            return;
-        }
+            CheckApiVersion(req, "v1");
 
-        // TODO: Ignoring instanceId and ns for now
+            // TODO: Ignoring instanceId and ns for now
 
-        if (!req.has_param("action") || util::AreNotEqualI(req.get_param_value("action"), "GenerateDownloadInfo"))
-        {
-            // TODO: SFS might throw a different error when the query string is unexpected
-            res.status = static_cast<int>(StatusCode::NotFound);
-            return;
-        }
+            if (!req.has_param("action") || util::AreNotEqualI(req.get_param_value("action"), "GenerateDownloadInfo"))
+            {
+                // TODO: SFS might throw a different error when the query string is unexpected
+                throw StatusCodeException(StatusCode::NotFound);
+            }
 
-        const std::string& name = req.path_params.at("name");
-        auto it = m_products.find(name);
-        if (it == m_products.end())
-        {
-            res.status = static_cast<int>(StatusCode::NotFound);
-            return;
-        }
+            const std::string& name = req.path_params.at("name");
+            auto it = m_products.find(name);
+            if (it == m_products.end())
+            {
+                throw StatusCodeException(StatusCode::NotFound);
+            }
 
-        const VersionList& versions = it->second;
-        if (versions.empty())
-        {
-            res.status = static_cast<int>(StatusCode::InternalServerError);
-            return;
-        }
+            const VersionList& versions = it->second;
+            if (versions.empty())
+            {
+                throw StatusCodeException(StatusCode::InternalServerError);
+            }
 
-        const std::string& version = req.path_params.at("version");
-        if (version.empty() || !versions.count(version))
-        {
-            res.status = static_cast<int>(StatusCode::NotFound);
-            return;
-        }
+            const std::string& version = req.path_params.at("version");
+            if (version.empty() || !versions.count(version))
+            {
+                throw StatusCodeException(StatusCode::NotFound);
+            }
 
-        // Response is a dummy, doesn't use the version above
-
-        res.status = static_cast<int>(StatusCode::Ok);
-        res.set_content(GeneratePostDownloadInfo(name).dump(), "application/json");
+            // Response is a dummy, doesn't use the version above
+            res.set_content(GeneratePostDownloadInfo(name).dump(), "application/json");
+        });
     });
+}
+
+void MockWebServerImpl::RunHttpCallback(const httplib::Request& req,
+                                        httplib::Response& res,
+                                        const std::function<void(const httplib::Request, httplib::Response&)>& callback)
+{
+    try
+    {
+        CheckRequestHeaders(req);
+        callback(req, res);
+        res.status = static_cast<int>(StatusCode::Ok);
+    }
+    catch (const StatusCodeException& ex)
+    {
+        res.status = ex.GetStatusCode();
+    }
+    catch (const std::exception&)
+    {
+        res.status = static_cast<int>(StatusCode::InternalServerError);
+    }
+    catch (...)
+    {
+        res.status = static_cast<int>(StatusCode::InternalServerError);
+    }
+}
+
+void MockWebServerImpl::CheckRequestHeaders(const httplib::Request& req)
+{
+    for (const auto& header : m_expectedRequestHeaders)
+    {
+        std::optional<std::string> errorMessage;
+        if (!req.has_header(header.first))
+        {
+            errorMessage = "Expected header [" + header.first + "] not found";
+        }
+        else if (util::AreNotEqualI(req.get_header_value(header.first), header.second))
+        {
+            errorMessage = "Header [" + header.first + "] with value [" + req.get_header_value(header.first) +
+                           "] does not match the expected value [" + header.second + "]";
+        }
+
+        if (errorMessage)
+        {
+            BUFFER_LOG(*errorMessage);
+            throw std::runtime_error(errorMessage->c_str());
+        }
+    }
 }
 
 void MockWebServerImpl::BufferLog(const BufferedLogData& data)
 {
     std::lock_guard guard(m_logMutex);
     m_bufferedLog.push_back(data);
+}
+
+void MockWebServerImpl::ProcessBufferedLogs()
+{
+    for (const auto& data : m_bufferedLog)
+    {
+        LogCallbackToTest(ToLogData(data));
+    }
+    m_bufferedLog.clear();
 }
 
 Result MockWebServerImpl::Stop()
@@ -572,11 +645,7 @@ Result MockWebServerImpl::Stop()
         m_server.stop();
         m_listenerThread.join();
     }
-    for (const auto& data : m_bufferedLog)
-    {
-        LogCallbackToTest(ToLogData(data));
-    }
-    m_bufferedLog.clear();
+    ProcessBufferedLogs();
     return m_lastException.value_or(Result::Success);
 }
 
@@ -588,4 +657,9 @@ std::string MockWebServerImpl::GetUrl() const
 void MockWebServerImpl::RegisterProduct(std::string&& name, std::string&& version)
 {
     m_products[std::move(name)].emplace(std::move(version));
+}
+
+void MockWebServerImpl::RegisterExpectedRequestHeader(std::string&& header, std::string&& value)
+{
+    m_expectedRequestHeaders.emplace(std::move(header), std::move(value));
 }

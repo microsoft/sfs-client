@@ -19,6 +19,7 @@ target_sources(
             src/details/connection/ConnectionManager.cpp
             src/details/connection/CurlConnection.cpp
             src/details/connection/CurlConnectionManager.cpp
+            src/details/connection/HttpHeader.cpp
             src/details/connection/mock/MockConnection.cpp
             src/details/connection/mock/MockConnectionManager.cpp
             src/details/ContentUtil.cpp
