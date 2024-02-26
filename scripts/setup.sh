@@ -100,6 +100,19 @@ install_vcpkg() {
     return 0
 }
 
+# Dependency for compiling CorrelationVector C++ library
+install_uuid() {
+    header "\nInstalling uuid-dev if it's not installed"
+
+    if ! install_with_apt "pkg-config"; then
+        return
+    fi
+    if ! install_with_apt "uuid-dev"; then
+        return
+    fi
+    return 0
+}
+
 set_git_hooks() {
     header "\nSetting Git hooks"
 
@@ -166,6 +179,10 @@ if ! install_cmake; then
 fi
 
 if ! install_vcpkg; then
+    return
+fi
+
+if ! install_uuid; then
     return
 fi
 
