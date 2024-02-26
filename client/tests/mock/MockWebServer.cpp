@@ -185,6 +185,14 @@ LogData ToLogData(const BufferedLogData& data)
 {
     return {LogSeverity::Info, data.message.c_str(), data.file.c_str(), data.line, data.function.c_str(), data.time};
 }
+
+void CheckApiVersion(const httplib::Request& req, std::string_view apiVersion)
+{
+    if (util::AreNotEqualI(req.path_params.at("apiVersion"), apiVersion))
+    {
+        throw StatusCodeException(StatusCode::NotFound);
+    }
+}
 } // namespace
 
 namespace SFS::test::details
@@ -334,10 +342,7 @@ void MockWebServerImpl::ConfigurePostLatestVersion()
         RunHttpCallback(req, res, [&](const httplib::Request& req, httplib::Response& res) {
             BUFFER_LOG("Matched PostLatestVersion");
 
-            if (util::AreNotEqualI(req.path_params.at("apiVersion"), "v2"))
-            {
-                throw StatusCodeException(StatusCode::NotFound);
-            }
+            CheckApiVersion(req, "v2");
 
             // TODO: Ignoring instanceId for now
 
@@ -404,10 +409,7 @@ void MockWebServerImpl::ConfigurePostLatestVersionBatch()
         RunHttpCallback(req, res, [&](const httplib::Request& req, httplib::Response& res) {
             BUFFER_LOG("Matched PostLatestVersionBatch");
 
-            if (util::AreNotEqualI(req.path_params.at("apiVersion"), "v2"))
-            {
-                throw StatusCodeException(StatusCode::NotFound);
-            }
+            CheckApiVersion(req, "v2");
 
             // TODO: Ignoring instanceId for now
 
@@ -499,10 +501,7 @@ void MockWebServerImpl::ConfigureGetSpecificVersion()
         RunHttpCallback(req, res, [&](const httplib::Request& req, httplib::Response& res) {
             BUFFER_LOG("Matched GetSpecificVersion");
 
-            if (util::AreNotEqualI(req.path_params.at("apiVersion"), "v1"))
-            {
-                throw StatusCodeException(StatusCode::NotFound);
-            }
+            CheckApiVersion(req, "v1");
 
             // TODO: Ignoring instanceId for now
 
@@ -542,10 +541,7 @@ void MockWebServerImpl::ConfigurePostDownloadInfo()
         RunHttpCallback(req, res, [&](const httplib::Request& req, httplib::Response& res) {
             BUFFER_LOG("Matched PostDownloadInfo");
 
-            if (util::AreNotEqualI(req.path_params.at("apiVersion"), "v1"))
-            {
-                throw StatusCodeException(StatusCode::NotFound);
-            }
+            CheckApiVersion(req, "v1");
 
             // TODO: Ignoring instanceId and ns for now
 
