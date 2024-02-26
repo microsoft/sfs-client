@@ -7,6 +7,7 @@
 #include "SFSClientImpl.h"
 #include "connection/Connection.h"
 #include "connection/CurlConnectionManager.h"
+#include "connection/HttpHeader.h"
 
 #include <catch2/catch_test_macros.hpp>
 
@@ -69,7 +70,7 @@ TEST("Testing class SFSClientImpl()")
 
     SECTION("Testing SFSClientImpl::GetLatestVersion()")
     {
-        server.RegisterExpectedRequestHeader("Content-Type", "application/json");
+        server.RegisterExpectedRequestHeader(HttpHeader::ContentType, "application/json");
         std::unique_ptr<ContentId> contentId;
 
         SECTION("No attributes")
@@ -101,7 +102,7 @@ TEST("Testing class SFSClientImpl()")
 
     SECTION("Testing SFSClientImpl::GetLatestVersionBatch()")
     {
-        server.RegisterExpectedRequestHeader("Content-Type", "application/json");
+        server.RegisterExpectedRequestHeader(HttpHeader::ContentType, "application/json");
         std::vector<ContentId> contentIds;
 
         SECTION("No attributes")
@@ -219,7 +220,7 @@ TEST("Testing class SFSClientImpl()")
 
     SECTION("Testing SFSClientImpl::GetDownloadInfo()")
     {
-        server.RegisterExpectedRequestHeader("Content-Type", "application/json");
+        server.RegisterExpectedRequestHeader(HttpHeader::ContentType, "application/json");
         std::vector<File> files;
 
         SECTION("Getting 0.0.0.1")

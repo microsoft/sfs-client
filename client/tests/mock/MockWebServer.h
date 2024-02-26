@@ -8,6 +8,11 @@
 #include <memory>
 #include <string>
 
+namespace SFS::details
+{
+enum class HttpHeader;
+}
+
 namespace SFS::test
 {
 namespace details
@@ -31,7 +36,7 @@ class MockWebServer
     void RegisterProduct(std::string name, std::string version);
 
     /// @brief Registers the expectation of a given header to the present in the request
-    void RegisterExpectedRequestHeader(std::string header, std::string value);
+    void RegisterExpectedRequestHeader(SFS::details::HttpHeader header, std::string value);
 
   private:
     std::unique_ptr<details::MockWebServerImpl> m_impl;

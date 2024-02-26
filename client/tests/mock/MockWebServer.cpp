@@ -6,6 +6,7 @@
 #include "../util/TestHelper.h"
 #include "ErrorHandling.h"
 #include "Util.h"
+#include "connection/HttpHeader.h"
 
 #ifdef _WIN32
 #define WIN32_LEAN_AND_MEAN
@@ -269,9 +270,10 @@ void MockWebServer::RegisterProduct(std::string name, std::string version)
     m_impl->RegisterProduct(std::move(name), std::move(version));
 }
 
-void MockWebServer::RegisterExpectedRequestHeader(std::string header, std::string value)
+void MockWebServer::RegisterExpectedRequestHeader(HttpHeader header, std::string value)
 {
-    m_impl->RegisterExpectedRequestHeader(std::move(header), std::move(value));
+    std::string headerName = ToString(header);
+    m_impl->RegisterExpectedRequestHeader(std::move(headerName), std::move(value));
 }
 
 void MockWebServerImpl::Start()

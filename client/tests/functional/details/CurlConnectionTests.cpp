@@ -8,6 +8,7 @@
 #include "SFSUrlComponents.h"
 #include "connection/CurlConnection.h"
 #include "connection/CurlConnectionManager.h"
+#include "connection/HttpHeader.h"
 
 #include <catch2/catch_test_macros.hpp>
 #include <catch2/matchers/catch_matchers_string.hpp>
@@ -103,7 +104,7 @@ TEST("Testing CurlConnection()")
 
     SECTION("Testing CurlConnection::Post()")
     {
-        server.RegisterExpectedRequestHeader("Content-Type", "application/json");
+        server.RegisterExpectedRequestHeader(HttpHeader::ContentType, "application/json");
 
         SECTION("With GetLatestVersionBatch mock")
         {

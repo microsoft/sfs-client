@@ -4,6 +4,7 @@
 #include "CurlConnection.h"
 
 #include "../ErrorHandling.h"
+#include "HttpHeader.h"
 
 #include <curl/curl.h>
 
@@ -49,22 +50,6 @@ size_t WriteCallback(char* contents, size_t sizeInBytes, size_t numElements, voi
         return totalSize;
     }
     return CURL_WRITEFUNC_ERROR;
-}
-
-enum class HttpHeader
-{
-    ContentType
-};
-
-std::string ToString(HttpHeader header)
-{
-    switch (header)
-    {
-    case HttpHeader::ContentType:
-        return "Content-Type";
-    }
-
-    return "";
 }
 
 struct CurlHeaderList
