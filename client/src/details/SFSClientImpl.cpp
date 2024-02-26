@@ -107,29 +107,6 @@ std::vector<ContentId> ConvertLatestVersionBatchResponseToContentIds(const json&
     return contentIds;
 }
 
-std::unique_ptr<ContentId> ConvertSpecificVersionResponseToContentId(const json& data, const ReportingHandler& handler)
-{
-    // Expected format:
-    // {
-    //   "ContentId": {
-    //     "Namespace": <ns>,
-    //     "Name": <name>,
-    //     "Version": <version>
-    //   },
-    //   "Files": [
-    //     <file1>,
-    //     ...
-    //   ]
-    // }
-    //
-    // We don't care about Files in this response, so we just ignore them
-
-    ThrowInvalidResponseIfFalse(data.is_object(), "Response is not a JSON object", handler);
-    ThrowInvalidResponseIfFalse(data.contains("ContentId"), "Missing ContentId in response", handler);
-
-    return ContentIdJsonToObj(data["ContentId"], handler);
-}
-
 std::vector<File> ConvertDownloadInfoResponseToFileVector(const json& data, const ReportingHandler& handler)
 {
     // Expected format:
@@ -285,7 +262,7 @@ try
 
     const json versionResponse = ParseServerMethodStringToJson(getResponse, "GetSpecificVersion", m_reportingHandler);
 
-    auto contentId = ConvertSpecificVersionResponseToContentId(versionResponse, m_reportingHandler);
+    auto contentId = ConvertSingleProductVersionResponseToContentId(versionResponse, m_reportingHandler);
     THROW_CODE_IF_LOG(ServiceInvalidResponse,
                       !VerifyVersionResponseMatchesProduct(*contentId, m_nameSpace, product),
                       m_reportingHandler,
