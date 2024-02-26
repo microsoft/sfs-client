@@ -36,7 +36,7 @@ class SFSClient
      * @brief Make a new SFSClient object
      * @details An SFSClient object is used to make calls to the SFS service. The SFSClient object is initialized with
      * a few parameters that are used to build the URL for the SFS service. The URL is built as follows:
-     * https://{accountId}.api.cdp.microsoft.com/api/v1/contents/{instanceId}/namespaces/{nameSpace}
+     * https://{accountId}.api.cdp.microsoft.com/api/v2/contents/{instanceId}/namespaces/{nameSpace}
      * The instanceId and nameSpace are optionally set in @param config and have a default value if not provided.
      * The accountId is required and must be set to a non-empty value.
      *

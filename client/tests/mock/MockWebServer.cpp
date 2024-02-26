@@ -95,26 +95,6 @@ class StatusCodeException : public std::exception
     StatusCode m_status;
 };
 
-json GenerateGetSpecificVersionResponse(const std::string& name, const std::string& version, const std::string& ns)
-{
-    // {
-    //   "ContentId": {
-    //     "Namespace": <ns>,
-    //     "Name": <name>,
-    //     "Version": <version>
-    //   },
-    //   "Files": [
-    //     <file1>,
-    //     ...
-    //   ]
-    // }
-
-    json response;
-    response["ContentId"] = {{"Namespace", ns}, {"Name", name}, {"Version", version}};
-    response["Files"] = json::array({name + ".json", name + ".bin"});
-    return response;
-}
-
 json GenerateContentIdJsonObject(const std::string& name, const std::string& latestVersion, const std::string& ns)
 {
     // {
@@ -225,6 +205,8 @@ class MockWebServerImpl
 
     void RunHttpCallback(const httplib::Request& req,
                          httplib::Response& res,
+                         const std::string& methodName,
+                         const std::string& apiVersion,
                          const std::function<void(const httplib::Request, httplib::Response&)>& callback);
     void CheckRequestHeaders(const httplib::Request& req);
 
@@ -339,11 +321,7 @@ void MockWebServerImpl::ConfigurePostLatestVersion()
     // Path: /api/<apiVersion:v2>/contents/<instanceId>/namespaces/<ns>/names/<name>/versions/latest?action=select
     const std::string pattern = "/api/:apiVersion/contents/:instanceId/namespaces/:ns/names/:name/versions/latest";
     m_server.Post(pattern, [&](const httplib::Request& req, httplib::Response& res) {
-        RunHttpCallback(req, res, [&](const httplib::Request& req, httplib::Response& res) {
-            BUFFER_LOG("Matched PostLatestVersion");
-
-            CheckApiVersion(req, "v2");
-
+        RunHttpCallback(req, res, "PostLatestVersion", "v2", [&](const httplib::Request& req, httplib::Response& res) {
             // TODO: Ignoring instanceId for now
 
             if (!req.has_param("action") || util::AreNotEqualI(req.get_param_value("action"), "select"))
@@ -406,103 +384,100 @@ void MockWebServerImpl::ConfigurePostLatestVersionBatch()
     // Path: /api/<apiVersion:v2>/contents/<instanceId>/namespaces/<ns>/names?action=BatchUpdates
     const std::string pattern = "/api/:apiVersion/contents/:instanceId/namespaces/:ns/names";
     m_server.Post(pattern, [&](const httplib::Request& req, httplib::Response& res) {
-        RunHttpCallback(req, res, [&](const httplib::Request& req, httplib::Response& res) {
-            BUFFER_LOG("Matched PostLatestVersionBatch");
+        RunHttpCallback(
+            req,
+            res,
+            "PostLatestVersionBatch",
+            "v2",
+            [&](const httplib::Request& req, httplib::Response& res) {
+                // TODO: Ignoring instanceId for now
 
-            CheckApiVersion(req, "v2");
+                if (!req.has_param("action") || util::AreNotEqualI(req.get_param_value("action"), "BatchUpdates"))
+                {
+                    // TODO: SFS might throw a different error when the query string is unexpected
+                    throw StatusCodeException(StatusCode::NotFound);
+                }
 
-            // TODO: Ignoring instanceId for now
-
-            if (!req.has_param("action") || util::AreNotEqualI(req.get_param_value("action"), "BatchUpdates"))
-            {
-                // TODO: SFS might throw a different error when the query string is unexpected
-                throw StatusCodeException(StatusCode::NotFound);
-            }
-
-            if (req.body.empty())
-            {
-                throw StatusCodeException(StatusCode::BadRequest);
-            }
-
-            json body;
-            try
-            {
-                body = json::parse(req.body);
-            }
-            catch (const json::parse_error& ex)
-            {
-                BUFFER_LOG("JSON parse error: " + std::string(ex.what()));
-                throw StatusCodeException(StatusCode::BadRequest);
-            }
-
-            // The BatchUpdates API returns an array of objects, each with a "Product" key.
-            // If repeated, the same product is only returned once.
-            // TODO: We are ignoring the TargetingAttributes for now.
-            if (!body.is_array())
-            {
-                throw StatusCodeException(StatusCode::BadRequest);
-            }
-
-            // Iterate over the array and collect the unique products
-            std::unordered_map<std::string, json> requestedProducts;
-            for (const auto& productRequest : body)
-            {
-                if (!productRequest.is_object() || !productRequest.contains("Product") ||
-                    !productRequest["Product"].is_string() || !productRequest.contains("TargetingAttributes"))
+                if (req.body.empty())
                 {
                     throw StatusCodeException(StatusCode::BadRequest);
                 }
-                if (requestedProducts.count(productRequest["Product"]))
-                {
-                    continue;
-                }
-                requestedProducts.emplace(productRequest["Product"], productRequest["TargetingAttributes"]);
-            }
 
-            // If at least one product exists, we will return a 200 OK with that. Non-existing products are ignored.
-            // Otherwise, a 404 is sent.
-            json response = json::array();
-            for (const auto& [name, _] : requestedProducts)
-            {
-                auto it = m_products.find(name);
-                if (it == m_products.end())
+                json body;
+                try
                 {
-                    continue;
+                    body = json::parse(req.body);
+                }
+                catch (const json::parse_error& ex)
+                {
+                    BUFFER_LOG("JSON parse error: " + std::string(ex.what()));
+                    throw StatusCodeException(StatusCode::BadRequest);
                 }
 
-                const VersionList& versions = it->second;
-                if (versions.empty())
+                // The BatchUpdates API returns an array of objects, each with a "Product" key.
+                // If repeated, the same product is only returned once.
+                // TODO: We are ignoring the TargetingAttributes for now.
+                if (!body.is_array())
                 {
-                    res.status = static_cast<int>(StatusCode::InternalServerError);
-                    return;
+                    throw StatusCodeException(StatusCode::BadRequest);
                 }
 
-                const std::string ns = req.path_params.at("ns");
-                const auto& latestVersion = *versions.rbegin();
+                // Iterate over the array and collect the unique products
+                std::unordered_map<std::string, json> requestedProducts;
+                for (const auto& productRequest : body)
+                {
+                    if (!productRequest.is_object() || !productRequest.contains("Product") ||
+                        !productRequest["Product"].is_string() || !productRequest.contains("TargetingAttributes"))
+                    {
+                        throw StatusCodeException(StatusCode::BadRequest);
+                    }
+                    if (requestedProducts.count(productRequest["Product"]))
+                    {
+                        continue;
+                    }
+                    requestedProducts.emplace(productRequest["Product"], productRequest["TargetingAttributes"]);
+                }
 
-                response.push_back(GenerateContentIdJsonObject(name, latestVersion, ns));
-            }
+                // If at least one product exists, we will return a 200 OK with that. Non-existing products are ignored.
+                // Otherwise, a 404 is sent.
+                json response = json::array();
+                for (const auto& [name, _] : requestedProducts)
+                {
+                    auto it = m_products.find(name);
+                    if (it == m_products.end())
+                    {
+                        continue;
+                    }
 
-            if (response.empty())
-            {
-                throw StatusCodeException(StatusCode::NotFound);
-            }
+                    const VersionList& versions = it->second;
+                    if (versions.empty())
+                    {
+                        res.status = static_cast<int>(StatusCode::InternalServerError);
+                        return;
+                    }
 
-            res.set_content(response.dump(), "application/json");
-        });
+                    const std::string ns = req.path_params.at("ns");
+                    const auto& latestVersion = *versions.rbegin();
+
+                    response.push_back(GenerateContentIdJsonObject(name, latestVersion, ns));
+                }
+
+                if (response.empty())
+                {
+                    throw StatusCodeException(StatusCode::NotFound);
+                }
+
+                res.set_content(response.dump(), "application/json");
+            });
     });
 }
 
 void MockWebServerImpl::ConfigureGetSpecificVersion()
 {
-    // Path: /api/<apiVersion:v1>/contents/<instanceId>/namespaces/<ns>/names/<name>/versions/<version>
+    // Path: /api/<apiVersion:v2>/contents/<instanceId>/namespaces/<ns>/names/<name>/versions/<version>
     const std::string pattern = "/api/:apiVersion/contents/:instanceId/namespaces/:ns/names/:name/versions/:version";
     m_server.Get(pattern, [&](const httplib::Request& req, httplib::Response& res) {
-        RunHttpCallback(req, res, [&](const httplib::Request& req, httplib::Response& res) {
-            BUFFER_LOG("Matched GetSpecificVersion");
-
-            CheckApiVersion(req, "v1");
-
+        RunHttpCallback(req, res, "GetSpecificVersion", "v2", [&](const httplib::Request& req, httplib::Response& res) {
             // TODO: Ignoring instanceId for now
 
             const std::string& name = req.path_params.at("name");
@@ -526,7 +501,7 @@ void MockWebServerImpl::ConfigureGetSpecificVersion()
 
             const std::string ns = req.path_params.at("ns");
 
-            res.set_content(GenerateGetSpecificVersionResponse(name, version, ns).dump(), "application/json");
+            res.set_content(GenerateContentIdJsonObject(name, version, ns).dump(), "application/json");
         });
     });
 }
@@ -534,15 +509,11 @@ void MockWebServerImpl::ConfigureGetSpecificVersion()
 void MockWebServerImpl::ConfigurePostDownloadInfo()
 {
     // Path:
-    // /api/<apiVersion:v1>/contents/<instanceId>/namespaces/<ns>/names/<name>/versions/<version>/files?action=GenerateDownloadInfo
+    // /api/<apiVersion:v2>/contents/<instanceId>/namespaces/<ns>/names/<name>/versions/<version>/files?action=GenerateDownloadInfo
     const std::string pattern =
         "/api/:apiVersion/contents/:instanceId/namespaces/:ns/names/:name/versions/:version/files";
     m_server.Post(pattern, [&](const httplib::Request& req, httplib::Response& res) {
-        RunHttpCallback(req, res, [&](const httplib::Request& req, httplib::Response& res) {
-            BUFFER_LOG("Matched PostDownloadInfo");
-
-            CheckApiVersion(req, "v1");
-
+        RunHttpCallback(req, res, "PostDownloadInfo", "v2", [&](const httplib::Request& req, httplib::Response& res) {
             // TODO: Ignoring instanceId and ns for now
 
             if (!req.has_param("action") || util::AreNotEqualI(req.get_param_value("action"), "GenerateDownloadInfo"))
@@ -578,10 +549,14 @@ void MockWebServerImpl::ConfigurePostDownloadInfo()
 
 void MockWebServerImpl::RunHttpCallback(const httplib::Request& req,
                                         httplib::Response& res,
+                                        const std::string& methodName,
+                                        const std::string& apiVersion,
                                         const std::function<void(const httplib::Request, httplib::Response&)>& callback)
 {
     try
     {
+        BUFFER_LOG("Matched " + methodName);
+        CheckApiVersion(req, apiVersion);
         CheckRequestHeaders(req);
         callback(req, res);
         res.status = static_cast<int>(StatusCode::Ok);

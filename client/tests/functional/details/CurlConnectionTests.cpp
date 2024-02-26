@@ -97,7 +97,6 @@ TEST("Testing CurlConnection()")
 
         json expectedResponse;
         expectedResponse["ContentId"] = {{"Namespace", "default"}, {"Name", c_productName}, {"Version", c_version}};
-        expectedResponse["Files"] = json::array({c_productName + ".json", c_productName + ".bin"});
 
         REQUIRE(json::parse(out) == expectedResponse);
     }
