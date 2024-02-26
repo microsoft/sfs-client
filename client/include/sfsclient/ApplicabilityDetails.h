@@ -22,7 +22,6 @@ class ApplicabilityDetails
   public:
     [[nodiscard]] static Result Make(std::vector<Architecture> architectures,
                                      std::vector<std::string> platformApplicabilityForPackage,
-                                     std::string fileMoniker,
                                      std::unique_ptr<ApplicabilityDetails>& out) noexcept;
 
     ApplicabilityDetails(const ApplicabilityDetails&) = delete;
@@ -30,7 +29,6 @@ class ApplicabilityDetails
 
     const std::vector<Architecture>& GetArchitectures() const noexcept;
     const std::vector<std::string>& GetPlatformApplicabilityForPackage() const noexcept;
-    const std::string& GetFileMoniker() const noexcept;
 
     bool operator==(const ApplicabilityDetails& other) const noexcept;
     bool operator!=(const ApplicabilityDetails& other) const noexcept;
@@ -40,6 +38,5 @@ class ApplicabilityDetails
 
     std::vector<Architecture> m_architectures;
     std::vector<std::string> m_platformApplicabilityForPackage;
-    std::string m_fileMoniker;
 };
 } // namespace SFS

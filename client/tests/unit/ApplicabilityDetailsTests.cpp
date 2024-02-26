@@ -12,12 +12,10 @@ using namespace SFS;
 namespace
 {
 std::unique_ptr<ApplicabilityDetails> GetDetails(const std::vector<Architecture>& architectures,
-                                                 const std::vector<std::string>& platformApplicabilityForPackage,
-                                                 const std::string& fileMoniker)
+                                                 const std::vector<std::string>& platformApplicabilityForPackage)
 {
     std::unique_ptr<ApplicabilityDetails> details;
-    REQUIRE(ApplicabilityDetails::Make(architectures, platformApplicabilityForPackage, fileMoniker, details) ==
-            Result::Success);
+    REQUIRE(ApplicabilityDetails::Make(architectures, platformApplicabilityForPackage, details) == Result::Success);
     REQUIRE(details != nullptr);
     return details;
 };
@@ -29,12 +27,10 @@ TEST("Testing ApplicabilityDetails::Make()")
     const std::vector<std::string> platformApplicabilityForPackage{"Windows.Desktop", "Windows.Server"};
     const std::string fileMoniker{"myApp"};
 
-    const std::unique_ptr<ApplicabilityDetails> details =
-        GetDetails(architectures, platformApplicabilityForPackage, fileMoniker);
+    const std::unique_ptr<ApplicabilityDetails> details = GetDetails(architectures, platformApplicabilityForPackage);
 
     CHECK(architectures == details->GetArchitectures());
     CHECK(platformApplicabilityForPackage == details->GetPlatformApplicabilityForPackage());
-    CHECK(fileMoniker == details->GetFileMoniker());
 
     SECTION("Testing ApplicabilityDetails equality operators")
     {
@@ -45,7 +41,7 @@ TEST("Testing ApplicabilityDetails::Make()")
                 REQUIRE_FALSE(*details != *sameDetails);
             };
 
-            CompareDetailsEqual(GetDetails(architectures, platformApplicabilityForPackage, fileMoniker));
+            CompareDetailsEqual(GetDetails(architectures, platformApplicabilityForPackage));
         }
 
         SECTION("Not equal")
@@ -55,11 +51,9 @@ TEST("Testing ApplicabilityDetails::Make()")
                 REQUIRE_FALSE(*details == *otherDetails);
             };
 
-            CompareDetailsNotEqual(GetDetails({}, platformApplicabilityForPackage, fileMoniker));
-            CompareDetailsNotEqual(GetDetails(architectures, {}, fileMoniker));
-            CompareDetailsNotEqual(GetDetails(architectures, platformApplicabilityForPackage, ""));
-            CompareDetailsNotEqual(GetDetails({}, {}, ""));
-            CompareDetailsNotEqual(GetDetails(architectures, platformApplicabilityForPackage, "MYAPP"));
+            CompareDetailsNotEqual(GetDetails({}, platformApplicabilityForPackage));
+            CompareDetailsNotEqual(GetDetails(architectures, {}));
+            CompareDetailsNotEqual(GetDetails({}, {}));
         }
     }
 }

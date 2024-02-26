@@ -23,7 +23,8 @@ add_library(Microsoft::${PROJECT_NAME} ALIAS ${PROJECT_NAME})
 
 target_sources(
     ${PROJECT_NAME}
-    PRIVATE src/ApplicabilityDetails.cpp
+    PRIVATE src/AppContent.cpp
+            src/ApplicabilityDetails.cpp
             src/Content.cpp
             src/DeliveryOptimizationData.cpp
             src/details/connection/Connection.cpp
