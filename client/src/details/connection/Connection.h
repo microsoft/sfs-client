@@ -5,8 +5,6 @@
 
 #include "../CorrelationVector.h"
 
-#include <memory>
-#include <optional>
 #include <string>
 
 namespace SFS::details
