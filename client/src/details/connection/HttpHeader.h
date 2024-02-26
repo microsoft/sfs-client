@@ -9,7 +9,8 @@ namespace SFS::details
 {
 enum class HttpHeader
 {
-    ContentType
+    ContentType,
+    MSCV,
 };
 
 std::string ToString(HttpHeader header);

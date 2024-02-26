@@ -14,3 +14,8 @@ std::string Connection::Post(const std::string& url)
 {
     return Post(url, {});
 }
+
+void Connection::SetCorrelationVector(const std::string& cv)
+{
+    m_cv = std::move(CorrelationVector(cv, m_handler));
+}
