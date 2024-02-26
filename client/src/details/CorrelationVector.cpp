@@ -11,17 +11,13 @@
 using namespace SFS::details;
 using namespace microsoft;
 
-CorrelationVector::CorrelationVector(const ReportingHandler& handler)
-    : m_handler(handler)
-    , m_cv(std::make_unique<correlation_vector>())
+CorrelationVector::CorrelationVector() : m_cv(std::make_unique<correlation_vector>())
 {
 }
 
-CorrelationVector::~CorrelationVector() = default;
-
-void CorrelationVector::SetCorrelationVector(const std::string& cv)
+CorrelationVector::CorrelationVector(const std::string& cv, const ReportingHandler& handler)
 {
-    THROW_CODE_IF_LOG(InvalidArg, cv.empty(), m_handler, "cv must not be empty");
+    THROW_CODE_IF_LOG(InvalidArg, cv.empty(), handler, "cv must not be empty");
 
     try
     {
@@ -30,9 +26,13 @@ void CorrelationVector::SetCorrelationVector(const std::string& cv)
     catch (std::invalid_argument& e)
     {
         THROW_LOG(Result(Result::InvalidArg, "baseCV is not a valid correlation vector: " + std::string(e.what())),
-                  m_handler);
+                  handler);
     }
 }
+
+CorrelationVector::~CorrelationVector() = default;
+CorrelationVector::CorrelationVector(CorrelationVector&&) = default;
+CorrelationVector& CorrelationVector::operator=(CorrelationVector&&) = default;
 
 std::string CorrelationVector::PopLatestString()
 {

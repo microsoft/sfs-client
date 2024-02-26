@@ -6,8 +6,7 @@
 using namespace SFS;
 using namespace SFS::details;
 
-Connection::Connection(const ReportingHandler& handler)
-    : m_handler(handler), m_cv(handler)
+Connection::Connection(const ReportingHandler& handler) : m_handler(handler)
 {
 }
 
@@ -18,5 +17,5 @@ std::string Connection::Post(const std::string& url)
 
 void Connection::SetCorrelationVector(const std::string& cv)
 {
-    m_cv.SetCorrelationVector(cv);
+    m_cv = std::move(CorrelationVector(cv, m_handler));
 }

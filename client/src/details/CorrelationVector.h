@@ -18,13 +18,13 @@ class ReportingHandler;
 class CorrelationVector
 {
   public:
-    CorrelationVector(const ReportingHandler& handler);
+    CorrelationVector();
+    CorrelationVector(const std::string& cv, const ReportingHandler& handler);
+
     ~CorrelationVector();
 
-    /**
-     * @brief Set a new correlation vector
-     */
-    void SetCorrelationVector(const std::string& cv);
+    CorrelationVector(CorrelationVector&&);
+    CorrelationVector& operator=(CorrelationVector&&);
 
     /**
      * @brief Returns the current correlation vector and increments the internal state
@@ -34,7 +34,6 @@ class CorrelationVector
   private:
     void Increment();
 
-    const ReportingHandler& m_handler;
     std::unique_ptr<microsoft::correlation_vector> m_cv;
     bool m_isFirstUse = true;
 };
