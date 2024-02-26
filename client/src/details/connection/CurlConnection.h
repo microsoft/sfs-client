@@ -12,6 +12,7 @@ typedef void CURL;
 
 namespace SFS::details
 {
+struct CurlHeaderList;
 class ReportingHandler;
 
 class CurlConnection : public Connection
@@ -36,11 +37,11 @@ class CurlConnection : public Connection
 
   protected:
     /**
-     * @brief Perform a REST request to the given @param url
+     * @brief Perform a REST request to the given @param url with the given @param headers
      * @return The response body
      * @throws SFSException if the request fails
      */
-    virtual std::string CurlPerform(const std::string& url);
+    virtual std::string CurlPerform(const std::string& url, CurlHeaderList& headers);
 
     CURL* m_handle;
 };
