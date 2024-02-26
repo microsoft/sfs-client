@@ -3,6 +3,10 @@
 
 #pragma once
 
+#include "../CorrelationVector.h"
+
+#include <memory>
+#include <optional>
 #include <string>
 
 namespace SFS::details
@@ -42,7 +46,15 @@ class Connection
      */
     std::string Post(const std::string& url);
 
+    /**
+     * @brief Set the correlation vector to use for requests
+     */
+    void SetCorrelationVector(const std::string& cv);
+
   protected:
     const ReportingHandler& m_handler;
+
+    /// @brief The correlation vector to use for requests
+    CorrelationVector m_cv;
 };
 } // namespace SFS::details
