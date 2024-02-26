@@ -34,7 +34,7 @@ CorrelationVector::~CorrelationVector() = default;
 CorrelationVector::CorrelationVector(CorrelationVector&&) = default;
 CorrelationVector& CorrelationVector::operator=(CorrelationVector&&) = default;
 
-std::string CorrelationVector::PopLatestString()
+std::string CorrelationVector::IncrementAndGet()
 {
     // Only increment after it's used at least once
     if (m_isFirstUse)

@@ -29,7 +29,7 @@ class CorrelationVector
     /**
      * @brief Returns the current correlation vector and increments the internal state
      */
-    std::string PopLatestString();
+    std::string IncrementAndGet();
 
   private:
     void Increment();
