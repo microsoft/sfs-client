@@ -203,11 +203,11 @@ TEST("Testing SFSClient::Make()")
 TEST("Testing SFSClient::GetLatestDownloadInfo()")
 {
     auto sfsClient = GetSFSClient();
+    std::unique_ptr<Content> content;
+    RequestParams params;
 
     SECTION("Does not allow an empty product")
     {
-        std::unique_ptr<Content> content;
-        RequestParams params;
         params.productRequests = {{"", {}}};
         auto result = sfsClient->GetLatestDownloadInfo(params, content);
         REQUIRE(result.GetCode() == Result::InvalidArg);
@@ -224,8 +224,6 @@ TEST("Testing SFSClient::GetLatestDownloadInfo()")
 
     SECTION("Does not allow an empty request")
     {
-        std::unique_ptr<Content> content;
-        RequestParams params;
         auto result = sfsClient->GetLatestDownloadInfo(params, content);
         REQUIRE(result.GetCode() == Result::InvalidArg);
         REQUIRE(result.GetMessage() == "productRequests cannot be empty");
@@ -234,12 +232,26 @@ TEST("Testing SFSClient::GetLatestDownloadInfo()")
 
     SECTION("Accepting multiple products is not implemented yet")
     {
-        std::unique_ptr<Content> content;
-        RequestParams params;
         params.productRequests = {{"p1", {}}, {"p2", {}}};
         auto result = sfsClient->GetLatestDownloadInfo(params, content);
         REQUIRE(result.GetCode() == Result::NotImpl);
         REQUIRE(result.GetMessage() == "There cannot be more than 1 productRequest at the moment");
+        REQUIRE(content == nullptr);
+    }
+
+    SECTION("Fails if base cv is not correct")
+    {
+        params.productRequests = {{"p1", {}}};
+        params.baseCV = "";
+        auto result = sfsClient->GetLatestDownloadInfo(params, content);
+        REQUIRE(result.GetCode() == Result::InvalidArg);
+        REQUIRE(result.GetMessage() == "cv must not be empty");
+        REQUIRE(content == nullptr);
+
+        params.baseCV = "cv";
+        result = sfsClient->GetLatestDownloadInfo(params, content);
+        REQUIRE(result.GetCode() == Result::InvalidArg);
+        REQUIRE(result.GetMessage().find("baseCV is not a valid correlation vector:") == 0);
         REQUIRE(content == nullptr);
     }
 }
