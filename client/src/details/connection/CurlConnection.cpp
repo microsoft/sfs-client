@@ -188,7 +188,7 @@ CurlConnection::CurlConnection(const ReportingHandler& handler) : Connection(han
                       m_handler,
                       "Failed to set up curl");
 
-    // TODO #40: Allow passing user agent and MS-CV in the header
+    // TODO #40: Allow passing user agent in the header
     // TODO #41: Pass AAD token in the header if it is available
     // TODO #42: Cert pinning with service
 }
@@ -231,6 +231,7 @@ std::string CurlConnection::CurlPerform(const std::string& url, CurlHeaderList& 
 {
     THROW_IF_CURL_SETUP_ERROR(curl_easy_setopt(m_handle, CURLOPT_URL, url.c_str()));
 
+    headers.Add(HttpHeader::MSCV, m_cv.IncrementAndGet());
     THROW_IF_CURL_SETUP_ERROR(curl_easy_setopt(m_handle, CURLOPT_HTTPHEADER, headers.m_slist));
 
     // Setting up error buffer where error messages get written - this gets unset in the destructor
