@@ -27,5 +27,8 @@ struct RequestParams
     /// @note At the moment only a single product request is supported. Using a vector for future implementation of
     /// batch requests
     std::vector<ProductRequest> productRequests;
+
+    /// @brief Base CorrelationVector to be used in the request for service telemetry stitching (optional)
+    std::optional<std::string> baseCV;
 };
 } // namespace SFS
