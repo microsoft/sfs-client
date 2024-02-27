@@ -56,6 +56,7 @@ json ParseServerMethodStringToJson(const std::string& data, const std::string& m
         THROW_LOG(
             Result(Result::ServiceInvalidResponse, "(" + method + ") JSON Parsing error: " + std::string(ex.what())),
             handler);
+        return json(); // Unreachable code, but the compiler doesn't know that.
     }
 }
 

@@ -54,62 +54,31 @@
         }                                                                                                              \
     } while ((void)0, 0)
 
-#define LOG_IF_FAILED(result, handler, ...)                                                                            \
-    do                                                                                                                 \
-    {                                                                                                                  \
-        auto __result = (result); /* Assigning to a variable ensures a code block gets called only once */             \
-        if (__result.IsFailure())                                                                                      \
-        {                                                                                                              \
-            SFS::details::LogFailedResult(handler, __result, __FILE__, __LINE__);                                      \
-        }                                                                                                              \
-    } while ((void)0, 0)
+#define LOG_IF_FAILED(result, handler) LogIfFailed(result, handler, __FILE__, __LINE__)
 
-#define THROW_LOG(result, handler)                                                                                     \
-    do                                                                                                                 \
-    {                                                                                                                  \
-        auto __result = (result); /* Assigning to a variable ensures a code block gets called only once */             \
-        assert(__result.IsFailure());                                                                                  \
-        SFS::details::LogFailedResult(handler, __result, __FILE__, __LINE__);                                          \
-        throw SFS::details::SFSException(std::move(__result));                                                         \
-    } while ((void)0, 0)
+#define THROW_LOG(result, handler) ThrowLog(result, handler, __FILE__, __LINE__)
 
-#define THROW_IF_FAILED_LOG(result, handler)                                                                           \
-    do                                                                                                                 \
-    {                                                                                                                  \
-        auto __result = (result); /* Assigning to a variable ensures a code block gets called only once */             \
-        if (__result.IsFailure())                                                                                      \
-        {                                                                                                              \
-            SFS::details::LogFailedResult(handler, __result, __FILE__, __LINE__);                                      \
-            throw SFS::details::SFSException(std::move(__result));                                                     \
-        }                                                                                                              \
-    } while ((void)0, 0)
+#define THROW_IF_FAILED_LOG(result, handler) ThrowIfFailedLog(result, handler, __FILE__, __LINE__)
 
-#define THROW_CODE_IF(code, condition, ...)                                                                            \
-    do                                                                                                                 \
-    {                                                                                                                  \
-        if (condition)                                                                                                 \
-        {                                                                                                              \
-            auto __result = SFS::Result(SFS::Result::code, ##__VA_ARGS__);                                             \
-            assert(__result.IsFailure());                                                                              \
-            throw SFS::details::SFSException(std::move(__result));                                                     \
-        }                                                                                                              \
-    } while ((void)0, 0)
+#define THROW_CODE_IF(code, condition, ...) ThrowCodeIf(SFS::Result::code, condition, ##__VA_ARGS__)
 
 #define THROW_CODE_IF_LOG(code, condition, handler, ...)                                                               \
-    do                                                                                                                 \
-    {                                                                                                                  \
-        if (condition)                                                                                                 \
-        {                                                                                                              \
-            auto __result = SFS::Result(SFS::Result::code, ##__VA_ARGS__);                                             \
-            assert(__result.IsFailure());                                                                              \
-            SFS::details::LogFailedResult(handler, __result, __FILE__, __LINE__);                                      \
-            throw SFS::details::SFSException(std::move(__result));                                                     \
-        }                                                                                                              \
-    } while ((void)0, 0)
+    ThrowCodeIfLog(SFS::Result::code, condition, handler, __FILE__, __LINE__, ##__VA_ARGS__)
 
 namespace SFS::details
 {
 class ReportingHandler;
 
-void LogFailedResult(const ReportingHandler& handler, const SFS::Result& result, const char* file, int line);
+void LogFailedResult(const ReportingHandler& handler, const Result& result, const char* file, int line);
+void LogIfFailed(const Result& result, const ReportingHandler& handler, const char* file, int line);
+
+void ThrowLog(Result result, const ReportingHandler& handler, const char* file, int line);
+void ThrowIfFailedLog(Result result, const ReportingHandler& handler, const char* file, int line);
+void ThrowCodeIf(Result::Code code, bool condition, std::string message = {});
+void ThrowCodeIfLog(Result::Code code,
+                    bool condition,
+                    const ReportingHandler& handler,
+                    const char* file,
+                    int line,
+                    std::string message = {});
 } // namespace SFS::details

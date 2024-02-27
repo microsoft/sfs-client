@@ -29,6 +29,7 @@ HashType HashTypeFromString(const std::string& hashType, const ReportingHandler&
     else
     {
         THROW_LOG(Result(Result::Unexpected, "Unknown hash type: " + hashType), handler);
+        return HashType::Sha1; // Unreachable code, but the compiler doesn't know that.
     }
 }
 
