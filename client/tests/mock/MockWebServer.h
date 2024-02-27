@@ -5,8 +5,8 @@
 
 #include "Result.h"
 
-#include <deque>
 #include <memory>
+#include <queue>
 #include <string>
 #include <unordered_map>
 
@@ -48,7 +48,7 @@ class MockWebServer
      * @brief Registers a sequence of HTTP error codes that will be sent by the server in the order in which they are
      * passed.
      */
-    void SetForcedHttpErrors(std::deque<HttpCode> forcedErrors);
+    void SetForcedHttpErrors(std::queue<HttpCode> forcedErrors);
 
     /// @brief Registers a set of headers that will be sent depending on the HTTP code
     void SetResponseHeaders(std::unordered_map<HttpCode, HeaderMap> headersByCode);

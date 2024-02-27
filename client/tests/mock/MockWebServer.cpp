@@ -193,7 +193,7 @@ class MockWebServerImpl
 
     void RegisterProduct(std::string&& name, std::string&& version);
     void RegisterExpectedRequestHeader(std::string&& header, std::string&& value);
-    void SetForcedHttpErrors(std::deque<HttpCode> forcedErrors);
+    void SetForcedHttpErrors(std::queue<HttpCode> forcedErrors);
     void SetResponseHeaders(std::unordered_map<HttpCode, HeaderMap> headersByCode);
 
   private:
@@ -226,7 +226,7 @@ class MockWebServerImpl
     std::unordered_map<std::string, VersionList> m_products;
 
     std::unordered_map<std::string, std::string> m_expectedRequestHeaders;
-    std::deque<HttpCode> m_forcedHttpErrors;
+    std::queue<HttpCode> m_forcedHttpErrors;
     std::unordered_map<HttpCode, HeaderMap> m_headersByCode;
 
     std::vector<BufferedLogData> m_bufferedLog;
@@ -270,7 +270,7 @@ void MockWebServer::RegisterExpectedRequestHeader(HttpHeader header, std::string
     m_impl->RegisterExpectedRequestHeader(std::move(headerName), std::move(value));
 }
 
-void MockWebServer::SetForcedHttpErrors(std::deque<HttpCode> forcedErrors)
+void MockWebServer::SetForcedHttpErrors(std::queue<HttpCode> forcedErrors)
 {
     m_impl->SetForcedHttpErrors(std::move(forcedErrors));
 }
@@ -570,7 +570,7 @@ void MockWebServerImpl::RunHttpCallback(const httplib::Request& req,
     if (m_forcedHttpErrors.size() > 0)
     {
         res.status = m_forcedHttpErrors.front();
-        m_forcedHttpErrors.pop_front();
+        m_forcedHttpErrors.pop();
 
         BUFFER_LOG("Forcing HTTP error: " + std::to_string(res.status));
     }
@@ -681,7 +681,7 @@ void MockWebServerImpl::RegisterExpectedRequestHeader(std::string&& header, std:
     }
 }
 
-void MockWebServerImpl::SetForcedHttpErrors(std::deque<int> forcedErrors)
+void MockWebServerImpl::SetForcedHttpErrors(std::queue<int> forcedErrors)
 {
     m_forcedHttpErrors = std::move(forcedErrors);
 }
