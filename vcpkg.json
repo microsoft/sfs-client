@@ -6,7 +6,8 @@
     {
       "name": "curl",
       "features": [
-        "c-ares"
+        "c-ares",
+        "openssl"
       ]
     },
     "nlohmann-json"

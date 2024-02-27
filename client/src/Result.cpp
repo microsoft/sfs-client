@@ -76,6 +76,8 @@ std::string_view SFS::ToString(Result::Code code) noexcept
         return "HttpNotFound";
     case Result::HttpServiceNotAvailable:
         return "HttpServiceNotAvailable";
+    case Result::HttpSSLVerificationError:
+        return "HttpSSLVerificationError";
     case Result::HttpTimeout:
         return "HttpTimeout";
     case Result::HttpUnexpected:

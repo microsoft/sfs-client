@@ -22,14 +22,15 @@ class Result
         HttpBadRequest = 0x80000003,
         HttpNotFound = 0x80000004,
         HttpServiceNotAvailable = 0x80000005,
-        HttpTimeout = 0x80000006,
-        HttpUnexpected = 0x80000007,
-        InvalidArg = 0x80000008,
-        NotImpl = 0x80000009,
-        NotSet = 0x8000000A,
-        OutOfMemory = 0x8000000B,
-        ServiceInvalidResponse = 0x8000000C,
-        Unexpected = 0x8000000D,
+        HttpSSLVerificationError = 0x80000006,
+        HttpTimeout = 0x80000007,
+        HttpUnexpected = 0x80000008,
+        InvalidArg = 0x80000009,
+        NotImpl = 0x8000000A,
+        NotSet = 0x8000000B,
+        OutOfMemory = 0x8000000C,
+        ServiceInvalidResponse = 0x8000000D,
+        Unexpected = 0x8000000E,
     };
 
     Result(Code code) noexcept;
