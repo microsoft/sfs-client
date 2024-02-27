@@ -29,6 +29,7 @@ struct RequestParams
     std::vector<ProductRequest> productRequests;
 
     /// @brief Base CorrelationVector to be used in the request for service telemetry stitching (optional)
+    /// @note If not provided, a new CorrelationVector will be generated
     std::optional<std::string> baseCV;
 };
 } // namespace SFS
