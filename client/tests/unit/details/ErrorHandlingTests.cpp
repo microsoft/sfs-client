@@ -203,6 +203,19 @@ TEST("Testing ErrorHandling's THROW_IF_FAILED_LOG()")
     }
 }
 
+TEST("Testing ErrorHandling's THROW_CODE_IF()")
+{
+    SECTION("Test that THROW_CODE_IF throws if the condition is true")
+    {
+        REQUIRE_THROWS_AS([]() { THROW_CODE_IF(Unexpected, true); }(), SFSException);
+    }
+
+    SECTION("Test that THROW_CODE_IF does not throw if the condition is false")
+    {
+        REQUIRE_NOTHROW([]() { THROW_CODE_IF(Unexpected, false); }());
+    }
+}
+
 TEST("Testing ErrorHandling's THROW_CODE_IF_LOG()")
 {
     ReportingHandler handler;

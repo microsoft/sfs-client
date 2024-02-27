@@ -23,3 +23,53 @@ void SFS::details::LogFailedResult(const ReportingHandler& handler,
                   line);
     }
 }
+
+void SFS::details::LogIfFailed(const Result& result, const ReportingHandler& handler, const char* file, int line)
+{
+    if (result.IsFailure())
+    {
+        LogFailedResult(handler, result, file, line);
+    }
+}
+
+void SFS::details::ThrowLog(Result result, const ReportingHandler& handler, const char* file, int line)
+{
+    assert(result.IsFailure());
+    LogFailedResult(handler, result, file, line);
+    throw SFSException(std::move(result));
+}
+
+void SFS::details::ThrowIfFailedLog(Result result, const ReportingHandler& handler, const char* file, int line)
+{
+    if (result.IsFailure())
+    {
+        LogFailedResult(handler, result, file, line);
+        throw SFSException(std::move(result));
+    }
+}
+
+void SFS::details::ThrowCodeIf(Result::Code code, bool condition, std::string message)
+{
+    if (condition)
+    {
+        Result result(code, std::move(message));
+        assert(result.IsFailure());
+        throw SFSException(std::move(result));
+    }
+}
+
+void SFS::details::ThrowCodeIfLog(Result::Code code,
+                                  bool condition,
+                                  const ReportingHandler& handler,
+                                  const char* file,
+                                  int line,
+                                  std::string message)
+{
+    if (condition)
+    {
+        Result result(code, std::move(message));
+        assert(result.IsFailure());
+        LogFailedResult(handler, result, file, line);
+        throw SFSException(std::move(result));
+    }
+}
