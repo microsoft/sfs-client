@@ -315,3 +315,34 @@ TEST("Testing a response over the limit fails the operation")
                             ConnectionUnexpectedError,
                             "Failure writing output to destination");
 }
+
+TEST("Testing MS-CV is sent to server")
+{
+    test::MockWebServer server;
+    ReportingHandler handler;
+    handler.SetLoggingCallback(LogCallbackToTest);
+    CurlConnectionManager connectionManager(handler);
+    auto connection = connectionManager.MakeConnection();
+
+    const std::string cv = "aaaaaaaaaaaaaaaa.1";
+    connection->SetCorrelationVector(cv);
+
+    const std::string url = SFSUrlComponents::GetSpecificVersionUrl(server.GetBaseUrl(),
+                                                                    c_instanceId,
+                                                                    c_namespace,
+                                                                    c_productName,
+                                                                    c_version);
+
+    server.RegisterProduct(c_productName, c_version);
+
+    INFO("First value ends with .0");
+    server.RegisterExpectedRequestHeader(HttpHeader::MSCV, cv + ".0");
+    connection->Get(url);
+
+    INFO("Value gets incremented on subsequent requests");
+    server.RegisterExpectedRequestHeader(HttpHeader::MSCV, cv + ".1");
+    connection->Get(url);
+
+    server.RegisterExpectedRequestHeader(HttpHeader::MSCV, cv + ".2");
+    connection->Get(url);
+}

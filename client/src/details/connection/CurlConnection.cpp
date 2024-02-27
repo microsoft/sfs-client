@@ -52,33 +52,6 @@ size_t WriteCallback(char* contents, size_t sizeInBytes, size_t numElements, voi
     return CURL_WRITEFUNC_ERROR;
 }
 
-struct CurlHeaderList
-{
-  public:
-    CurlHeaderList() = default;
-
-    ~CurlHeaderList()
-    {
-        curl_slist_free_all(m_slist);
-    }
-
-    /**
-     * @throws SFSException if the header cannot be added to the list.
-     */
-    void Add(HttpHeader header, const std::string& value)
-    {
-        const std::string data = ToString(header) + ": " + value;
-        const auto ret = curl_slist_append(m_slist, data.c_str());
-        if (!ret)
-        {
-            throw SFSException(Result::ConnectionSetupFailed, "Failed to add header " + data + " to CurlHeaderList");
-        }
-        m_slist = ret;
-    }
-
-    struct curl_slist* m_slist{nullptr};
-};
-
 struct CurlErrorBuffer
 {
   public:
@@ -173,6 +146,36 @@ Result HttpCodeToResult(long httpCode)
 }
 } // namespace
 
+namespace SFS::details
+{
+struct CurlHeaderList
+{
+  public:
+    CurlHeaderList() = default;
+
+    ~CurlHeaderList()
+    {
+        curl_slist_free_all(m_slist);
+    }
+
+    /**
+     * @throws SFSException if the header cannot be added to the list.
+     */
+    void Add(HttpHeader header, const std::string& value)
+    {
+        const std::string data = ToString(header) + ": " + value;
+        const auto ret = curl_slist_append(m_slist, data.c_str());
+        if (!ret)
+        {
+            throw SFSException(Result::ConnectionSetupFailed, "Failed to add header " + data + " to CurlHeaderList");
+        }
+        m_slist = ret;
+    }
+
+    struct curl_slist* m_slist{nullptr};
+};
+} // namespace SFS::details
+
 CurlConnection::CurlConnection(const ReportingHandler& handler) : Connection(handler)
 {
     m_handle = curl_easy_init();
@@ -185,7 +188,7 @@ CurlConnection::CurlConnection(const ReportingHandler& handler) : Connection(han
                       m_handler,
                       "Failed to set up curl");
 
-    // TODO #40: Allow passing user agent and MS-CV in the header
+    // TODO #40: Allow passing user agent in the header
     // TODO #41: Pass AAD token in the header if it is available
     // TODO #42: Cert pinning with service
 }
@@ -205,7 +208,8 @@ std::string CurlConnection::Get(const std::string& url)
     THROW_IF_CURL_SETUP_ERROR(curl_easy_setopt(m_handle, CURLOPT_HTTPGET, 1L));
     THROW_IF_CURL_SETUP_ERROR(curl_easy_setopt(m_handle, CURLOPT_HTTPHEADER, nullptr));
 
-    return CurlPerform(url);
+    CurlHeaderList headers;
+    return CurlPerform(url, headers);
 }
 
 std::string CurlConnection::Post(const std::string& url, const std::string& data)
@@ -217,14 +221,18 @@ std::string CurlConnection::Post(const std::string& url, const std::string& data
 
     THROW_IF_CURL_SETUP_ERROR(curl_easy_setopt(m_handle, CURLOPT_POST, 1L));
     THROW_IF_CURL_SETUP_ERROR(curl_easy_setopt(m_handle, CURLOPT_COPYPOSTFIELDS, data.c_str()));
-    THROW_IF_CURL_SETUP_ERROR(curl_easy_setopt(m_handle, CURLOPT_HTTPHEADER, headerList.m_slist));
 
-    return CurlPerform(url);
+    CurlHeaderList headers;
+    headers.Add(HttpHeader::ContentType, "application/json");
+    return CurlPerform(url, headers);
 }
 
-std::string CurlConnection::CurlPerform(const std::string& url)
+std::string CurlConnection::CurlPerform(const std::string& url, CurlHeaderList& headers)
 {
     THROW_IF_CURL_SETUP_ERROR(curl_easy_setopt(m_handle, CURLOPT_URL, url.c_str()));
+
+    headers.Add(HttpHeader::MSCV, m_cv.IncrementAndGet());
+    THROW_IF_CURL_SETUP_ERROR(curl_easy_setopt(m_handle, CURLOPT_HTTPHEADER, headers.m_slist));
 
     // Setting up error buffer where error messages get written - this gets unset in the destructor
     CurlErrorBuffer errorBuffer(m_handle, m_handler);

@@ -62,9 +62,10 @@ class SFSClientImpl : public SFSClientInterface
                                       Connection& connection) const override;
 
     /**
-     * @brief Returns the ConnectionManager to be used by the SFSClient to create Connection objects
+     * @brief Returns a new Connection to be used by the SFSClient to make requests
+     * @param cv The base CorrelationVector to be used in the request for service telemetry stitching
      */
-    ConnectionManager& GetConnectionManager() override;
+    std::unique_ptr<Connection> MakeConnection(const std::optional<std::string>& cv) override;
 
     //
     // Configuration methods

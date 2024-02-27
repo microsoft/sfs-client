@@ -66,6 +66,7 @@ TEST("Testing SFSClient::GetLatestDownloadInfo()")
     SECTION("Single product request")
     {
         RequestParams params;
+        params.baseCV = "aaaaaaaaaaaaaaaa.1";
         SECTION("No attributes")
         {
             params.productRequests = {{c_productName, {}}};

@@ -636,5 +636,13 @@ void MockWebServerImpl::RegisterProduct(std::string&& name, std::string&& versio
 
 void MockWebServerImpl::RegisterExpectedRequestHeader(std::string&& header, std::string&& value)
 {
-    m_expectedRequestHeaders.emplace(std::move(header), std::move(value));
+    if (auto it = m_expectedRequestHeaders.find(header); it != m_expectedRequestHeaders.end())
+    {
+        it->second = std::move(value);
+        return;
+    }
+    else
+    {
+        m_expectedRequestHeaders.emplace(std::move(header), std::move(value));
+    }
 }

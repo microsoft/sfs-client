@@ -62,9 +62,10 @@ class SFSClientInterface
                                               Connection& connection) const = 0;
 
     /**
-     * @brief Returns the ConnectionManager to be used by the SFSClient to create Connection objects
+     * @brief Returns a new Connection to be used by the SFSClient to make requests
+     * @param cv The base CorrelationVector to be used in the request for service telemetry stitching
      */
-    virtual ConnectionManager& GetConnectionManager() = 0;
+    virtual std::unique_ptr<Connection> MakeConnection(const std::optional<std::string>& cv) = 0;
 
     const ReportingHandler& GetReportingHandler() const
     {
