@@ -84,6 +84,17 @@
         }                                                                                                              \
     } while ((void)0, 0)
 
+#define THROW_CODE_IF(code, condition, ...)                                                                            \
+    do                                                                                                                 \
+    {                                                                                                                  \
+        if (condition)                                                                                                 \
+        {                                                                                                              \
+            auto __result = SFS::Result(SFS::Result::code, ##__VA_ARGS__);                                             \
+            assert(__result.IsFailure());                                                                              \
+            throw SFS::details::SFSException(std::move(__result));                                                     \
+        }                                                                                                              \
+    } while ((void)0, 0)
+
 #define THROW_CODE_IF_LOG(code, condition, handler, ...)                                                               \
     do                                                                                                                 \
     {                                                                                                                  \
