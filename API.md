@@ -44,3 +44,16 @@ If a logging callback is set in a multi-threaded environment, and the same `SFSC
 
 A few data types are provided which abstract contents that can be sent by the SFS Service, such as `Content`, `ContentId`, `File`, `DeliveryOptimizationData`.
 These data types provide `noexcept` methods to interact with member data.
+
+## Retry Behavior
+
+The API follows a certain set of rules to retry upon reaching specific HTTP Status Codes. The behavior is configurable through the `ConnectionConfig` member of `ClientConfig`. See `ConnectionConfig.h` for each individual configuration.
+
+By default, the client will retry up to 3 times when reaching the following HTTP Status Codes:
+- 429: Too Many Requests
+- 500: Internal Server Error
+- 502: Bad Gateway
+- 503: Server Busy
+- 504: Gateway Timeout
+
+Between each retry the Client will wait an interval that follows either the `Retry-After` response header, or an exponential backoff calculation with a factor of 2 starting from 15s.
