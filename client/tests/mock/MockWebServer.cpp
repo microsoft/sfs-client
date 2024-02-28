@@ -44,7 +44,7 @@ namespace
 {
 std::string ToString(httplib::StatusCode status)
 {
-    return std::to_string(status) + " " + std::string(status_message(status));
+    return std::to_string(status) + " " + std::string(httplib::status_message(status));
 }
 
 class StatusCodeException : public std::exception
