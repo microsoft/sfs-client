@@ -10,6 +10,7 @@ namespace SFS::details
 enum class ContentType
 {
     Generic,
+    App,
 };
 
 struct ContentIdEntity
@@ -36,5 +37,16 @@ struct GenericVersionEntity : public VersionEntity
     {
         return ContentType::Generic;
     }
+};
+
+struct AppVersionEntity : public GenericVersionEntity
+{
+    ContentType GetContentType() const override
+    {
+        return ContentType::App;
+    }
+
+    std::string updateId;
+    std::vector<GenericVersionEntity> prerequisites;
 };
 } // namespace SFS::details
