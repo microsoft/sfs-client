@@ -3,6 +3,7 @@
 
 #pragma once
 
+#include "AppContent.h"
 #include "Content.h"
 #include "SFSEntities.h"
 
@@ -41,10 +42,22 @@ bool operator==(const File& lhs, const File& rhs);
 /// @brief Compares two File objects for inequality. The values of members are strictly compared.
 bool operator!=(const File& lhs, const File& rhs);
 
+/// @brief Compares two AppFile objects for equality. The values of members are strictly compared.
+bool operator==(const AppFile& lhs, const AppFile& rhs);
+
+/// @brief Compares two AppFile objects for inequality. The values of members are strictly compared.
+bool operator!=(const AppFile& lhs, const AppFile& rhs);
+
 /// @brief Compares two Content objects for equality. The values of members are strictly compared.
 bool operator==(const Content& lhs, const Content& rhs);
 
 /// @brief Compares two Content objects for inequality. The values of members are strictly compared.
 bool operator!=(const Content& lhs, const Content& rhs);
+
+/// @brief Compares two AppContent objects for equality. The values of members are strictly compared.
+bool operator==(const AppContent& lhs, const AppContent& rhs);
+
+/// @brief Compares two AppContent objects for inequality. The values of members are strictly compared.
+bool operator!=(const AppContent& lhs, const AppContent& rhs);
 } // namespace contentutil
 } // namespace SFS::details

@@ -156,6 +156,20 @@ bool contentutil::operator!=(const File& lhs, const File& rhs)
     return !(lhs == rhs);
 }
 
+bool contentutil::operator==(const AppFile& lhs, const AppFile& rhs)
+{
+    // String characters can be UTF-8 encoded, so we need to compare them in a case-sensitive manner.
+    return lhs.GetFileId() == rhs.GetFileId() && lhs.GetUrl() == rhs.GetUrl() &&
+           lhs.GetSizeInBytes() == rhs.GetSizeInBytes() && lhs.GetHashes() == rhs.GetHashes() &&
+           lhs.GetApplicabilityDetails() == rhs.GetApplicabilityDetails() &&
+           lhs.GetFileMoniker() == rhs.GetFileMoniker();
+}
+
+bool contentutil::operator!=(const AppFile& lhs, const AppFile& rhs)
+{
+    return !(lhs == rhs);
+}
+
 bool contentutil::operator==(const Content& lhs, const Content& rhs)
 {
     return lhs.GetContentId() == rhs.GetContentId() &&
@@ -167,6 +181,31 @@ bool contentutil::operator==(const Content& lhs, const Content& rhs)
 }
 
 bool contentutil::operator!=(const Content& lhs, const Content& rhs)
+{
+    return !(lhs == rhs);
+}
+
+bool contentutil::operator==(const AppContent& lhs, const AppContent& rhs)
+{
+    auto arePrerequisitesEqual = [&lhs, &rhs]() {
+        return std::equal(lhs.GetPrerequisites().begin(),
+                          lhs.GetPrerequisites().end(),
+                          rhs.GetPrerequisites().begin(),
+                          rhs.GetPrerequisites().end(),
+                          [](const Content& clhs, const Content& crhs) { return clhs == crhs; });
+    };
+    auto areFilesEqual = [&lhs, &rhs]() {
+        return std::is_permutation(lhs.GetFiles().begin(),
+                                   lhs.GetFiles().end(),
+                                   rhs.GetFiles().begin(),
+                                   rhs.GetFiles().end(),
+                                   [](const AppFile& flhs, const AppFile& frhs) { return flhs == frhs; });
+    };
+    return lhs.GetContentId() == rhs.GetContentId() && lhs.GetUpdateId() == rhs.GetUpdateId() &&
+           arePrerequisitesEqual() && areFilesEqual();
+}
+
+bool contentutil::operator!=(const AppContent& lhs, const AppContent& rhs)
 {
     return !(lhs == rhs);
 }
