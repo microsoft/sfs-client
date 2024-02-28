@@ -29,7 +29,7 @@
 #define SFS_CATCH_LOG_RETHROW(handler)                                                                                 \
     catch (const SFS::details::SFSException& e)                                                                        \
     {                                                                                                                  \
-        SFS::details::LogFailedResult(handler, e.GetResult(), __FILE__, __LINE__);                                     \
+        SFS::details::LogFailedResult(e.GetResult(), handler, __FILE__, __LINE__);                                     \
         throw;                                                                                                         \
     }
 
@@ -49,7 +49,7 @@
         auto __result = (result); /* Assigning to a variable ensures a code block gets called only once */             \
         if (__result.IsFailure())                                                                                      \
         {                                                                                                              \
-            SFS::details::LogFailedResult(handler, __result, __FILE__, __LINE__);                                      \
+            SFS::details::LogFailedResult(__result, handler, __FILE__, __LINE__);                                      \
             return __result;                                                                                           \
         }                                                                                                              \
     } while ((void)0, 0)
@@ -69,16 +69,16 @@ namespace SFS::details
 {
 class ReportingHandler;
 
-void LogFailedResult(const ReportingHandler& handler, const Result& result, const char* file, int line);
-void LogIfFailed(const Result& result, const ReportingHandler& handler, const char* file, int line);
+void LogFailedResult(const Result& result, const ReportingHandler& handler, const char* file, unsigned line);
+void LogIfFailed(const Result& result, const ReportingHandler& handler, const char* file, unsigned line);
 
-void ThrowLog(Result result, const ReportingHandler& handler, const char* file, int line);
-void ThrowIfFailedLog(Result result, const ReportingHandler& handler, const char* file, int line);
+void ThrowLog(Result result, const ReportingHandler& handler, const char* file, unsigned line);
+void ThrowIfFailedLog(Result result, const ReportingHandler& handler, const char* file, unsigned line);
 void ThrowCodeIf(Result::Code code, bool condition, std::string message = {});
 void ThrowCodeIfLog(Result::Code code,
                     bool condition,
                     const ReportingHandler& handler,
                     const char* file,
-                    int line,
+                    unsigned line,
                     std::string message = {});
 } // namespace SFS::details
