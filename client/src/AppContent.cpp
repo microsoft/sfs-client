@@ -80,6 +80,14 @@ try
 }
 SFS_CATCH_RETURN()
 
+AppContent::AppContent(AppContent&& other) noexcept
+{
+    m_contentId = std::move(other.m_contentId);
+    m_updateId = std::move(other.m_updateId);
+    m_prerequisites = std::move(other.m_prerequisites);
+    m_files = std::move(other.m_files);
+}
+
 const ContentId& AppContent::GetContentId() const noexcept
 {
     return *m_contentId;

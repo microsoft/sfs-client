@@ -133,6 +133,8 @@ class Content
                                      std::vector<File>&& files,
                                      std::unique_ptr<Content>& out) noexcept;
 
+    Content(Content&&) noexcept;
+
     Content(const Content&) = delete;
     Content& operator=(const Content&) = delete;
 

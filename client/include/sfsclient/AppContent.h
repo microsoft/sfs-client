@@ -65,6 +65,8 @@ class AppContent
                                      std::vector<AppFile>&& files,
                                      std::unique_ptr<AppContent>& out) noexcept;
 
+    AppContent(AppContent&&) noexcept;
+
     AppContent(const AppContent&) = delete;
     AppContent& operator=(const AppContent&) = delete;
 

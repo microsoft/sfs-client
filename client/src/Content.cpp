@@ -177,6 +177,12 @@ try
 }
 SFS_CATCH_RETURN()
 
+Content::Content(Content&& other) noexcept
+{
+    m_contentId = std::move(other.m_contentId);
+    m_files = std::move(other.m_files);
+}
+
 const ContentId& Content::GetContentId() const noexcept
 {
     return *m_contentId;
