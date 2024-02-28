@@ -7,6 +7,7 @@
 #include "Logging.h"
 #include "ReportingHandler.h"
 #include "RequestParams.h"
+#include "SFSEntities.h"
 
 #include <memory>
 #include <string>
@@ -16,6 +17,8 @@ namespace SFS::details
 class Connection;
 class ConnectionManager;
 struct ConnectionConfig;
+
+using VersionEntities = std::vector<std::unique_ptr<VersionEntity>>;
 
 class SFSClientInterface
 {
@@ -30,28 +33,28 @@ class SFSClientInterface
 
     /**
      * @brief Gets the metadata for the latest available version for the specified product request
-     * @return ContentId for the latest version of the product
+     * @return Entity that describes the latest version of the product
      * @throws SFSException if the request fails
      */
-    virtual std::unique_ptr<ContentId> GetLatestVersion(const ProductRequest& productRequest,
-                                                        Connection& connection) const = 0;
+    virtual std::unique_ptr<VersionEntity> GetLatestVersion(const ProductRequest& productRequest,
+                                                            Connection& connection) const = 0;
 
     /**
      * @brief Gets the metadata for the latest available version for the specified product requests
-     * @return Vector of ContentId for the latest version of the products
+     * @return Vector of entities that describe the latest version of the products
      * @throws SFSException if the request fails
      */
-    virtual std::vector<ContentId> GetLatestVersionBatch(const std::vector<ProductRequest>& productRequests,
-                                                         Connection& connection) const = 0;
+    virtual VersionEntities GetLatestVersionBatch(const std::vector<ProductRequest>& productRequests,
+                                                  Connection& connection) const = 0;
 
     /**
      * @brief Gets the metadata for a specific version of the specified product
-     * @return ContentId for the specific version of the product
+     * @return Entity that describes the latest version of the product
      * @throws SFSException if the request fails
      */
-    virtual std::unique_ptr<ContentId> GetSpecificVersion(const std::string& product,
-                                                          const std::string& version,
-                                                          Connection& connection) const = 0;
+    virtual std::unique_ptr<VersionEntity> GetSpecificVersion(const std::string& product,
+                                                              const std::string& version,
+                                                              Connection& connection) const = 0;
 
     /**
      * @brief Gets the files metadata for a specific version of the specified product

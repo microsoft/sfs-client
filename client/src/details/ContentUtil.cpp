@@ -37,27 +37,65 @@ void ThrowInvalidResponseIfFalse(bool condition, const std::string& message, con
 {
     THROW_CODE_IF_LOG(ServiceInvalidResponse, !condition, handler, message);
 }
+
+void ValidateContentType(const VersionEntity& versionEntity, ContentType expectedType, const ReportingHandler& handler)
+{
+    THROW_CODE_IF_LOG(Result::ServiceInvalidResponse,
+                      versionEntity.GetContentType() != expectedType,
+                      handler,
+                      "Unexpected content type returned by the service");
+}
 } // namespace
 
-std::unique_ptr<ContentId> contentutil::ContentIdJsonToObj(const json& contentId, const ReportingHandler& handler)
+std::unique_ptr<VersionEntity> contentutil::ParseJsonToVersionEntity(const nlohmann::json& data,
+                                                                     const ReportingHandler& handler)
 {
+    // Expected format for a generic version entity:
+    // {
+    //   "ContentId": {
+    //     "Namespace": <ns>,
+    //     "Name": <name>,
+    //     "Version": <version>
+    //   }
+    // }
+    //
+
+    // TODO #50: Use a different entity once the service supports app content.
+
+    std::unique_ptr<GenericVersionEntity> tmp = std::make_unique<GenericVersionEntity>();
+
+    ThrowInvalidResponseIfFalse(data.is_object(), "Response is not a JSON object", handler);
+    ThrowInvalidResponseIfFalse(data.contains("ContentId"), "Missing ContentId in response", handler);
+
+    const auto& contentId = data["ContentId"];
     ThrowInvalidResponseIfFalse(contentId.is_object(), "ContentId is not a JSON object", handler);
 
     ThrowInvalidResponseIfFalse(contentId.contains("Namespace"), "Missing ContentId.Namespace in response", handler);
     ThrowInvalidResponseIfFalse(contentId["Namespace"].is_string(), "ContentId.Namespace is not a string", handler);
-    std::string nameSpace = contentId["Namespace"];
+    tmp->contentId.nameSpace = contentId["Namespace"];
 
     ThrowInvalidResponseIfFalse(contentId.contains("Name"), "Missing ContentId.Name in response", handler);
     ThrowInvalidResponseIfFalse(contentId["Name"].is_string(), "ContentId.Name is not a string", handler);
-    std::string name = contentId["Name"];
+    tmp->contentId.name = contentId["Name"];
 
     ThrowInvalidResponseIfFalse(contentId.contains("Version"), "Missing ContentId.Version in response", handler);
     ThrowInvalidResponseIfFalse(contentId["Version"].is_string(), "ContentId.Version is not a string", handler);
-    std::string version = contentId["Version"];
+    tmp->contentId.version = contentId["Version"];
+
+    return tmp;
+}
+
+std::unique_ptr<ContentId> contentutil::ConvertGenericVersionEntityToContentId(VersionEntity&& entity,
+                                                                               const ReportingHandler& handler)
+{
+    ValidateContentType(entity, ContentType::Generic, handler);
 
     std::unique_ptr<ContentId> tmp;
-    THROW_IF_FAILED_LOG(ContentId::Make(std::move(nameSpace), std::move(name), std::move(version), tmp), handler);
-
+    THROW_IF_FAILED_LOG(ContentId::Make(std::move(entity.contentId.nameSpace),
+                                        std::move(entity.contentId.name),
+                                        std::move(entity.contentId.version),
+                                        tmp),
+                        handler);
     return tmp;
 }
 

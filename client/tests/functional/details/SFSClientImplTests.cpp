@@ -21,23 +21,24 @@ using namespace SFS::test;
 
 namespace
 {
-void CheckProduct(const ContentId& contentId, std::string_view ns, std::string_view name, std::string_view version)
+void CheckProduct(const VersionEntity& entity, std::string_view ns, std::string_view name, std::string_view version)
 {
-    REQUIRE(contentId.GetNameSpace() == ns);
-    REQUIRE(contentId.GetName() == name);
-    REQUIRE(contentId.GetVersion() == version);
+    REQUIRE(entity.GetContentType() == ContentType::Generic);
+    REQUIRE(entity.contentId.nameSpace == ns);
+    REQUIRE(entity.contentId.name == name);
+    REQUIRE(entity.contentId.version == version);
 }
 
-void CheckProducts(const std::vector<ContentId>& contentIds,
+void CheckProducts(const VersionEntities& entities,
                    std::string_view ns,
                    const std::set<std::pair<std::string, std::string>>& nameVersionPairs)
 {
     // json arrays don't guarantee order, and they are the underlying structure, so we need to check using sets
     std::set<std::pair<std::string, std::string>> uniqueNameVersionPairs;
-    for (const auto& contentId : contentIds)
+    for (const auto& entity : entities)
     {
-        REQUIRE(contentId.GetNameSpace() == ns);
-        uniqueNameVersionPairs.emplace(contentId.GetName(), contentId.GetVersion());
+        REQUIRE(entity->contentId.nameSpace == ns);
+        uniqueNameVersionPairs.emplace(entity->contentId.name, entity->contentId.version);
     }
 
     for (const auto& nameVersionPair : nameVersionPairs)
@@ -74,65 +75,65 @@ TEST("Testing class SFSClientImpl()")
     SECTION("Testing SFSClientImpl::GetLatestVersion()")
     {
         server.RegisterExpectedRequestHeader(HttpHeader::ContentType, "application/json");
-        std::unique_ptr<ContentId> contentId;
+        std::unique_ptr<VersionEntity> entity;
 
         SECTION("No attributes")
         {
-            REQUIRE_NOTHROW(contentId = sfsClient.GetLatestVersion({"productName", {}}, *connection));
-            REQUIRE(contentId);
-            CheckProduct(*contentId, ns, "productName", "0.0.0.2");
+            REQUIRE_NOTHROW(entity = sfsClient.GetLatestVersion({"productName", {}}, *connection));
+            REQUIRE(entity);
+            CheckProduct(*entity, ns, "productName", "0.0.0.2");
         }
 
         SECTION("With attributes")
         {
             const TargetingAttributes attributes{{"attr1", "value"}};
-            REQUIRE_NOTHROW(contentId = sfsClient.GetLatestVersion({"productName", attributes}, *connection));
-            REQUIRE(contentId);
-            CheckProduct(*contentId, ns, "productName", "0.0.0.2");
+            REQUIRE_NOTHROW(entity = sfsClient.GetLatestVersion({"productName", attributes}, *connection));
+            REQUIRE(entity);
+            CheckProduct(*entity, ns, "productName", "0.0.0.2");
         }
 
         SECTION("Wrong product name")
         {
-            REQUIRE_THROWS_CODE(contentId = sfsClient.GetLatestVersion({"badName", {}}, *connection), HttpNotFound);
-            REQUIRE(!contentId);
+            REQUIRE_THROWS_CODE(entity = sfsClient.GetLatestVersion({"badName", {}}, *connection), HttpNotFound);
+            REQUIRE(!entity);
 
             const TargetingAttributes attributes{{"attr1", "value"}};
-            REQUIRE_THROWS_CODE(contentId = sfsClient.GetLatestVersion({"badName", attributes}, *connection),
+            REQUIRE_THROWS_CODE(entity = sfsClient.GetLatestVersion({"badName", attributes}, *connection),
                                 HttpNotFound);
-            REQUIRE(!contentId);
+            REQUIRE(!entity);
         }
     }
 
     SECTION("Testing SFSClientImpl::GetLatestVersionBatch()")
     {
         server.RegisterExpectedRequestHeader(HttpHeader::ContentType, "application/json");
-        std::vector<ContentId> contentIds;
+        VersionEntities entities;
 
         SECTION("No attributes")
         {
-            REQUIRE_NOTHROW(contentIds = sfsClient.GetLatestVersionBatch({{"productName", {}}}, *connection));
-            REQUIRE(!contentIds.empty());
-            CheckProduct(contentIds[0], ns, "productName", "0.0.0.2");
+            REQUIRE_NOTHROW(entities = sfsClient.GetLatestVersionBatch({{"productName", {}}}, *connection));
+            REQUIRE(!entities.empty());
+            CheckProduct(*entities[0], ns, "productName", "0.0.0.2");
         }
 
         SECTION("With attributes")
         {
             const TargetingAttributes attributes{{"attr1", "value"}};
-            REQUIRE_NOTHROW(contentIds = sfsClient.GetLatestVersionBatch({{"productName", attributes}}, *connection));
-            REQUIRE(!contentIds.empty());
-            CheckProduct(contentIds[0], ns, "productName", "0.0.0.2");
+            REQUIRE_NOTHROW(entities = sfsClient.GetLatestVersionBatch({{"productName", attributes}}, *connection));
+            REQUIRE(!entities.empty());
+            CheckProduct(*entities[0], ns, "productName", "0.0.0.2");
         }
 
         SECTION("Wrong product name")
         {
-            REQUIRE_THROWS_CODE(contentIds = sfsClient.GetLatestVersionBatch({{"badName", {}}}, *connection),
+            REQUIRE_THROWS_CODE(entities = sfsClient.GetLatestVersionBatch({{"badName", {}}}, *connection),
                                 HttpNotFound);
-            REQUIRE(contentIds.empty());
+            REQUIRE(entities.empty());
 
             const TargetingAttributes attributes{{"attr1", "value"}};
-            REQUIRE_THROWS_CODE(contentIds = sfsClient.GetLatestVersionBatch({{"badName", attributes}}, *connection),
+            REQUIRE_THROWS_CODE(entities = sfsClient.GetLatestVersionBatch({{"badName", attributes}}, *connection),
                                 HttpNotFound);
-            REQUIRE(contentIds.empty());
+            REQUIRE(entities.empty());
         }
 
         SECTION("Multiple unique products")
@@ -140,17 +141,17 @@ TEST("Testing class SFSClientImpl()")
             server.RegisterProduct("productName2", "0.0.0.3");
 
             REQUIRE_NOTHROW(
-                contentIds = sfsClient.GetLatestVersionBatch({{"productName", {}}, {"productName2", {}}}, *connection));
-            REQUIRE(contentIds.size() == 2);
-            CheckProducts(contentIds, ns, {{"productName", "0.0.0.2"}, {"productName2", "0.0.0.3"}});
+                entities = sfsClient.GetLatestVersionBatch({{"productName", {}}, {"productName2", {}}}, *connection));
+            REQUIRE(entities.size() == 2);
+            CheckProducts(entities, ns, {{"productName", "0.0.0.2"}, {"productName2", "0.0.0.3"}});
 
             server.RegisterProduct("productName3", "0.0.0.4");
 
-            REQUIRE_NOTHROW(contentIds = sfsClient.GetLatestVersionBatch(
+            REQUIRE_NOTHROW(entities = sfsClient.GetLatestVersionBatch(
                                 {{"productName", {}}, {"productName2", {}}, {"productName3", {}}},
                                 *connection));
-            REQUIRE(contentIds.size() == 3);
-            CheckProducts(contentIds,
+            REQUIRE(entities.size() == 3);
+            CheckProducts(entities,
                           ns,
                           {{"productName", "0.0.0.2"}, {"productName2", "0.0.0.3"}, {"productName3", "0.0.0.4"}});
         }
@@ -158,66 +159,64 @@ TEST("Testing class SFSClientImpl()")
         SECTION("Multiple repeated products")
         {
             REQUIRE_NOTHROW(
-                contentIds = sfsClient.GetLatestVersionBatch({{"productName", {}}, {"productName", {}}}, *connection));
-            REQUIRE(contentIds.size() == 1);
-            CheckProduct(contentIds[0], ns, "productName", "0.0.0.2");
+                entities = sfsClient.GetLatestVersionBatch({{"productName", {}}, {"productName", {}}}, *connection));
+            REQUIRE(entities.size() == 1);
+            CheckProduct(*entities[0], ns, "productName", "0.0.0.2");
 
             server.RegisterProduct("productName2", "0.0.0.3");
 
-            REQUIRE_NOTHROW(contentIds = sfsClient.GetLatestVersionBatch(
+            REQUIRE_NOTHROW(entities = sfsClient.GetLatestVersionBatch(
                                 {{"productName", {}}, {"productName", {}}, {"productName2", {}}, {"productName2", {}}},
                                 *connection));
-            REQUIRE(contentIds.size() == 2);
-            CheckProducts(contentIds, ns, {{"productName", "0.0.0.2"}, {"productName2", "0.0.0.3"}});
+            REQUIRE(entities.size() == 2);
+            CheckProducts(entities, ns, {{"productName", "0.0.0.2"}, {"productName2", "0.0.0.3"}});
         }
 
         SECTION("Multiple wrong products returns 404")
         {
-            REQUIRE_THROWS_CODE(contentIds =
+            REQUIRE_THROWS_CODE(entities =
                                     sfsClient.GetLatestVersionBatch({{"badName", {}}, {"badName2", {}}}, *connection),
                                 HttpNotFound);
-            REQUIRE(contentIds.empty());
+            REQUIRE(entities.empty());
         }
 
         SECTION("Multiple products, one wrong returns 200")
         {
-            REQUIRE_NOTHROW(contentIds =
+            REQUIRE_NOTHROW(entities =
                                 sfsClient.GetLatestVersionBatch({{"productName", {}}, {"badName", {}}}, *connection));
-            REQUIRE(contentIds.size() == 1);
-            CheckProduct(contentIds[0], ns, "productName", "0.0.0.2");
+            REQUIRE(entities.size() == 1);
+            CheckProduct(*entities[0], ns, "productName", "0.0.0.2");
         }
     }
 
     SECTION("Testing SFSClientImpl::GetSpecificVersion()")
     {
-        std::unique_ptr<ContentId> contentId;
-
+        std::unique_ptr<VersionEntity> entity;
         SECTION("Getting 0.0.0.1")
         {
-            REQUIRE_NOTHROW(contentId = sfsClient.GetSpecificVersion("productName", "0.0.0.1", *connection));
-            REQUIRE(contentId);
-            CheckProduct(*contentId, ns, "productName", "0.0.0.1");
+            REQUIRE_NOTHROW(entity = sfsClient.GetSpecificVersion("productName", "0.0.0.1", *connection));
+            REQUIRE(entity);
+            CheckProduct(*entity, ns, "productName", "0.0.0.1");
         }
 
         SECTION("Getting 0.0.0.2")
         {
-            REQUIRE_NOTHROW(contentId = sfsClient.GetSpecificVersion("productName", "0.0.0.2", *connection));
-            REQUIRE(contentId);
-            CheckProduct(*contentId, ns, "productName", "0.0.0.2");
+            REQUIRE_NOTHROW(entity = sfsClient.GetSpecificVersion("productName", "0.0.0.2", *connection));
+            REQUIRE(entity);
+            CheckProduct(*entity, ns, "productName", "0.0.0.2");
         }
 
         SECTION("Wrong product name")
         {
-            REQUIRE_THROWS_CODE(contentId = sfsClient.GetSpecificVersion("badName", "0.0.0.2", *connection),
-                                HttpNotFound);
-            REQUIRE(!contentId);
+            REQUIRE_THROWS_CODE(entity = sfsClient.GetSpecificVersion("badName", "0.0.0.2", *connection), HttpNotFound);
+            REQUIRE(!entity);
         }
 
         SECTION("Wrong version")
         {
-            REQUIRE_THROWS_CODE(contentId = sfsClient.GetSpecificVersion("productName", "0.0.0.3", *connection),
+            REQUIRE_THROWS_CODE(entity = sfsClient.GetSpecificVersion("productName", "0.0.0.3", *connection),
                                 HttpNotFound);
-            REQUIRE(!contentId);
+            REQUIRE(!entity);
         }
     }
 

@@ -3,6 +3,7 @@
 
 #include "SFSClient.h"
 
+#include "details/ContentUtil.h"
 #include "details/ErrorHandling.h"
 #include "details/ReportingHandler.h"
 #include "details/SFSClientImpl.h"
@@ -11,6 +12,7 @@
 
 using namespace SFS;
 using namespace SFS::details;
+using namespace SFS::details::contentutil;
 
 // Defining the constructor and destructor here allows us to use a unique_ptr to SFSClientImpl in the header file
 SFSClient::SFSClient() noexcept = default;
@@ -66,7 +68,9 @@ try
     connectionConfig.baseCV = requestParams.baseCV;
     const auto connection = m_impl->MakeConnection(connectionConfig);
 
-    auto contentId = m_impl->GetLatestVersion(requestParams.productRequests[0], *connection);
+    auto versionEntity = m_impl->GetLatestVersion(requestParams.productRequests[0], *connection);
+    auto contentId = ConvertGenericVersionEntityToContentId(std::move(*versionEntity), m_impl->GetReportingHandler());
+
     auto files = m_impl->GetDownloadInfo(product, contentId->GetVersion(), *connection);
 
     std::unique_ptr<Content> tmp;

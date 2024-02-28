@@ -60,26 +60,7 @@ json ParseServerMethodStringToJson(const std::string& data, const std::string& m
     }
 }
 
-std::unique_ptr<ContentId> ConvertSingleProductVersionResponseToContentId(const json& data,
-                                                                          const ReportingHandler& handler)
-{
-    // Expected format:
-    // {
-    //   "ContentId": {
-    //     "Namespace": <ns>,
-    //     "Name": <name>,
-    //     "Version": <version>
-    //   }
-    // }
-    //
-
-    ThrowInvalidResponseIfFalse(data.is_object(), "Response is not a JSON object", handler);
-    ThrowInvalidResponseIfFalse(data.contains("ContentId"), "Missing ContentId in response", handler);
-
-    return ContentIdJsonToObj(data["ContentId"], handler);
-}
-
-std::vector<ContentId> ConvertLatestVersionBatchResponseToContentIds(const json& data, const ReportingHandler& handler)
+VersionEntities ConvertLatestVersionBatchResponseToVersionEntities(const json& data, const ReportingHandler& handler)
 {
     // Expected format:
     // [
@@ -97,15 +78,13 @@ std::vector<ContentId> ConvertLatestVersionBatchResponseToContentIds(const json&
     ThrowInvalidResponseIfFalse(data.is_array(), "Response is not a JSON array", handler);
     ThrowInvalidResponseIfFalse(data.size() > 0, "Response does not have the expected size", handler);
 
-    std::vector<ContentId> contentIds;
+    VersionEntities entities;
     for (const auto& obj : data)
     {
-        ThrowInvalidResponseIfFalse(obj.is_object(), "Array element is not a JSON object", handler);
-        ThrowInvalidResponseIfFalse(obj.contains("ContentId"), "Missing ContentId in response", handler);
-        contentIds.push_back(std::move(*ContentIdJsonToObj(obj["ContentId"], handler)));
+        entities.push_back(std::move(ParseJsonToVersionEntity(obj, handler)));
     }
 
-    return contentIds;
+    return entities;
 }
 
 std::vector<File> ConvertDownloadInfoResponseToFileVector(const json& data, const ReportingHandler& handler)
@@ -144,9 +123,46 @@ std::vector<File> ConvertDownloadInfoResponseToFileVector(const json& data, cons
     return tmp;
 }
 
-bool VerifyVersionResponseMatchesProduct(const ContentId& contentId, std::string_view nameSpace, std::string_view name)
+bool VerifyVersionResponseMatchesProduct(const ContentIdEntity& contentId,
+                                         std::string_view nameSpace,
+                                         std::string_view name)
 {
-    return contentId.GetNameSpace() == nameSpace && contentId.GetName() == name;
+    return contentId.nameSpace == nameSpace && contentId.name == name;
+}
+
+void ValidateVersionEntity(const VersionEntity& versionEntity,
+                           const std::string& nameSpace,
+                           const std::string& product,
+                           const ReportingHandler& handler)
+{
+    THROW_CODE_IF_LOG(ServiceInvalidResponse,
+                      !VerifyVersionResponseMatchesProduct(versionEntity.contentId, nameSpace, product),
+                      handler,
+                      "Response does not match the requested product");
+}
+
+void ValidateBatchVersionEntity(const VersionEntities& versionEntities,
+                                const std::string& nameSpace,
+                                const std::unordered_set<std::string>& products,
+                                const ReportingHandler& handler)
+{
+    for (const auto& entity : versionEntities)
+    {
+        THROW_CODE_IF_LOG(ServiceInvalidResponse,
+                          products.count(entity->contentId.name) == 0,
+                          handler,
+                          "Response of product [" + entity->contentId.name + "] does not match the requested products");
+        THROW_CODE_IF_LOG(ServiceInvalidResponse,
+                          AreNotEqualI(entity->contentId.nameSpace, nameSpace),
+                          handler,
+                          "Response of product [" + entity->contentId.name +
+                              "] does not match the requested namespace");
+
+        LOG_INFO(handler,
+                 "Received a response for product [%s] with version %s",
+                 entity->contentId.name.c_str(),
+                 entity->contentId.version.c_str());
+    }
 }
 } // namespace
 
@@ -170,8 +186,8 @@ SFSClientImpl<ConnectionManagerT>::SFSClientImpl(ClientConfig&& config)
 }
 
 template <typename ConnectionManagerT>
-std::unique_ptr<ContentId> SFSClientImpl<ConnectionManagerT>::GetLatestVersion(const ProductRequest& productRequest,
-                                                                               Connection& connection) const
+std::unique_ptr<VersionEntity> SFSClientImpl<ConnectionManagerT>::GetLatestVersion(const ProductRequest& productRequest,
+                                                                                   Connection& connection) const
 try
 {
     const auto& [product, attributes] = productRequest;
@@ -185,18 +201,17 @@ try
     const std::string postResponse{connection.Post(url, body.dump())};
     const json versionResponse = ParseServerMethodStringToJson(postResponse, "GetLatestVersion", m_reportingHandler);
 
-    auto contentId = ConvertSingleProductVersionResponseToContentId(versionResponse, m_reportingHandler);
-    THROW_CODE_IF_LOG(ServiceInvalidResponse,
-                      !VerifyVersionResponseMatchesProduct(*contentId, m_nameSpace, product),
-                      m_reportingHandler,
-                      "(GetLatestVersion) Response does not match the requested product");
+    auto versionEntity = ParseJsonToVersionEntity(versionResponse, m_reportingHandler);
+    ValidateVersionEntity(*versionEntity, m_nameSpace, product, m_reportingHandler);
 
-    return contentId;
+    SFS_INFO("Received a response with version %s", versionEntity->contentId.version.c_str());
+
+    return versionEntity;
 }
 SFS_CATCH_LOG_RETHROW(m_reportingHandler)
 
 template <typename ConnectionManagerT>
-std::vector<ContentId> SFSClientImpl<ConnectionManagerT>::GetLatestVersionBatch(
+VersionEntities SFSClientImpl<ConnectionManagerT>::GetLatestVersionBatch(
     const std::vector<ProductRequest>& productRequests,
     Connection& connection) const
 try
@@ -223,35 +238,17 @@ try
     const json versionResponse =
         ParseServerMethodStringToJson(postResponse, "GetLatestVersionBatch", m_reportingHandler);
 
-    auto contentIds = ConvertLatestVersionBatchResponseToContentIds(versionResponse, m_reportingHandler);
+    auto entities = ConvertLatestVersionBatchResponseToVersionEntities(versionResponse, m_reportingHandler);
+    ValidateBatchVersionEntity(entities, m_nameSpace, products, m_reportingHandler);
 
-    // Validating responses
-    for (const auto& contentId : contentIds)
-    {
-        THROW_CODE_IF_LOG(ServiceInvalidResponse,
-                          products.count(contentId.GetName()) == 0,
-                          m_reportingHandler,
-                          "(GetLatestVersionBatch) Response of product [" + contentId.GetName() +
-                              "] does not match the requested products");
-        THROW_CODE_IF_LOG(ServiceInvalidResponse,
-                          AreNotEqualI(contentId.GetNameSpace(), m_nameSpace),
-                          m_reportingHandler,
-                          "(GetLatestVersionBatch) Response of product [" + contentId.GetName() +
-                              "] does not match the requested namespace");
-
-        SFS_INFO("Received a response for product [%s] with version %s",
-                 contentId.GetName().c_str(),
-                 contentId.GetVersion().c_str());
-    }
-
-    return contentIds;
+    return entities;
 }
 SFS_CATCH_LOG_RETHROW(m_reportingHandler)
 
 template <typename ConnectionManagerT>
-std::unique_ptr<ContentId> SFSClientImpl<ConnectionManagerT>::GetSpecificVersion(const std::string& product,
-                                                                                 const std::string& version,
-                                                                                 Connection& connection) const
+std::unique_ptr<VersionEntity> SFSClientImpl<ConnectionManagerT>::GetSpecificVersion(const std::string& product,
+                                                                                     const std::string& version,
+                                                                                     Connection& connection) const
 try
 {
     const std::string url{
@@ -263,15 +260,12 @@ try
 
     const json versionResponse = ParseServerMethodStringToJson(getResponse, "GetSpecificVersion", m_reportingHandler);
 
-    auto contentId = ConvertSingleProductVersionResponseToContentId(versionResponse, m_reportingHandler);
-    THROW_CODE_IF_LOG(ServiceInvalidResponse,
-                      !VerifyVersionResponseMatchesProduct(*contentId, m_nameSpace, product),
-                      m_reportingHandler,
-                      "(GetSpecificVersion) Response does not match the requested product");
+    auto versionEntity = ParseJsonToVersionEntity(versionResponse, m_reportingHandler);
+    ValidateVersionEntity(*versionEntity, m_nameSpace, product, m_reportingHandler);
 
-    SFS_INFO("Received the expected response with version %s", contentId->GetVersion().c_str());
+    SFS_INFO("Received the expected response with version %s", versionEntity->contentId.version.c_str());
 
-    return contentId;
+    return versionEntity;
 }
 SFS_CATCH_LOG_RETHROW(m_reportingHandler)
 

@@ -74,11 +74,12 @@ class MockCurlConnection : public CurlConnection
     bool& m_expectEmptyPostBody;
 };
 
-void CheckProduct(const ContentId& contentId, std::string_view ns, std::string_view name, std::string_view version)
+void CheckProduct(const VersionEntity& entity, std::string_view ns, std::string_view name, std::string_view version)
 {
-    REQUIRE(contentId.GetNameSpace() == ns);
-    REQUIRE(contentId.GetName() == name);
-    REQUIRE(contentId.GetVersion() == version);
+    REQUIRE(entity.GetContentType() == ContentType::Generic);
+    REQUIRE(entity.contentId.nameSpace == ns);
+    REQUIRE(entity.contentId.name == name);
+    REQUIRE(entity.contentId.version == version);
 }
 
 void CheckDownloadInfo(const std::vector<File>& files, const std::string& name)
@@ -112,7 +113,7 @@ TEST("Testing class SFSClientImpl()")
     SECTION("Testing SFSClientImpl::GetLatestVersion()")
     {
         expectEmptyPostBody = false;
-        std::unique_ptr<ContentId> contentId;
+        std::unique_ptr<VersionEntity> entity;
 
         SECTION("Expected response")
         {
@@ -121,29 +122,29 @@ TEST("Testing class SFSClientImpl()")
             postResponse = latestVersionResponse.dump();
             SECTION("No attributes")
             {
-                REQUIRE_NOTHROW(contentId = sfsClient.GetLatestVersion({productName, {}}, *connection));
-                REQUIRE(contentId);
-                CheckProduct(*contentId, ns, productName, expectedVersion);
+                REQUIRE_NOTHROW(entity = sfsClient.GetLatestVersion({productName, {}}, *connection));
+                REQUIRE(entity);
+                CheckProduct(*entity, ns, productName, expectedVersion);
             }
 
             SECTION("With attributes")
             {
                 const TargetingAttributes attributes{{"attr1", "value"}};
-                REQUIRE_NOTHROW(contentId = sfsClient.GetLatestVersion({productName, attributes}, *connection));
-                REQUIRE(contentId);
-                CheckProduct(*contentId, ns, productName, expectedVersion);
+                REQUIRE_NOTHROW(entity = sfsClient.GetLatestVersion({productName, attributes}, *connection));
+                REQUIRE(entity);
+                CheckProduct(*entity, ns, productName, expectedVersion);
             }
 
             SECTION("Failing")
             {
                 responseCode = Result::HttpNotFound;
-                REQUIRE_THROWS_CODE(contentId = sfsClient.GetLatestVersion({"badName", {}}, *connection), HttpNotFound);
-                REQUIRE(!contentId);
+                REQUIRE_THROWS_CODE(entity = sfsClient.GetLatestVersion({"badName", {}}, *connection), HttpNotFound);
+                REQUIRE(!entity);
 
                 const TargetingAttributes attributes{{"attr1", "value"}};
-                REQUIRE_THROWS_CODE(contentId = sfsClient.GetLatestVersion({"badName", attributes}, *connection),
+                REQUIRE_THROWS_CODE(entity = sfsClient.GetLatestVersion({"badName", attributes}, *connection),
                                     HttpNotFound);
-                REQUIRE(!contentId);
+                REQUIRE(!entity);
             }
         }
 
@@ -163,10 +164,10 @@ TEST("Testing class SFSClientImpl()")
                 postResponse = latestVersionResponse.dump();
             }
 
-            REQUIRE_THROWS_CODE_MSG(contentId = sfsClient.GetLatestVersion({productName, {}}, *connection),
+            REQUIRE_THROWS_CODE_MSG(entity = sfsClient.GetLatestVersion({productName, {}}, *connection),
                                     ServiceInvalidResponse,
-                                    "(GetLatestVersion) Response does not match the requested product");
-            REQUIRE(!contentId);
+                                    "Response does not match the requested product");
+            REQUIRE(!entity);
         }
     }
 
@@ -177,30 +178,30 @@ TEST("Testing class SFSClientImpl()")
         latestVersionResponse.push_back(
             {{"ContentId", {{"Namespace", ns}, {"Name", productName}, {"Version", expectedVersion}}}});
         postResponse = latestVersionResponse.dump();
-        std::vector<ContentId> contentIds;
+        VersionEntities entities;
         SECTION("No attributes")
         {
-            REQUIRE_NOTHROW(contentIds = sfsClient.GetLatestVersionBatch({{productName, {}}}, *connection));
-            REQUIRE(!contentIds.empty());
-            CheckProduct(contentIds[0], ns, productName, expectedVersion);
+            REQUIRE_NOTHROW(entities = sfsClient.GetLatestVersionBatch({{productName, {}}}, *connection));
+            REQUIRE(!entities.empty());
+            CheckProduct(*entities[0], ns, productName, expectedVersion);
         }
 
         SECTION("With attributes")
         {
             const TargetingAttributes attributes{{"attr1", "value"}};
-            REQUIRE_NOTHROW(contentIds = sfsClient.GetLatestVersionBatch({{productName, attributes}}, *connection));
-            REQUIRE(!contentIds.empty());
-            CheckProduct(contentIds[0], ns, productName, expectedVersion);
+            REQUIRE_NOTHROW(entities = sfsClient.GetLatestVersionBatch({{productName, attributes}}, *connection));
+            REQUIRE(!entities.empty());
+            CheckProduct(*entities[0], ns, productName, expectedVersion);
         }
 
         SECTION("Failing")
         {
             responseCode = Result::HttpNotFound;
-            REQUIRE_THROWS_CODE(contentIds = sfsClient.GetLatestVersionBatch({{"badName", {}}}, *connection),
+            REQUIRE_THROWS_CODE(entities = sfsClient.GetLatestVersionBatch({{"badName", {}}}, *connection),
                                 HttpNotFound);
 
             const TargetingAttributes attributes{{"attr1", "value"}};
-            REQUIRE_THROWS_CODE(contentIds = sfsClient.GetLatestVersionBatch({{"badName", attributes}}, *connection),
+            REQUIRE_THROWS_CODE(entities = sfsClient.GetLatestVersionBatch({{"badName", attributes}}, *connection),
                                 HttpNotFound);
         }
     }
@@ -211,18 +212,18 @@ TEST("Testing class SFSClientImpl()")
         specificVersionResponse["ContentId"] = {{"Namespace", ns}, {"Name", productName}, {"Version", expectedVersion}};
         specificVersionResponse["Files"] = json::array({productName + ".json", productName + ".bin"});
         getResponse = specificVersionResponse.dump();
-        std::unique_ptr<ContentId> contentId;
+        std::unique_ptr<VersionEntity> entity;
         SECTION("Getting version")
         {
-            REQUIRE_NOTHROW(contentId = sfsClient.GetSpecificVersion(productName, expectedVersion, *connection));
-            REQUIRE(contentId);
-            CheckProduct(*contentId, ns, productName, expectedVersion);
+            REQUIRE_NOTHROW(entity = sfsClient.GetSpecificVersion(productName, expectedVersion, *connection));
+            REQUIRE(entity);
+            CheckProduct(*entity, ns, productName, expectedVersion);
         }
 
         SECTION("Failing")
         {
             responseCode = Result::HttpNotFound;
-            REQUIRE_THROWS_CODE(contentId = sfsClient.GetSpecificVersion(productName, expectedVersion, *connection),
+            REQUIRE_THROWS_CODE(entity = sfsClient.GetSpecificVersion(productName, expectedVersion, *connection),
                                 HttpNotFound);
         }
     }

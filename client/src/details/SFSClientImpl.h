@@ -29,28 +29,28 @@ class SFSClientImpl : public SFSClientInterface
 
     /**
      * @brief Gets the metadata for the latest available version for the specified product request
-     * @return ContentId for the latest version of the product
+     * @return Entity that describes the latest version of the product
      * @throws SFSException if the request fails
      */
-    std::unique_ptr<ContentId> GetLatestVersion(const ProductRequest& productRequest,
-                                                Connection& connection) const override;
+    std::unique_ptr<VersionEntity> GetLatestVersion(const ProductRequest& productRequest,
+                                                    Connection& connection) const override;
 
     /**
      * @brief Gets the metadata for the latest available version for the specified product requests
-     * @return Vector of ContentId for the latest version of the products
+     * @return Vector of entities that describe the latest version of the products
      * @throws SFSException if the request fails
      */
-    std::vector<ContentId> GetLatestVersionBatch(const std::vector<ProductRequest>& productRequests,
-                                                 Connection& connection) const override;
+    VersionEntities GetLatestVersionBatch(const std::vector<ProductRequest>& productRequests,
+                                          Connection& connection) const override;
 
     /**
      * @brief Gets the metadata for a specific version of the specified product
-     * @return ContentId for the specific version of the product
+     * @return Entity that describes the latest version of the product
      * @throws SFSException if the request fails
      */
-    std::unique_ptr<ContentId> GetSpecificVersion(const std::string& product,
-                                                  const std::string& version,
-                                                  Connection& connection) const override;
+    std::unique_ptr<VersionEntity> GetSpecificVersion(const std::string& product,
+                                                      const std::string& version,
+                                                      Connection& connection) const override;
 
     /**
      * @brief Gets the files metadata for a specific version of the specified product
