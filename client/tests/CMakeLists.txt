@@ -17,6 +17,7 @@ target_sources(
             functional/details/SFSClientImplTests.cpp
             functional/SFSClientTests.cpp
             mock/MockWebServer.cpp
+            unit/AppContentTests.cpp
             unit/ApplicabilityDetailsTests.cpp
             unit/ContentTests.cpp
             unit/DeliveryOptimizationDataTests.cpp
