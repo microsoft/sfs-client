@@ -64,3 +64,8 @@ ContentType GenericFileEntity::GetContentType() const
 {
     return ContentType::Generic;
 }
+
+ContentType AppFileEntity::GetContentType() const
+{
+    return ContentType::App;
+}
