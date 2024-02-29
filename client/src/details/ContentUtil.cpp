@@ -36,7 +36,7 @@ HashType HashTypeFromString(const std::string& hashType, const ReportingHandler&
 template <typename Entity>
 void ValidateContentType(const Entity& entity, ContentType expectedType, const ReportingHandler& handler)
 {
-    THROW_CODE_IF_LOG(Result::ServiceInvalidResponse,
+    THROW_CODE_IF_LOG(Result::ServiceUnexpectedContentType,
                       entity.GetContentType() != expectedType,
                       handler,
                       "Unexpected content type returned by the service");
