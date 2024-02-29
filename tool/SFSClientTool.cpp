@@ -30,6 +30,7 @@ void DisplayUsage()
         << "Options:" << std::endl
         << "  -h, --help\t\t\tDisplay this help message" << std::endl
         << "  -v, --version\t\t\tDisplay the library version" << std::endl
+        << "  --isApp\t\tIndicates the specific product is an App" << std::endl
         << "  --instanceId <id>\t\tA custom SFS instance ID" << std::endl
         << "  --namespace <ns>\t\tA custom SFS namespace" << std::endl
         << "  --customUrl <url>\t\tA custom URL for the SFS service. Library must have been built with SFS_ENABLE_OVERRIDES"
@@ -80,6 +81,7 @@ struct Settings
 {
     bool displayHelp{true};
     bool displayVersion{false};
+    bool isApp{false};
     std::string product;
     std::string accountId;
     std::string instanceId;
@@ -123,6 +125,10 @@ void ParseArguments(const std::vector<std::string_view>& args, Settings& setting
         else if (matchArg(args[i], "-v", "--version"))
         {
             settings.displayVersion = true;
+        }
+        else if (matchLongArg(args[i], "--isApp"))
+        {
+            settings.isApp = true;
         }
         else if (matchLongArg(args[i], "--product"))
         {
@@ -173,6 +179,24 @@ constexpr std::string_view ToString(HashType type)
     return "";
 }
 
+constexpr std::string_view ToString(Architecture type)
+{
+    switch (type)
+    {
+    case Architecture::None:
+        return "None";
+    case Architecture::Amd64:
+        return "amd64";
+    case Architecture::Arm:
+        return "arm";
+    case Architecture::Arm64:
+        return "arm64";
+    case Architecture::x86:
+        return "x86";
+    }
+    return "";
+}
+
 void DisplayResults(const std::unique_ptr<Content>& content)
 {
     if (!content)
@@ -202,6 +226,77 @@ void DisplayResults(const std::unique_ptr<Content>& content)
         }
         fileJson["Hashes"] = hashes;
         j["Files"].push_back(fileJson);
+    }
+
+    PrintLog(j.dump(2 /*indent*/));
+}
+
+json AppFileToJson(const AppFile& file)
+{
+    json fileJson = json::object();
+    fileJson["FileId"] = file.GetFileId();
+    fileJson["Url"] = file.GetUrl();
+    fileJson["SizeInBytes"] = file.GetSizeInBytes();
+    fileJson["FileMoniker"] = file.GetFileMoniker();
+    json hashes = json::object();
+    for (const auto& hash : file.GetHashes())
+    {
+        hashes[ToString(hash.first)] = hash.second;
+    }
+    fileJson["Hashes"] = hashes;
+
+    fileJson["ApplicabilityDetails"] = json::object();
+    fileJson["ApplicabilityDetails"]["Architectures"] = json::array();
+    for (const auto& arch : file.GetApplicabilityDetails().GetArchitectures())
+    {
+        fileJson["ApplicabilityDetails"]["Architectures"].push_back(ToString(arch));
+    }
+    fileJson["ApplicabilityDetails"]["PlatformApplicabilityForPackage"] = json::array();
+    for (const auto& app : file.GetApplicabilityDetails().GetPlatformApplicabilityForPackage())
+    {
+        fileJson["ApplicabilityDetails"]["PlatformApplicabilityForPackage"].push_back(app);
+    }
+
+    return fileJson;
+}
+
+void DisplayResults(const std::unique_ptr<AppContent>& content)
+{
+    if (!content)
+    {
+        std::cout << "No results found." << std::endl;
+        return;
+    }
+
+    PrintLog("Content found:");
+
+    json j = json::object();
+    j["ContentId"]["Namespace"] = content->GetContentId().GetNameSpace();
+    j["ContentId"]["Name"] = content->GetContentId().GetName();
+    j["ContentId"]["Version"] = content->GetContentId().GetVersion();
+    j["UpdateId"] = content->GetUpdateId();
+
+    j["Files"] = json::array();
+    for (const auto& file : content->GetFiles())
+    {
+        j["Files"].push_back(AppFileToJson(file));
+    }
+
+    j["Prerequisites"] = json::array();
+    for (const auto& prereq : content->GetPrerequisites())
+    {
+        json prereqJson = json::object();
+        prereqJson["ContentId"]["Namespace"] = prereq.GetContentId().GetNameSpace();
+        prereqJson["ContentId"]["Name"] = prereq.GetContentId().GetName();
+        prereqJson["ContentId"]["Version"] = prereq.GetContentId().GetVersion();
+
+        prereqJson["Files"] = json::array();
+        for (const auto& file : prereq.GetFiles())
+        {
+            prereqJson["Files"].push_back(AppFileToJson(file));
+        }
+
+        j["Prerequisites"].push_back(prereqJson);
     }
 
     PrintLog(j.dump(2 /*indent*/));
@@ -260,6 +355,44 @@ bool SetEnv(const std::string& varName, const std::string& value)
     return setenv(varName.c_str(), value.c_str(), 1 /*overwrite*/) == 0;
 #endif
 }
+
+Result GetLatestDownloadInfo(const SFSClient& sfsClient, const Settings& settings)
+{
+    PrintLog("Getting latest download info for product: " + settings.product);
+    RequestParams params;
+    params.productRequests = {{settings.product, {}}};
+    if (settings.isApp)
+    {
+        std::unique_ptr<AppContent> appContent;
+        auto result = sfsClient.GetLatestAppDownloadInfo(params, appContent);
+        if (!result)
+        {
+            PrintError("Failed to get latest download info for app.");
+            LogResult(result);
+            return result.GetCode();
+        }
+
+        // Display results
+        DisplayResults(appContent);
+    }
+    else
+    {
+        std::unique_ptr<Content> content;
+        auto result = sfsClient.GetLatestDownloadInfo(params, content);
+
+        if (!result)
+        {
+            PrintError("Failed to get latest download info.");
+            LogResult(result);
+            return result.GetCode();
+        }
+
+        // Display results
+        DisplayResults(content);
+    }
+
+    return Result::Success;
+}
 } // namespace
 
 int main(int argc, char* argv[])
@@ -316,20 +449,12 @@ int main(int argc, char* argv[])
     }
 
     // Perform operations using SFSClient
-    PrintLog("Getting latest download info for product: " + settings.product);
-    std::unique_ptr<Content> content;
-    RequestParams params;
-    params.productRequests = {{settings.product, {}}};
-    result = sfsClient->GetLatestDownloadInfo(params, content);
+    result = GetLatestDownloadInfo(*sfsClient, settings);
     if (!result)
     {
-        PrintError("Failed to get latest download info.");
         LogResult(result);
         return result.GetCode();
     }
-
-    // Display results
-    DisplayResults(content);
 
     return 0;
 }
