@@ -26,17 +26,10 @@ struct ConnectionConfig
 
     /**
      * @brief The base delay in milliseconds between attempts for a web request if a Retry-After header is not present.
-     * maxSecForRetryAfter is considered if the Retry-After interval is sent. This number must be 15000ms <
-     * retryDelayMs <= 60000ms. The delay between attempts will be exponential with a factor of 2.
+     * This number must be 15000ms < retryDelayMs <= 60000ms. The delay between attempts will be exponential with a
+     * factor of 2.
      */
     unsigned retryDelayMs = 15000;
-
-    /**
-     * @brief If a recommended Retry-After interval is sent by the server, it will be honored if the value is less than
-     * or equal to this value. If the value is bigger than this value, no retry will be made. If no interval is sent,
-     * retryDelayMs is used instead.
-     */
-    unsigned maxSecForRetryAfter = 60;
 
     /// @brief Set of errors for which a retry will happen. If empty, there are no retries
     std::unordered_set<RetriableHttpError> retriableHttpErrors = {RetriableHttpError::TooManyRequests,

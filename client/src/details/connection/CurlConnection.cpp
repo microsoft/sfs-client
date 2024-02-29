@@ -380,15 +380,6 @@ void CurlConnection::ProcessRetry(int attempt, bool lastAttempt, long httpCode)
     if (retryAfter)
     {
         const int retryAfterSec = ParseRetryAfterValue(*retryAfter, m_handler);
-        if (retryAfterSec > static_cast<int>(m_config.maxSecForRetryAfter))
-        {
-            LOG_INFO(m_handler,
-                     "Retry-After header value %d is larger than the expected value %u, stopping",
-                     retryAfterSec,
-                     m_config.maxSecForRetryAfter);
-            THROW_IF_FAILED_LOG(httpResult, m_handler);
-        }
-
         retryDelayMs = static_cast<unsigned>(duration_cast<milliseconds>(seconds(retryAfterSec)).count());
     }
     else

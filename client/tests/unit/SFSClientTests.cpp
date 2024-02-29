@@ -152,7 +152,7 @@ TEST("Testing SFSClient::Make()")
         SECTION("Creating a connectionConfig member directly with {}")
         {
             ClientConfig config{accountId, instanceId, nameSpace, {}, std::nullopt};
-            config.connectionConfig = {2, 30000, 60, {}};
+            config.connectionConfig = {2, 30000, {}};
             REQUIRE(SFSClient::Make(config, sfsClient) == Result::Success);
             REQUIRE(sfsClient != nullptr);
         }
