@@ -379,6 +379,7 @@ void CurlConnection::ProcessRetry(int attempt, bool lastAttempt, long httpCode)
     const std::optional<std::string> retryAfter = GetResponseHeader(m_handle, HttpHeader::RetryAfter, m_handler);
     if (retryAfter)
     {
+        // TODO #93: Enforce Retry-After value across calls to avoid caller spamming server
         const int retryAfterSec = ParseRetryAfterValue(*retryAfter, m_handler);
         retryDelayMs = static_cast<unsigned>(duration_cast<milliseconds>(seconds(retryAfterSec)).count());
     }
