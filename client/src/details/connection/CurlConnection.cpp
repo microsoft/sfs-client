@@ -134,6 +134,10 @@ Result HttpCodeToResult(long httpCode)
     {
         return Result(Result::HttpBadRequest, "405 Method Not Allowed");
     }
+    case 429:
+    {
+        return Result(Result::HttpTooManyRequests, "429 Too Many Requests");
+    }
     case 503:
     {
         return Result(Result::HttpServiceNotAvailable, "503 Service Unavailable");
