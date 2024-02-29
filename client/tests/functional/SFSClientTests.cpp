@@ -138,8 +138,7 @@ TEST("Testing SFSClient retry behavior")
         REQUIRE(SFSClient::Make(clientConfig, sfsClient));
         REQUIRE(sfsClient != nullptr);
 
-        REQUIRE(clientConfig.connectionConfig.retriableHttpErrors.count(RetriableHttpError::ServerBusy) != 0);
-        const int retriableError = static_cast<int>(RetriableHttpError::ServerBusy);
+        const int retriableError = 503; // ServerBusy
 
         auto RunTimedGet = [&](bool success = true) -> long long {
             auto begin = steady_clock::now();
@@ -203,11 +202,8 @@ TEST("Testing SFSClient retry behavior")
         REQUIRE(SFSClient::Make(clientConfig, sfsClient));
         REQUIRE(sfsClient != nullptr);
 
-        REQUIRE(clientConfig.connectionConfig.retriableHttpErrors.count(RetriableHttpError::ServerBusy) != 0);
-        const int retriableError = static_cast<int>(RetriableHttpError::ServerBusy);
-
-        REQUIRE(clientConfig.connectionConfig.retriableHttpErrors.count(RetriableHttpError::BadGateway) != 0);
-        const int retriableError2 = static_cast<int>(RetriableHttpError::BadGateway);
+        const int retriableError = 503;  // ServerBusy
+        const int retriableError2 = 502; // BadGateway
 
         auto RunTimedGet = [&]() -> long long {
             auto begin = steady_clock::now();
@@ -247,8 +243,7 @@ TEST("Testing SFSClient retry behavior")
         INFO("Sets the retry delay to 1ms to speed up the test");
         clientConfig.connectionConfig.retryDelayMs = 1;
 
-        REQUIRE(clientConfig.connectionConfig.retriableHttpErrors.count(RetriableHttpError::ServerBusy) != 0);
-        const int retriableError = static_cast<int>(RetriableHttpError::ServerBusy);
+        const int retriableError = 503; // ServerBusy
 
         SECTION("With default retries")
         {
@@ -303,61 +298,6 @@ TEST("Testing SFSClient retry behavior")
             {
                 server.SetForcedHttpErrors(std::queue<HttpCode>({retriableError}));
                 REQUIRE(sfsClient->GetLatestDownloadInfo(params, content) == Result::HttpServiceNotAvailable);
-            }
-        }
-    }
-
-    SECTION("Test retriable errors")
-    {
-        INFO("Sets the retry delay to 1ms to speed up the test");
-        clientConfig.connectionConfig.retryDelayMs = 1;
-
-        SECTION("Should pass with default errors")
-        {
-            REQUIRE(SFSClient::Make(clientConfig, sfsClient));
-            REQUIRE(sfsClient != nullptr);
-
-            for (const auto& error : clientConfig.connectionConfig.retriableHttpErrors)
-            {
-                server.SetForcedHttpErrors(std::queue<HttpCode>({static_cast<int>(error)}));
-                REQUIRE(sfsClient->GetLatestDownloadInfo(params, content));
-            }
-
-            SECTION("Unless max retries is set to 0")
-            {
-                clientConfig.connectionConfig.maxRetries = 0;
-                REQUIRE(SFSClient::Make(clientConfig, sfsClient));
-                REQUIRE(sfsClient != nullptr);
-
-                for (const auto& error : clientConfig.connectionConfig.retriableHttpErrors)
-                {
-                    server.SetForcedHttpErrors(std::queue<HttpCode>({static_cast<int>(error)}));
-                    REQUIRE(!sfsClient->GetLatestDownloadInfo(params, content));
-                }
-            }
-        }
-
-        SECTION("Removing error from list makes it fail")
-        {
-            clientConfig.connectionConfig.retriableHttpErrors.erase(RetriableHttpError::ServerBusy);
-            REQUIRE(SFSClient::Make(clientConfig, sfsClient));
-            REQUIRE(sfsClient != nullptr);
-
-            server.SetForcedHttpErrors(std::queue<HttpCode>({static_cast<int>(RetriableHttpError::ServerBusy)}));
-            REQUIRE(sfsClient->GetLatestDownloadInfo(params, content) == Result::HttpServiceNotAvailable);
-        }
-
-        SECTION("Should fail with default errors if erase list")
-        {
-            const auto originalSet = clientConfig.connectionConfig.retriableHttpErrors;
-            clientConfig.connectionConfig.retriableHttpErrors.clear();
-            REQUIRE(SFSClient::Make(clientConfig, sfsClient));
-            REQUIRE(sfsClient != nullptr);
-
-            for (const auto& error : originalSet)
-            {
-                server.SetForcedHttpErrors(std::queue<HttpCode>({static_cast<int>(error)}));
-                REQUIRE(!sfsClient->GetLatestDownloadInfo(params, content));
             }
         }
     }

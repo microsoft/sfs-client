@@ -142,7 +142,6 @@ TEST("Testing SFSClient::Make()")
         {
             ConnectionConfig connectionConfig;
             connectionConfig.maxRetries = 2;
-            connectionConfig.retriableHttpErrors.clear();
 
             ClientConfig config{accountId, instanceId, nameSpace, connectionConfig, std::nullopt};
             REQUIRE(SFSClient::Make(config, sfsClient) == Result::Success);
@@ -152,7 +151,7 @@ TEST("Testing SFSClient::Make()")
         SECTION("Creating a connectionConfig member directly with {}")
         {
             ClientConfig config{accountId, instanceId, nameSpace, {}, std::nullopt};
-            config.connectionConfig = {2, 30000, {}};
+            config.connectionConfig = {2, 30000};
             REQUIRE(SFSClient::Make(config, sfsClient) == Result::Success);
             REQUIRE(sfsClient != nullptr);
         }

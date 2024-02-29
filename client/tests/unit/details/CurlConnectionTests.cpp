@@ -125,11 +125,4 @@ TEST("Testing setting ConnectionConfig")
         config2.retryDelayMs = 15000;
         REQUIRE_NOTHROW(connection->SetConfig(config2));
     }
-
-    SECTION("Can pass empty retriableHttpErrors")
-    {
-        ConnectionConfig config;
-        config.retriableHttpErrors.clear();
-        REQUIRE_NOTHROW(connection->SetConfig(config));
-    }
 }

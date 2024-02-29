@@ -390,8 +390,7 @@ TEST("Testing retry behavior")
         config.retryDelayMs = 50;
         connection->SetConfig(config);
 
-        REQUIRE(config.retriableHttpErrors.count(RetriableHttpError::ServerBusy) != 0);
-        const int retriableError = static_cast<int>(RetriableHttpError::ServerBusy);
+        const int retriableError = 503; // ServerBusy
 
         auto RunTimedGet = [&](bool success = true) -> long long {
             std::string out;
@@ -455,11 +454,8 @@ TEST("Testing retry behavior")
         config.retryDelayMs = 200;
         connection->SetConfig(config);
 
-        REQUIRE(config.retriableHttpErrors.count(RetriableHttpError::ServerBusy) != 0);
-        const int retriableError = static_cast<int>(RetriableHttpError::ServerBusy);
-
-        REQUIRE(config.retriableHttpErrors.count(RetriableHttpError::BadGateway) != 0);
-        const int retriableError2 = static_cast<int>(RetriableHttpError::BadGateway);
+        const int retriableError = 503;  // ServerBusy
+        const int retriableError2 = 502; // BadGateway
 
         auto RunTimedGet = [&]() -> long long {
             std::string out;
@@ -516,8 +512,7 @@ TEST("Testing retry behavior")
         config.retryDelayMs = 1;
         connection->SetConfig(config);
 
-        REQUIRE(config.retriableHttpErrors.count(RetriableHttpError::ServerBusy) != 0);
-        const int retriableError = static_cast<int>(RetriableHttpError::ServerBusy);
+        const int retriableError = 503; // ServerBusy
 
         SECTION("Should pass with 3 errors")
         {
@@ -564,56 +559,6 @@ TEST("Testing retry behavior")
             {
                 server.SetForcedHttpErrors(std::queue<HttpCode>({retriableError}));
                 REQUIRE_THROWS_CODE(connection->Get(url), HttpServiceNotAvailable);
-            }
-        }
-    }
-
-    SECTION("Test retriable errors")
-    {
-        INFO("Sets the retry delay to 1ms to speed up the test");
-        ConnectionConfig config;
-        config.retryDelayMs = 1;
-        connection->SetConfig(config);
-
-        SECTION("Should pass with default errors")
-        {
-            for (const auto& error : config.retriableHttpErrors)
-            {
-                server.SetForcedHttpErrors(std::queue<HttpCode>({static_cast<int>(error)}));
-                REQUIRE_NOTHROW(connection->Get(url));
-            }
-
-            SECTION("Unless max retries is set to 0")
-            {
-                config.maxRetries = 0;
-                connection->SetConfig(config);
-
-                for (const auto& error : config.retriableHttpErrors)
-                {
-                    server.SetForcedHttpErrors(std::queue<HttpCode>({static_cast<int>(error)}));
-                    REQUIRE_THROWS_AS(connection->Get(url), SFSException);
-                }
-            }
-        }
-
-        SECTION("Removing error from list makes it fail")
-        {
-            config.retriableHttpErrors.erase(RetriableHttpError::ServerBusy);
-            connection->SetConfig(config);
-            server.SetForcedHttpErrors(std::queue<HttpCode>({static_cast<int>(RetriableHttpError::ServerBusy)}));
-            REQUIRE_THROWS_CODE(connection->Get(url), HttpServiceNotAvailable);
-        }
-
-        SECTION("Should fail with default errors if erase list")
-        {
-            const auto originalSet = config.retriableHttpErrors;
-            config.retriableHttpErrors.clear();
-            connection->SetConfig(config);
-
-            for (const auto& error : originalSet)
-            {
-                server.SetForcedHttpErrors(std::queue<HttpCode>({static_cast<int>(error)}));
-                REQUIRE_THROWS_AS(connection->Get(url), SFSException);
             }
         }
     }

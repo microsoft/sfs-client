@@ -7,15 +7,6 @@
 
 namespace SFS
 {
-enum class RetriableHttpError
-{
-    TooManyRequests = 429,     // Rate limiting
-    InternalServerError = 500, // Can be triggered within server timeouts, network issue
-    BadGateway = 502,          // Likely an issue with routing
-    ServerBusy = 503,
-    GatewayTimeout = 504
-};
-
 struct ConnectionConfig
 {
     /**
@@ -30,12 +21,5 @@ struct ConnectionConfig
      * factor of 2.
      */
     unsigned retryDelayMs = 15000;
-
-    /// @brief Set of errors for which a retry will happen. If empty, there are no retries
-    std::unordered_set<RetriableHttpError> retriableHttpErrors = {RetriableHttpError::TooManyRequests,
-                                                                  RetriableHttpError::InternalServerError,
-                                                                  RetriableHttpError::BadGateway,
-                                                                  RetriableHttpError::ServerBusy,
-                                                                  RetriableHttpError::GatewayTimeout};
 };
 } // namespace SFS

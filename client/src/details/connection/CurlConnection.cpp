@@ -159,21 +159,19 @@ Result HttpCodeToResult(long httpCode)
     }
 }
 
-bool IsRetriableHttpError(long httpCode, const std::unordered_set<RetriableHttpError>& retriableHttpErrors)
+bool IsRetriableHttpError(long httpCode)
 {
-    for (const auto retriableError : {RetriableHttpError::TooManyRequests,
-                                      RetriableHttpError::InternalServerError,
-                                      RetriableHttpError::BadGateway,
-                                      RetriableHttpError::ServerBusy,
-                                      RetriableHttpError::GatewayTimeout})
+    switch (httpCode)
     {
-        if (httpCode == static_cast<long>(retriableError) && retriableHttpErrors.count(retriableError) > 0)
-        {
-            return true;
-        }
+    case 429: // Too Many Requests - Rate Limiting
+    case 500: // InternalServerError - Can be triggered within server timeouts, network issue
+    case 502: // BadGateway - Likely an issue with routing
+    case 503: // ServerBusy
+    case 504: // GatewayTimeout
+        return true;
+    default:
+        return false;
     }
-
-    return false;
 }
 
 std::optional<std::string> GetResponseHeader(CURL* handle,
@@ -378,7 +376,7 @@ void CurlConnection::ProcessRetry(int attempt, bool lastAttempt, long httpCode)
         THROW_IF_FAILED_LOG(httpResult, m_handler);
     }
 
-    if (!IsRetriableHttpError(httpCode, m_config.retriableHttpErrors))
+    if (!IsRetriableHttpError(httpCode))
     {
         LOG_INFO(m_handler, "Error %ld is not retriable, stopping", httpCode);
         THROW_IF_FAILED_LOG(httpResult, m_handler);
