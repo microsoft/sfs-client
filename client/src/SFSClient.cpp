@@ -11,8 +11,6 @@
 using namespace SFS;
 using namespace SFS::details;
 
-constexpr unsigned c_maxRetries = 3;
-
 // Defining the constructor and destructor here allows us to use a unique_ptr to SFSClientImpl in the header file
 SFSClient::SFSClient() noexcept = default;
 SFSClient::~SFSClient() noexcept = default;
