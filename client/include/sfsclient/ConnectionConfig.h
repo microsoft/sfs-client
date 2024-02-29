@@ -7,6 +7,8 @@
 
 namespace SFS
 {
+constexpr unsigned c_maxMaxRetries = 3;
+
 struct ConnectionConfig
 {
     /**

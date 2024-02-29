@@ -15,7 +15,9 @@ namespace
 {
 void ValidateConnectionConfig(const ConnectionConfig& config)
 {
-    THROW_CODE_IF(InvalidArg, config.maxRetries > 3, "maxRetries must be <= 3");
+    THROW_CODE_IF(InvalidArg,
+                  config.maxRetries > c_maxMaxRetries,
+                  "maxRetries must be <= " + std::to_string(c_maxMaxRetries));
 }
 } // namespace
 
