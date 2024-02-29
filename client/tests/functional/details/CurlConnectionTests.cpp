@@ -436,7 +436,7 @@ TEST("Testing retry behavior")
         SECTION("Should fail after first retry if we limit max duration to 75ms")
         {
             ConnectionConfig config;
-            config.maxRequestDuration = std::chrono::duration_cast<std::chrono::minutes>(std::chrono::milliseconds{75});
+            config.maxRequestDuration = std::chrono::milliseconds{75};
             connection->SetConfig(config);
 
             server.SetForcedHttpErrors(forcedHttpErrors);
@@ -456,8 +456,7 @@ TEST("Testing retry behavior")
         SECTION("Should fail after second retry if we limit max duration to 200ms")
         {
             ConnectionConfig config;
-            config.maxRequestDuration =
-                std::chrono::duration_cast<std::chrono::minutes>(std::chrono::milliseconds{200});
+            config.maxRequestDuration = std::chrono::milliseconds{200};
             connection->SetConfig(config);
 
             server.SetForcedHttpErrors(forcedHttpErrors);

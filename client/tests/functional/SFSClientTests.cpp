@@ -177,8 +177,7 @@ TEST("Testing SFSClient retry behavior")
 
         SECTION("Should fail after first retry if we limit max duration to 75ms")
         {
-            clientConfig.connectionConfig.maxRequestDuration =
-                std::chrono::duration_cast<std::chrono::minutes>(std::chrono::milliseconds{75});
+            clientConfig.connectionConfig.maxRequestDuration = std::chrono::milliseconds{75};
             REQUIRE(SFSClient::Make(clientConfig, sfsClient));
 
             server.SetForcedHttpErrors(forcedHttpErrors);
@@ -197,8 +196,7 @@ TEST("Testing SFSClient retry behavior")
 
         SECTION("Should fail after second retry if we limit max duration to 200ms")
         {
-            clientConfig.connectionConfig.maxRequestDuration =
-                std::chrono::duration_cast<std::chrono::minutes>(std::chrono::milliseconds{200});
+            clientConfig.connectionConfig.maxRequestDuration = std::chrono::milliseconds{200};
             REQUIRE(SFSClient::Make(clientConfig, sfsClient));
 
             server.SetForcedHttpErrors(forcedHttpErrors);

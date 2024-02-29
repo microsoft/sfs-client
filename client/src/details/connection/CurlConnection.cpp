@@ -405,8 +405,7 @@ void CurlConnection::ProcessRetry(int attempt,
                      "The %s duration of %lldms is bigger than the max request duration of %lldms",
                      currentStr,
                      static_cast<long long>(curDuration.count()),
-                     static_cast<long long>(
-                         std::chrono::duration_cast<std::chrono::milliseconds>(m_config.maxRequestDuration).count()));
+                     static_cast<long long>(m_config.maxRequestDuration.count()));
             THROW_IF_FAILED_LOG(httpResult, m_handler);
         }
     };
