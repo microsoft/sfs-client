@@ -205,6 +205,7 @@ std::optional<std::string> GetResponseHeader(CURL* handle,
 
 int ParseRetryAfterValue(const std::string& retryAfter, const ReportingHandler& reportingHandler)
 {
+    LOG_INFO(reportingHandler, "Parsing Retry-After value [%s]", retryAfter.c_str());
     int retryAfterSec = 0;
     try
     {
@@ -212,16 +213,27 @@ int ParseRetryAfterValue(const std::string& retryAfter, const ReportingHandler& 
     }
     catch (std::invalid_argument&)
     {
-        THROW_LOG(
-            Result(Result::ConnectionUnexpectedError, "Retry-After header value could not be converted to an integer"),
-            reportingHandler);
+        // Value is not an integer, but may still be in HTTP Date format
+        const time_t retryAfterSecSinceEpoch = curl_getdate(retryAfter.c_str(), nullptr /*unused*/);
+        if (retryAfterSecSinceEpoch == -1)
+        {
+            THROW_LOG(Result(Result::ConnectionUnexpectedError,
+                             "Retry-After header value could not be converted to an integer or an HTTP Date"),
+                      reportingHandler);
+        }
+
+        // Get number of seconds since epoch for now to calculate the difference
+        const auto epoch = std::chrono::system_clock::now().time_since_epoch();
+        const auto nowSecSinceEpoch = std::chrono::duration_cast<std::chrono::seconds>(epoch).count();
+
+        retryAfterSec = static_cast<int>(retryAfterSecSinceEpoch - nowSecSinceEpoch);
     }
     catch (std::out_of_range&)
     {
         THROW_LOG(Result(Result::ConnectionUnexpectedError, "Retry-After header value is not in the expected range"),
                   reportingHandler);
     }
-    if (retryAfterSec < 0)
+    if (retryAfterSec <= 0)
     {
         THROW_LOG(Result(Result::ConnectionUnexpectedError, "Invalid Retry-After header value"), reportingHandler);
     }

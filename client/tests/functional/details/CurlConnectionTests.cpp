@@ -16,6 +16,7 @@
 #include <nlohmann/json.hpp>
 
 #include <chrono>
+#include <sstream>
 
 #define TEST(...) TEST_CASE("[Functional][CurlConnectionTests] " __VA_ARGS__)
 
@@ -70,6 +71,22 @@ class CurlConnectionTimeoutManager : public CurlConnectionManager
         return std::make_unique<CurlConnectionTimeout>(m_handler);
     }
 };
+
+std::string TimestampToHttpDateString(std::chrono::time_point<std::chrono::system_clock> time)
+{
+    auto timer = system_clock::to_time_t(time);
+
+    std::stringstream timeStream;
+    struct tm gmTime;
+#ifdef _WIN32
+    gmtime_s(&gmTime, &timer); // gmtime_s is the safe version of gmtime, not available on Linux
+#else
+    gmTime = (*std::gmtime(&timer));
+#endif
+    timeStream << std::put_time(&gmTime, "%a, %d %b %Y %X GMT"); // day, dd Mmm yyyy HH:MM:SS
+
+    return timeStream.str();
+}
 } // namespace
 
 TEST("Testing CurlConnection()")
@@ -453,28 +470,42 @@ TEST("Testing retry behavior")
             return duration_cast<milliseconds>(end - begin).count();
         };
 
-        std::unordered_map<HttpCode, HeaderMap> headersByCode;
-        headersByCode[retriableError] = {{"Retry-After", "1"}}; // 1s delay
-        server.SetResponseHeaders(headersByCode);
+        auto testForRetryAfterValue = [&](const std::string& retryAfterValue) -> void {
+            INFO("retryAfterValue = " << retryAfterValue);
 
-        long long allowedTimeDeviation = 200LL;
-        std::queue<HttpCode> forcedHttpErrors({retriableError});
-        SECTION("Should take at least 1000ms with a single retriable error with 1s in Retry-After")
+            std::unordered_map<HttpCode, HeaderMap> headersByCode;
+            headersByCode[retriableError] = {{"Retry-After", retryAfterValue}};
+            server.SetResponseHeaders(headersByCode);
+
+            long long allowedTimeDeviation = 200LL;
+            std::queue<HttpCode> forcedHttpErrors({retriableError});
+            SECTION("Should take at least 1000ms with a single retriable error with 1s in Retry-After")
+            {
+                server.SetForcedHttpErrors(forcedHttpErrors);
+                const auto time = RunTimedGet();
+                REQUIRE(time >= 1000LL);
+                REQUIRE(time < 1000LL + allowedTimeDeviation);
+            }
+
+            SECTION(
+                "Should take at least 1000ms + 200ms with a retriable error with 1s in Retry-After and one with 200ms*2 as default value")
+            {
+                forcedHttpErrors.push(retriableError2);
+                server.SetForcedHttpErrors(forcedHttpErrors);
+                const auto time = RunTimedGet();
+                REQUIRE(time >= 1400LL);
+                REQUIRE(time < 1400LL + allowedTimeDeviation);
+            }
+        };
+
+        SECTION("Using seconds")
         {
-            server.SetForcedHttpErrors(forcedHttpErrors);
-            const auto time = RunTimedGet();
-            REQUIRE(time >= 1000LL);
-            REQUIRE(time < 1000LL + allowedTimeDeviation);
+            testForRetryAfterValue("1"); // 1s delay
         }
-
-        SECTION(
-            "Should take at least 1000ms + 200ms with a retriable error with 1s in Retry-After and one with 200ms*2 as default value")
+        SECTION("Using date")
         {
-            forcedHttpErrors.push(retriableError2);
-            server.SetForcedHttpErrors(forcedHttpErrors);
-            const auto time = RunTimedGet();
-            REQUIRE(time >= 1400LL);
-            REQUIRE(time < 1400LL + allowedTimeDeviation);
+            const auto time = std::chrono::system_clock::now() + std::chrono::seconds(1);
+            testForRetryAfterValue(TimestampToHttpDateString(time));
         }
     }
 
