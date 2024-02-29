@@ -11,6 +11,7 @@ namespace SFS::details
 {
 class Connection;
 class ReportingHandler;
+struct ConnectionConfig;
 
 class MockConnectionManager : public ConnectionManager
 {
@@ -18,6 +19,6 @@ class MockConnectionManager : public ConnectionManager
     MockConnectionManager(const ReportingHandler& handler);
     ~MockConnectionManager() override;
 
-    std::unique_ptr<Connection> MakeConnection() override;
+    std::unique_ptr<Connection> MakeConnection(const ConnectionConfig& config) override;
 };
 } // namespace SFS::details

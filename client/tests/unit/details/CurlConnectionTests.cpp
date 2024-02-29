@@ -25,7 +25,7 @@ class MockCurlConnection : public CurlConnection
 {
   public:
     MockCurlConnection(const ReportingHandler& handler, Result::Code& responseCode, std::string& response)
-        : CurlConnection(handler)
+        : CurlConnection({}, handler)
         , m_responseCode(responseCode)
         , m_response(response)
     {
@@ -84,45 +84,23 @@ TEST("Testing CurlConnection()")
         REQUIRE_NOTHROW(out = connection->Post("url", body.dump()));
         REQUIRE(out == response);
     }
-
-    SECTION("Testing CurlConnection::SetCorrelationVector()")
-    {
-        REQUIRE_THROWS_CODE_MSG(connection->SetCorrelationVector(""), InvalidArg, "cv must not be empty");
-        REQUIRE_THROWS_CODE_MSG_MATCHES(
-            connection->SetCorrelationVector("cv"),
-            InvalidArg,
-            Catch::Matchers::ContainsSubstring("baseCV is not a valid correlation vector:"));
-
-        REQUIRE_NOTHROW(connection->SetCorrelationVector("aaaaaaaaaaaaaaaa.1"));
-    }
 }
 
-TEST("Testing setting ConnectionConfig")
+TEST("Testing CurlConnection constructor passing a cv")
 {
     ReportingHandler handler;
     handler.SetLoggingCallback(LogCallbackToTest);
-    std::unique_ptr<Connection> connection = std::make_unique<MockConnection>(handler);
 
-    SECTION("Setting default config")
-    {
-        ConnectionConfig config;
-        REQUIRE_NOTHROW(connection->SetConfig(config));
-    }
+    ConnectionConfig config;
+    config.baseCV = "";
 
-    SECTION("Setting default config (moving)")
-    {
-        ConnectionConfig config;
-        REQUIRE_NOTHROW(connection->SetConfig(std::move(config)));
-    }
+    REQUIRE_THROWS_CODE_MSG(std::make_unique<CurlConnection>(config, handler), InvalidArg, "cv must not be empty");
 
-    SECTION("Multiple sequential set calls")
-    {
-        ConnectionConfig config;
-        config.maxRetries = 2;
-        REQUIRE_NOTHROW(connection->SetConfig(config));
+    config.baseCV = "cv";
+    REQUIRE_THROWS_CODE_MSG_MATCHES(std::make_unique<CurlConnection>(config, handler),
+                                    InvalidArg,
+                                    Catch::Matchers::ContainsSubstring("baseCV is not a valid correlation vector:"));
 
-        ConnectionConfig config2;
-        config2.maxRequestDuration = std::chrono::minutes{3};
-        REQUIRE_NOTHROW(connection->SetConfig(config2));
-    }
+    config.baseCV = "aaaaaaaaaaaaaaaa.1";
+    REQUIRE_NOTHROW(std::make_unique<CurlConnection>(config, handler));
 }

@@ -60,14 +60,16 @@ TEST("Testing class SFSClientImpl()")
 {
     test::MockWebServer server;
     const std::string ns = "testNameSpace";
-    SFSClientImpl<CurlConnectionManager> sfsClient({"testAccountId", "testInstanceId", ns, {}, LogCallbackToTest});
+    SFSClientImpl<CurlConnectionManager> sfsClient({"testAccountId", "testInstanceId", ns, LogCallbackToTest});
     sfsClient.SetCustomBaseUrl(server.GetBaseUrl());
 
     server.RegisterProduct("productName", "0.0.0.2");
     server.RegisterProduct("productName", "0.0.0.1");
 
     const std::string cv = "aaaaaaaaaaaaaaaa.1";
-    auto connection = sfsClient.MakeConnection(cv);
+    ConnectionConfig config;
+    config.baseCV = cv;
+    auto connection = sfsClient.MakeConnection(config);
 
     SECTION("Testing SFSClientImpl::GetLatestVersion()")
     {

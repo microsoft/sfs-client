@@ -15,6 +15,7 @@ namespace SFS::details
 {
 class Connection;
 class ConnectionManager;
+struct ConnectionConfig;
 
 class SFSClientInterface
 {
@@ -63,9 +64,9 @@ class SFSClientInterface
 
     /**
      * @brief Returns a new Connection to be used by the SFSClient to make requests
-     * @param cv The base CorrelationVector to be used in the request for service telemetry stitching
+     * @param config Configurations for the connection object
      */
-    virtual std::unique_ptr<Connection> MakeConnection(const std::optional<std::string>& cv) = 0;
+    virtual std::unique_ptr<Connection> MakeConnection(const ConnectionConfig& config) = 0;
 
     const ReportingHandler& GetReportingHandler() const
     {

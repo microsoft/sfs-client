@@ -11,15 +11,7 @@
 using namespace SFS;
 using namespace SFS::details;
 
-namespace
-{
-void ValidateConnectionConfig(const ConnectionConfig& config)
-{
-    THROW_CODE_IF(InvalidArg,
-                  config.maxRetries > c_maxMaxRetries,
-                  "maxRetries must be <= " + std::to_string(c_maxMaxRetries));
-}
-} // namespace
+constexpr unsigned c_maxRetries = 3;
 
 // Defining the constructor and destructor here allows us to use a unique_ptr to SFSClientImpl in the header file
 SFSClient::SFSClient() noexcept = default;
@@ -32,7 +24,6 @@ try
     {
         return Result(Result::InvalidArg, "ClientConfig::accountId cannot be empty");
     }
-    ValidateConnectionConfig(config.connectionConfig);
 
     out.reset();
     std::unique_ptr<SFSClient> tmp(new SFSClient());
@@ -65,7 +56,10 @@ try
 
     // TODO #50: Adapt retrieval to storeapps flow with pre-requisites once that is implemented server-side
 
-    const auto connection = m_impl->MakeConnection(requestParams.baseCV);
+    ConnectionConfig connectionConfig;
+    connectionConfig.maxRetries = requestParams.retryOnError ? c_maxRetries : 0;
+    connectionConfig.baseCV = requestParams.baseCV;
+    const auto connection = m_impl->MakeConnection(connectionConfig);
 
     auto contentId = m_impl->GetLatestVersion(requestParams.productRequests[0], *connection);
     auto files = m_impl->GetDownloadInfo(product, contentId->GetVersion(), *connection);

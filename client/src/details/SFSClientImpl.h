@@ -63,9 +63,9 @@ class SFSClientImpl : public SFSClientInterface
 
     /**
      * @brief Returns a new Connection to be used by the SFSClient to make requests
-     * @param cv The base CorrelationVector to be used in the request for service telemetry stitching
+     * @param config Configurations for the connection object
      */
-    std::unique_ptr<Connection> MakeConnection(const std::optional<std::string>& cv) override;
+    std::unique_ptr<Connection> MakeConnection(const ConnectionConfig& config) override;
 
     //
     // Configuration methods
@@ -87,7 +87,6 @@ class SFSClientImpl : public SFSClientInterface
     std::string m_accountId;
     std::string m_instanceId;
     std::string m_nameSpace;
-    ConnectionConfig m_connectionConfig;
 
     std::unique_ptr<ConnectionManagerT> m_connectionManager;
 

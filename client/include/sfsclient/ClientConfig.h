@@ -3,7 +3,6 @@
 
 #pragma once
 
-#include "ConnectionConfig.h"
 #include "Logging.h"
 
 #include <optional>
@@ -22,9 +21,6 @@ struct ClientConfig
 
     /// @brief The namespace of the SFS service
     std::optional<std::string> nameSpace;
-
-    /// @brief Set of modifiable configurations for the connections to be made to the SFSService
-    ConnectionConfig connectionConfig;
 
     /**
      * @brief A logging callback function that is called when the SFSClient logs a message

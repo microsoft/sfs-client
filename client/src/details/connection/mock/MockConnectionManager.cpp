@@ -15,7 +15,7 @@ MockConnectionManager::~MockConnectionManager()
 {
 }
 
-std::unique_ptr<Connection> MockConnectionManager::MakeConnection()
+std::unique_ptr<Connection> MockConnectionManager::MakeConnection(const ConnectionConfig& config)
 {
-    return std::make_unique<MockConnection>(m_handler);
+    return std::make_unique<MockConnection>(config, m_handler);
 }

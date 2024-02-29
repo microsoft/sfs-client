@@ -31,5 +31,8 @@ struct RequestParams
     /// @brief Base CorrelationVector to be used in the request for service telemetry stitching (optional)
     /// @note If not provided, a new CorrelationVector will be generated
     std::optional<std::string> baseCV;
+
+    /// @brief Retry for a web request after a failed attempt. If true, client will retry up to 3 times
+    bool retryOnError{true};
 };
 } // namespace SFS

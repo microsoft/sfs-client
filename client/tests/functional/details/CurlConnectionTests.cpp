@@ -41,7 +41,8 @@ namespace
 class CurlConnectionTimeout : public CurlConnection
 {
   public:
-    CurlConnectionTimeout(const ReportingHandler& handler) : CurlConnection(handler)
+    CurlConnectionTimeout(const ConnectionConfig& config, const ReportingHandler& handler)
+        : CurlConnection(config, handler)
     {
     }
 
@@ -67,9 +68,9 @@ class CurlConnectionTimeoutManager : public CurlConnectionManager
     {
     }
 
-    std::unique_ptr<Connection> MakeConnection() override
+    std::unique_ptr<Connection> MakeConnection(const ConnectionConfig& config) override
     {
-        return std::make_unique<CurlConnectionTimeout>(m_handler);
+        return std::make_unique<CurlConnectionTimeout>(config, m_handler);
     }
 };
 
@@ -96,7 +97,7 @@ TEST("Testing CurlConnection()")
     ReportingHandler handler;
     handler.SetLoggingCallback(LogCallbackToTest);
     CurlConnectionManager connectionManager(handler);
-    auto connection = connectionManager.MakeConnection();
+    auto connection = connectionManager.MakeConnection({});
 
     SECTION("Testing CurlConnection::Get()")
     {
@@ -225,7 +226,7 @@ TEST("Testing CurlConnection when the server is not reachable")
     ReportingHandler handler;
     CurlConnectionTimeoutManager connectionManager(handler);
     handler.SetLoggingCallback(LogCallbackToTest);
-    auto connection = connectionManager.MakeConnection();
+    auto connection = connectionManager.MakeConnection({});
 
     // Using a non-routable IP address to ensure the server is not reachable
     // https://www.rfc-editor.org/rfc/rfc5737#section-3: The blocks 192.0.2.0/24 (...) are provided for use in
@@ -252,13 +253,13 @@ TEST("Testing CurlConnection works from a second ConnectionManager")
     // Create a first connection manager and see it leave scope - curl initializes and uninitializes
     {
         CurlConnectionManager connectionManager(handler);
-        REQUIRE(connectionManager.MakeConnection() != nullptr);
+        REQUIRE(connectionManager.MakeConnection({}) != nullptr);
     }
 
     test::MockWebServer server;
     CurlConnectionManager connectionManager(handler);
     handler.SetLoggingCallback(LogCallbackToTest);
-    auto connection = connectionManager.MakeConnection();
+    auto connection = connectionManager.MakeConnection({});
 
     const std::string url = SFSUrlComponents::GetSpecificVersionUrl(server.GetBaseUrl(),
                                                                     c_instanceId,
@@ -274,7 +275,7 @@ TEST("Testing CurlConnection works from a second ConnectionManager")
 
     SECTION("A second connection also works")
     {
-        auto connection2 = connectionManager.MakeConnection();
+        auto connection2 = connectionManager.MakeConnection({});
         REQUIRE_NOTHROW(connection2->Get(url));
     }
 }
@@ -286,7 +287,7 @@ TEST("Testing a url that's too big throws 414")
 
     test::MockWebServer server;
     CurlConnectionManager connectionManager(handler);
-    auto connection = connectionManager.MakeConnection();
+    auto connection = connectionManager.MakeConnection({});
 
     // Will use a fake large product name to produce a large url
     const std::string largeProductName(90000, 'a');
@@ -312,7 +313,7 @@ TEST("Testing a response over the limit fails the operation")
 
     test::MockWebServer server;
     CurlConnectionManager connectionManager(handler);
-    auto connection = connectionManager.MakeConnection();
+    auto connection = connectionManager.MakeConnection({});
 
     // Will use a fake large product name to produce a response over the limit of 100k characters
     const std::string largeProductName(90000, 'a');
@@ -343,10 +344,11 @@ TEST("Testing MS-CV is sent to server")
     ReportingHandler handler;
     handler.SetLoggingCallback(LogCallbackToTest);
     CurlConnectionManager connectionManager(handler);
-    auto connection = connectionManager.MakeConnection();
 
     const std::string cv = "aaaaaaaaaaaaaaaa.1";
-    connection->SetCorrelationVector(cv);
+    ConnectionConfig config;
+    config.baseCV = cv;
+    auto connection = connectionManager.MakeConnection(config);
 
     const std::string url = SFSUrlComponents::GetSpecificVersionUrl(server.GetBaseUrl(),
                                                                     c_instanceId,
@@ -381,7 +383,6 @@ TEST("Testing retry behavior")
 
     MockWebServer server;
     CurlConnectionManager connectionManager(handler);
-    auto connection = connectionManager.MakeConnection();
 
     server.RegisterProduct(c_productName, c_version);
     const std::string url = SFSUrlComponents::GetSpecificVersionUrl(server.GetBaseUrl(),
@@ -392,6 +393,8 @@ TEST("Testing retry behavior")
 
     SECTION("Test exponential backoff")
     {
+        auto connection = connectionManager.MakeConnection({});
+
         INFO("Sets the retry delay to 50ms to speed up the test");
         ScopedTestOverride override(TestOverride::BaseRetryDelayMs, 50);
 
@@ -433,17 +436,6 @@ TEST("Testing retry behavior")
             REQUIRE(time < 150LL + allowedTimeDeviation);
         }
 
-        SECTION("Should fail after first retry if we limit max duration to 75ms")
-        {
-            ConnectionConfig config;
-            config.maxRequestDuration = std::chrono::milliseconds{75};
-            connection->SetConfig(config);
-
-            server.SetForcedHttpErrors(forcedHttpErrors);
-            const auto time = RunTimedGet(false /*success*/);
-            REQUIRE(time < 75LL + allowedTimeDeviation);
-        }
-
         forcedHttpErrors.push(retriableError);
         SECTION("Should take at least 300ms (50ms + 2*50ms + 3*50ms) with three retriable errors")
         {
@@ -451,17 +443,6 @@ TEST("Testing retry behavior")
             const auto time = RunTimedGet();
             REQUIRE(time >= 300LL);
             REQUIRE(time < 300LL + allowedTimeDeviation);
-        }
-
-        SECTION("Should fail after second retry if we limit max duration to 200ms")
-        {
-            ConnectionConfig config;
-            config.maxRequestDuration = std::chrono::milliseconds{200};
-            connection->SetConfig(config);
-
-            server.SetForcedHttpErrors(forcedHttpErrors);
-            const auto time = RunTimedGet(false /*success*/);
-            REQUIRE(time < 200LL + allowedTimeDeviation);
         }
 
         forcedHttpErrors.push(retriableError);
@@ -476,6 +457,8 @@ TEST("Testing retry behavior")
 
     SECTION("Test retriable errors with Retry-After headers")
     {
+        auto connection = connectionManager.MakeConnection({});
+
         INFO("Sets the retry delay to 200ms to speed up the test");
         ScopedTestOverride override(TestOverride::BaseRetryDelayMs, 200);
 
@@ -539,12 +522,14 @@ TEST("Testing retry behavior")
 
         SECTION("Should pass with 3 errors")
         {
+            auto connection = connectionManager.MakeConnection({});
             server.SetForcedHttpErrors(std::queue<HttpCode>({retriableError, retriableError, retriableError}));
             REQUIRE_NOTHROW(connection->Get(url));
         }
 
         SECTION("Should fail with 4 errors")
         {
+            auto connection = connectionManager.MakeConnection({});
             server.SetForcedHttpErrors(
                 std::queue<HttpCode>({retriableError, retriableError, retriableError, retriableError}));
             REQUIRE_THROWS_CODE(connection->Get(url), HttpServiceNotAvailable);
@@ -554,7 +539,7 @@ TEST("Testing retry behavior")
         {
             ConnectionConfig config;
             config.maxRetries = 2;
-            connection->SetConfig(config);
+            auto connection = connectionManager.MakeConnection(config);
 
             SECTION("Should pass with 2 errors")
             {
@@ -573,7 +558,7 @@ TEST("Testing retry behavior")
         {
             ConnectionConfig config;
             config.maxRetries = 0;
-            connection->SetConfig(config);
+            auto connection = connectionManager.MakeConnection(config);
 
             SECTION("Should pass with no errors")
             {

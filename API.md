@@ -47,7 +47,7 @@ These data types provide `noexcept` methods to interact with member data.
 
 ## Retry Behavior
 
-The API follows a certain set of rules to retry upon reaching specific HTTP Status Codes. The behavior is configurable through the `ConnectionConfig` member of `ClientConfig`. See `ConnectionConfig.h` for each individual configuration.
+The API follows a certain set of rules to retry upon reaching specific HTTP Status Codes. The behavior is configurable through the `retryOnError` member of `ProductRequest`.
 
 By default, the client will retry up to 3 times when reaching the following HTTP Status Codes:
 - 429: Too Many Requests

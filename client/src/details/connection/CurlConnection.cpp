@@ -10,6 +10,7 @@
 
 #include <curl/curl.h>
 
+#include <chrono>
 #include <cstring>
 #include <optional>
 #include <thread>
@@ -270,7 +271,8 @@ struct CurlHeaderList
 };
 } // namespace SFS::details
 
-CurlConnection::CurlConnection(const ReportingHandler& handler) : Connection(handler)
+CurlConnection::CurlConnection(const ConnectionConfig& config, const ReportingHandler& handler)
+    : Connection(config, handler)
 {
     m_handle = curl_easy_init();
     THROW_CODE_IF_LOG(ConnectionSetupFailed, !m_handle, m_handler, "Failed to init curl connection");
@@ -335,10 +337,8 @@ std::string CurlConnection::CurlPerform(const std::string& url, CurlHeaderList& 
     THROW_IF_CURL_SETUP_ERROR(curl_easy_setopt(m_handle, CURLOPT_WRITEFUNCTION, WriteCallback));
     THROW_IF_CURL_SETUP_ERROR(curl_easy_setopt(m_handle, CURLOPT_WRITEDATA, &readBuffer));
 
-    auto start = std::chrono::steady_clock::now();
-
     // Retry the connection a specified number of times
-    const unsigned totalAttempts = 1 + m_config.maxRetries;
+    const unsigned totalAttempts = 1 + m_maxRetries;
     for (unsigned i = 0; i < totalAttempts; i++)
     {
         const unsigned attempt = i + 1;
@@ -370,7 +370,7 @@ std::string CurlConnection::CurlPerform(const std::string& url, CurlHeaderList& 
             THROW_IF_FAILED_LOG(httpResult, m_handler);
         }
 
-        ProcessRetry(attempt, httpResult, start);
+        ProcessRetry(attempt, httpResult);
     }
 
     return readBuffer;
@@ -393,25 +393,8 @@ bool CurlConnection::CanRetryRequest(bool lastAttempt, long httpCode)
     return true;
 }
 
-void CurlConnection::ProcessRetry(int attempt,
-                                  const Result& httpResult,
-                                  const std::chrono::steady_clock::time_point& start)
+void CurlConnection::ProcessRetry(int attempt, const Result& httpResult)
 {
-    auto ThrowIfOverExpectedTime = [&](const std::chrono::steady_clock::time_point& end, const char* currentStr) {
-        auto curDuration = std::chrono::duration_cast<std::chrono::milliseconds>(end - start);
-        if (curDuration > m_config.maxRequestDuration)
-        {
-            LOG_INFO(m_handler,
-                     "The %s duration of %lldms is bigger than the max request duration of %lldms",
-                     currentStr,
-                     static_cast<long long>(curDuration.count()),
-                     static_cast<long long>(m_config.maxRequestDuration.count()));
-            THROW_IF_FAILED_LOG(httpResult, m_handler);
-        }
-    };
-
-    ThrowIfOverExpectedTime(std::chrono::steady_clock::now(), "current");
-
     // Wait before retrying. Prefer the Retry-After information if available
     std::chrono::milliseconds retryDelay{0};
     const std::optional<std::string> retryAfter = GetResponseHeader(m_handle, HttpHeader::RetryAfter, m_handler);
@@ -435,9 +418,6 @@ void CurlConnection::ProcessRetry(int attempt,
 
         retryDelay = baseRetryDelay * (1 << (attempt - 1));
     }
-
-    // Throw if waiting will go over the expected max duration
-    ThrowIfOverExpectedTime(std::chrono::steady_clock::now() + retryDelay, "expected");
 
     LOG_IF_FAILED(httpResult, m_handler);
     LOG_INFO(m_handler, "Sleeping for %lld ms", static_cast<long long>(retryDelay.count()));

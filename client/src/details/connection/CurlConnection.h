@@ -5,7 +5,6 @@
 
 #include "Connection.h"
 
-#include <chrono>
 #include <string>
 
 // Forward declaration
@@ -23,7 +22,7 @@ class ReportingHandler;
 class CurlConnection : public Connection
 {
   public:
-    CurlConnection(const ReportingHandler& handler);
+    CurlConnection(const ConnectionConfig& config, const ReportingHandler& handler);
     ~CurlConnection() override;
 
     /**
@@ -49,7 +48,7 @@ class CurlConnection : public Connection
     /**
      * @brief Process retry and perform wait logic before retrying the request
      */
-    void ProcessRetry(int attempt, const Result& httpResult, const std::chrono::steady_clock::time_point& start);
+    void ProcessRetry(int attempt, const Result& httpResult);
 
   protected:
     /**

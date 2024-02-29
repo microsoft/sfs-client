@@ -33,16 +33,16 @@ TEST("Testing CurlConnectionManager()")
     CurlConnectionManager curlConnectionManager(handler);
 
     // Check that the CurlConnectionManager generates a CurlConnection object
-    std::unique_ptr<Connection> Connection = curlConnectionManager.MakeConnection();
+    std::unique_ptr<Connection> Connection = curlConnectionManager.MakeConnection({});
     REQUIRE(Connection != nullptr);
     REQUIRE(dynamic_cast<CurlConnection*>(Connection.get()) != nullptr);
 
     // Having many CurlConnectionManager objects should not cause any issues, curl is smart enough to
     // handle multiple initialization and cleanup calls
     CurlConnectionManager curlConnectionManager2(handler);
-    auto Connection2 = curlConnectionManager2.MakeConnection();
+    auto Connection2 = curlConnectionManager2.MakeConnection({});
 
     CurlConnectionManager curlConnectionManager3(handler);
-    auto Connection3 = curlConnectionManager3.MakeConnection();
-    auto Connection4 = curlConnectionManager3.MakeConnection();
+    auto Connection3 = curlConnectionManager3.MakeConnection({});
+    auto Connection4 = curlConnectionManager3.MakeConnection({});
 }

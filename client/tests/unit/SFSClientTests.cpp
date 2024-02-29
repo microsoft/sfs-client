@@ -120,109 +120,53 @@ TEST("Testing SFSClient::Make()")
         REQUIRE(sfsClient != nullptr);
     }
 
-    SECTION("Make(accountId, instanceId, namespace, connectionConfig, out)")
-    {
-        SECTION("Using an existing struct")
-        {
-            const ConnectionConfig connectionConfig;
-            REQUIRE(SFSClient::Make({accountId, instanceId, nameSpace, connectionConfig, std::nullopt}, sfsClient) ==
-                    Result::Success);
-            REQUIRE(sfsClient != nullptr);
-        }
-
-        SECTION("Using a separate ClientConfig object")
-        {
-            const ConnectionConfig connectionConfig;
-            ClientConfig config{accountId, instanceId, nameSpace, connectionConfig, std::nullopt};
-            REQUIRE(SFSClient::Make(config, sfsClient) == Result::Success);
-            REQUIRE(sfsClient != nullptr);
-        }
-
-        SECTION("Editing a ConnectionConfig object")
-        {
-            ConnectionConfig connectionConfig;
-            connectionConfig.maxRetries = 2;
-
-            ClientConfig config{accountId, instanceId, nameSpace, connectionConfig, std::nullopt};
-            REQUIRE(SFSClient::Make(config, sfsClient) == Result::Success);
-            REQUIRE(sfsClient != nullptr);
-        }
-
-        SECTION("Creating a connectionConfig member directly with {}")
-        {
-            ClientConfig config{accountId, instanceId, nameSpace, {}, std::nullopt};
-            config.connectionConfig = {2, std::chrono::minutes{3}};
-            REQUIRE(SFSClient::Make(config, sfsClient) == Result::Success);
-            REQUIRE(sfsClient != nullptr);
-        }
-
-        SECTION("Testing validation of ConnectionConfig::maxRetries")
-        {
-            ClientConfig config{accountId, instanceId, nameSpace, {}, std::nullopt};
-            for (unsigned i = 0; i < 10; ++i)
-            {
-                config.connectionConfig.maxRetries = i;
-                if (i <= 3)
-                {
-                    REQUIRE(SFSClient::Make(config, sfsClient) == Result::Success);
-                }
-                else
-                {
-                    const auto ret = SFSClient::Make(config, sfsClient);
-                    REQUIRE(ret.GetCode() == Result::InvalidArg);
-                    REQUIRE(ret.GetMessage() == "maxRetries must be <= 3");
-                }
-            }
-        }
-    }
-
-    SECTION("Make(accountId, instanceId, namespace, connectionConfig, logCallbackFn, out) works")
+    SECTION("Make(accountId, instanceId, namespace, logCallbackFn, out) works")
     {
         SECTION("Using a lambda with {} initialization")
         {
-            REQUIRE(SFSClient::Make({accountId, instanceId, nameSpace, {}, [](const LogData&) {}}, sfsClient) ==
+            REQUIRE(SFSClient::Make({accountId, instanceId, nameSpace, [](const LogData&) {}}, sfsClient) ==
                     Result::Success);
             REQUIRE(sfsClient != nullptr);
         }
 
         SECTION("Using a lambda with a ClientConfig object")
         {
-            ClientConfig config{accountId, instanceId, nameSpace, {}, [](const LogData&) {}};
+            ClientConfig config{accountId, instanceId, nameSpace, [](const LogData&) {}};
             REQUIRE(SFSClient::Make(config, sfsClient) == Result::Success);
             REQUIRE(sfsClient != nullptr);
         }
 
         SECTION("Using a nullptr with a ClientConfig object")
         {
-            ClientConfig config{accountId, instanceId, nameSpace, {}, nullptr};
+            ClientConfig config{accountId, instanceId, nameSpace, nullptr};
             REQUIRE(SFSClient::Make(config, sfsClient) == Result::Success);
             REQUIRE(sfsClient != nullptr);
         }
 
         SECTION("Using a valid empty-namespace function within a ClientConfig object")
         {
-            ClientConfig config{accountId, instanceId, nameSpace, {}, TestLoggingCallback};
+            ClientConfig config{accountId, instanceId, nameSpace, TestLoggingCallback};
             REQUIRE(SFSClient::Make(config, sfsClient) == Result::Success);
             REQUIRE(sfsClient != nullptr);
         }
 
         SECTION("Using a valid static function within a ClientConfig object")
         {
-            ClientConfig config{accountId, instanceId, nameSpace, {}, StaticTestLoggingCallback};
+            ClientConfig config{accountId, instanceId, nameSpace, StaticTestLoggingCallback};
             REQUIRE(SFSClient::Make(config, sfsClient) == Result::Success);
             REQUIRE(sfsClient != nullptr);
         }
 
         SECTION("Using a valid static member method within a ClientConfig object")
         {
-            ClientConfig config{accountId, instanceId, nameSpace, {}, &TestLoggingCallbackStruct::TestLoggingCallback};
+            ClientConfig config{accountId, instanceId, nameSpace, &TestLoggingCallbackStruct::TestLoggingCallback};
             REQUIRE(SFSClient::Make(config, sfsClient) == Result::Success);
             REQUIRE(sfsClient != nullptr);
         }
 
         SECTION("Can also move a lambda")
         {
-            ClientConfig config{accountId, instanceId, nameSpace, {}, [](const LogData&) {}};
+            ClientConfig config{accountId, instanceId, nameSpace, [](const LogData&) {}};
             REQUIRE(SFSClient::Make(std::move(config), sfsClient) == Result::Success);
             REQUIRE(sfsClient != nullptr);
         }

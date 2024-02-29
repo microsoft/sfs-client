@@ -156,7 +156,6 @@ SFSClientImpl<ConnectionManagerT>::SFSClientImpl(ClientConfig&& config)
     , m_instanceId(config.instanceId && !config.instanceId->empty() ? std::move(*config.instanceId)
                                                                     : c_defaultInstanceId)
     , m_nameSpace(config.nameSpace && !config.nameSpace->empty() ? std::move(*config.nameSpace) : c_defaultNameSpace)
-    , m_connectionConfig(std::move(config.connectionConfig))
 {
     if (config.logCallbackFn)
     {
@@ -304,16 +303,9 @@ try
 SFS_CATCH_LOG_RETHROW(m_reportingHandler)
 
 template <typename ConnectionManagerT>
-std::unique_ptr<Connection> SFSClientImpl<ConnectionManagerT>::MakeConnection(const std::optional<std::string>& cv)
+std::unique_ptr<Connection> SFSClientImpl<ConnectionManagerT>::MakeConnection(const ConnectionConfig& config)
 {
-    auto connection = m_connectionManager->MakeConnection();
-    if (cv)
-    {
-        connection->SetCorrelationVector(*cv);
-    }
-
-    connection->SetConfig(m_connectionConfig);
-    return connection;
+    return m_connectionManager->MakeConnection(config);
 }
 
 template <typename ConnectionManagerT>
