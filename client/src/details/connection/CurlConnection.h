@@ -11,7 +11,11 @@
 // Forward declaration
 typedef void CURL;
 
-namespace SFS::details
+namespace SFS
+{
+class Result;
+
+namespace details
 {
 struct CurlHeaderList;
 class ReportingHandler;
@@ -38,9 +42,14 @@ class CurlConnection : public Connection
 
   private:
     /**
+     * @brief Perform checks that the request can be retried
+     */
+    bool CanRetryRequest(bool lastAttempt, long httpCode);
+
+    /**
      * @brief Process retry and perform wait logic before retrying the request
      */
-    void ProcessRetry(int attempt, bool lastAttempt, long httpCode, const std::chrono::steady_clock::time_point& start);
+    void ProcessRetry(int attempt, const Result& httpResult, const std::chrono::steady_clock::time_point& start);
 
   protected:
     /**
@@ -52,4 +61,5 @@ class CurlConnection : public Connection
 
     CURL* m_handle;
 };
-} // namespace SFS::details
+} // namespace details
+} // namespace SFS

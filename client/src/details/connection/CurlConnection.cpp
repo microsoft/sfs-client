@@ -181,7 +181,7 @@ std::optional<std::string> GetResponseHeader(CURL* handle,
     const std::string headerName = ToString(httpHeader);
 
     // This struct only represents data inside the CURL handle, and must not be manually freed
-    struct curl_header* header;
+    curl_header* header;
     const int lastRequest = -1;
     CURLHcode curlhCode = curl_easy_header(handle, headerName.c_str(), 0 /*index*/, CURLH_HEADER, lastRequest, &header);
     switch (curlhCode)
@@ -363,47 +363,57 @@ std::string CurlConnection::CurlPerform(const std::string& url, CurlHeaderList& 
             break;
         }
 
-        ProcessRetry(attempt, lastAttempt, httpCode, start);
+        const Result httpResult = HttpCodeToResult(httpCode);
+        if (!CanRetryRequest(lastAttempt, httpCode))
+        {
+            THROW_IF_FAILED_LOG(httpResult, m_handler);
+        }
+
+        ProcessRetry(attempt, httpResult, start);
     }
 
     return readBuffer;
 }
 
-void CurlConnection::ProcessRetry(int attempt,
-                                  bool lastAttempt,
-                                  long httpCode,
-                                  const std::chrono::steady_clock::time_point& start)
+bool CurlConnection::CanRetryRequest(bool lastAttempt, long httpCode)
 {
-    const Result httpResult = HttpCodeToResult(httpCode);
     if (lastAttempt)
     {
         LOG_INFO(m_handler, "No retry as this is the last attempt");
-        THROW_IF_FAILED_LOG(httpResult, m_handler);
+        return false;
     }
 
     if (!IsRetriableHttpError(httpCode))
     {
         LOG_INFO(m_handler, "Error %ld is not retriable, stopping", httpCode);
-        THROW_IF_FAILED_LOG(httpResult, m_handler);
+        return false;
     }
 
-    using namespace std::chrono;
-    auto ThrowIfOverExpectedTime = [&](const steady_clock::time_point& end, const char* currentStr) {
-        if (auto curDuration = duration_cast<milliseconds>(end - start); curDuration > m_config.maxRequestDuration)
+    return true;
+}
+
+void CurlConnection::ProcessRetry(int attempt,
+                                  const Result& httpResult,
+                                  const std::chrono::steady_clock::time_point& start)
+{
+    auto ThrowIfOverExpectedTime = [&](const std::chrono::steady_clock::time_point& end, const char* currentStr) {
+        auto curDuration = std::chrono::duration_cast<std::chrono::milliseconds>(end - start);
+        if (curDuration > m_config.maxRequestDuration)
         {
             LOG_INFO(m_handler,
                      "The %s duration of %lldms is bigger than the max request duration of %lldms",
                      currentStr,
                      static_cast<long long>(curDuration.count()),
-                     static_cast<long long>(duration_cast<milliseconds>(m_config.maxRequestDuration).count()));
+                     static_cast<long long>(
+                         std::chrono::duration_cast<std::chrono::milliseconds>(m_config.maxRequestDuration).count()));
             THROW_IF_FAILED_LOG(httpResult, m_handler);
         }
     };
 
-    ThrowIfOverExpectedTime(steady_clock::now(), "current");
+    ThrowIfOverExpectedTime(std::chrono::steady_clock::now(), "current");
 
     // Wait before retrying. Prefer the Retry-After information if available
-    milliseconds retryDelay{0};
+    std::chrono::milliseconds retryDelay{0};
     const std::optional<std::string> retryAfter = GetResponseHeader(m_handle, HttpHeader::RetryAfter, m_handler);
     if (retryAfter)
     {
@@ -413,9 +423,9 @@ void CurlConnection::ProcessRetry(int attempt,
     else
     {
         // Apply exponential back-off with a factor of 2
-        static milliseconds s_baseRetryDelay{15000}; // Value recommended as interval by the service
+        static std::chrono::milliseconds s_baseRetryDelay{15000}; // Value recommended as interval by the service
 
-        milliseconds baseRetryDelay = s_baseRetryDelay;
+        std::chrono::milliseconds baseRetryDelay = s_baseRetryDelay;
 
         // Value can be overriden in tests
         if (auto override = test::GetTestOverrideAsInt(test::TestOverride::BaseRetryDelayMs))
@@ -427,7 +437,7 @@ void CurlConnection::ProcessRetry(int attempt,
     }
 
     // Throw if waiting will go over the expected max duration
-    ThrowIfOverExpectedTime(steady_clock::now() + retryDelay, "expected");
+    ThrowIfOverExpectedTime(std::chrono::steady_clock::now() + retryDelay, "expected");
 
     LOG_IF_FAILED(httpResult, m_handler);
     LOG_INFO(m_handler, "Sleeping for %lld ms", static_cast<long long>(retryDelay.count()));
