@@ -394,8 +394,8 @@ void CurlConnection::ProcessRetry(int attempt,
             LOG_INFO(m_handler,
                      "The %s duration of %lldms is bigger than the max request duration of %lldms",
                      currentStr,
-                     curDuration.count(),
-                     m_config.maxRequestDuration.count());
+                     static_cast<long long>(curDuration.count()),
+                     static_cast<long long>(m_config.maxRequestDuration.count()));
             THROW_IF_FAILED_LOG(httpResult, m_handler);
         }
     };
@@ -430,6 +430,6 @@ void CurlConnection::ProcessRetry(int attempt,
     ThrowIfOverExpectedTime(steady_clock::now() + retryDelay, "expected");
 
     LOG_IF_FAILED(httpResult, m_handler);
-    LOG_INFO(m_handler, "Sleeping for %lld ms", retryDelay.count());
+    LOG_INFO(m_handler, "Sleeping for %lld ms", static_cast<long long>(retryDelay.count()));
     std::this_thread::sleep_for(retryDelay);
 }
