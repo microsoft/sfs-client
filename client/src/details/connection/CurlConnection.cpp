@@ -30,6 +30,7 @@
 
 using namespace SFS;
 using namespace SFS::details;
+using namespace std::chrono_literals;
 
 namespace
 {
@@ -118,14 +119,14 @@ Result CurlCodeToResult(CURLcode curlCode, char* errorBuffer)
     return Result(code, std::move(message));
 }
 
-bool IsSuccessfulHttpCode(long httpCode)
+bool IsSuccessfulSFSHttpCode(long httpCode)
 {
     return httpCode == 200;
 }
 
 Result HttpCodeToResult(long httpCode)
 {
-    if (IsSuccessfulHttpCode(httpCode))
+    if (IsSuccessfulSFSHttpCode(httpCode))
     {
         return Result::Success;
     }
@@ -231,11 +232,11 @@ std::chrono::milliseconds ParseRetryAfterValue(const std::string& retryAfter, co
         THROW_LOG(Result(Result::ConnectionUnexpectedError, "Retry-After header value is not in the expected range"),
                   reportingHandler);
     }
-    if (retryAfterSec.count() <= 0)
+    if (retryAfterSec <= 0s)
     {
         THROW_LOG(Result(Result::ConnectionUnexpectedError, "Invalid Retry-After header value"), reportingHandler);
     }
-    return std::chrono::duration_cast<std::chrono::milliseconds>(retryAfterSec);
+    return retryAfterSec;
 }
 } // namespace
 
@@ -358,7 +359,7 @@ std::string CurlConnection::CurlPerform(const std::string& url, CurlHeaderList& 
         long httpCode = 0;
         THROW_IF_CURL_UNEXPECTED_ERROR(curl_easy_getinfo(m_handle, CURLINFO_RESPONSE_CODE, &httpCode));
 
-        if (IsSuccessfulHttpCode(httpCode))
+        if (IsSuccessfulSFSHttpCode(httpCode))
         {
             break;
         }
@@ -423,7 +424,7 @@ void CurlConnection::ProcessRetry(int attempt,
     else
     {
         // Apply exponential back-off with a factor of 2
-        static std::chrono::milliseconds s_baseRetryDelay{15000}; // Value recommended as interval by the service
+        static std::chrono::milliseconds s_baseRetryDelay = 15s; // Value recommended as interval by the service
 
         std::chrono::milliseconds baseRetryDelay = s_baseRetryDelay;
 
