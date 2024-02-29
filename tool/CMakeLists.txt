@@ -1,15 +1,19 @@
 # Copyright (c) Microsoft Corporation.
 # Licensed under the MIT License.
 
-set(SFS_CLIENT_TOOL_NAME "SFSClientTool")
+# JSON library
+find_package(nlohmann_json CONFIG REQUIRED)
 
-add_executable(${SFS_CLIENT_TOOL_NAME})
+project(SFSClientTool LANGUAGES CXX)
 
-target_sources(${SFS_CLIENT_TOOL_NAME} PRIVATE SFSClientTool.cpp)
+add_executable(${PROJECT_NAME})
 
-set(SFS_CLIENT_LIB_NAME "Microsoft::${PROJECT_NAME}")
-add_dependencies(${SFS_CLIENT_TOOL_NAME} ${SFS_CLIENT_LIB_NAME})
+target_sources(${PROJECT_NAME} PRIVATE SFSClientTool.cpp)
 
-target_link_libraries(${SFS_CLIENT_TOOL_NAME} PRIVATE ${SFS_CLIENT_LIB_NAME})
+set(SFS_CLIENT_LIB_NAME "Microsoft::${CMAKE_PROJECT_NAME}")
+add_dependencies(${PROJECT_NAME} ${SFS_CLIENT_LIB_NAME})
 
-target_include_directories(${SFS_CLIENT_TOOL_NAME} PUBLIC ../client/include)
+target_link_libraries(${PROJECT_NAME} PRIVATE ${SFS_CLIENT_LIB_NAME})
+target_link_libraries(${PROJECT_NAME} PRIVATE nlohmann_json::nlohmann_json)
+
+target_include_directories(${PROJECT_NAME} PUBLIC ../client/include)

@@ -10,7 +10,10 @@
 #include <time.h>
 #include <vector>
 
+#include <nlohmann/json.hpp>
+
 using namespace SFS;
+using json = nlohmann::json;
 
 namespace
 {
@@ -162,48 +165,34 @@ void DisplayResults(const std::unique_ptr<Content>& content)
 {
     if (!content)
     {
-        std::cout << "No results found." << std::endl;
+        PrintError("No results found.");
         return;
     }
 
-    auto comma = [](size_t count, size_t size) -> std::string { return count == size - 1 ? "" : ","; };
-
     PrintLog("Content found:");
-    std::cout << "{" << std::endl;
-    std::cout << R"(  "Content": {)" << std::endl;
-    std::cout << R"(    "Namespace": ")" << content->GetContentId().GetNameSpace() << R"(",)" << std::endl;
-    std::cout << R"(    "Name": ")" << content->GetContentId().GetName() << R"(",)" << std::endl;
-    std::cout << R"(    "Version": ")" << content->GetContentId().GetVersion() << R"(",)" << std::endl;
 
-    if (content->GetFiles().size() == 0)
-    {
-        std::cout << R"(    "Files": [])" << std::endl;
-    }
-    else
-    {
-        std::cout << R"(    "Files": [)" << std::endl;
+    json j = json::object();
+    j["ContentId"]["Namespace"] = content->GetContentId().GetNameSpace();
+    j["ContentId"]["Name"] = content->GetContentId().GetName();
+    j["ContentId"]["Version"] = content->GetContentId().GetVersion();
 
-        size_t fileCount = 0;
-        for (const auto& file : content->GetFiles())
+    j["Files"] = json::array();
+    for (const auto& file : content->GetFiles())
+    {
+        json fileJson = json::object();
+        fileJson["FileId"] = file.GetFileId();
+        fileJson["Url"] = file.GetUrl();
+        fileJson["SizeInBytes"] = file.GetSizeInBytes();
+        json hashes = json::object();
+        for (const auto& hash : file.GetHashes())
         {
-            std::cout << R"(      {)" << std::endl;
-            std::cout << R"(        "FileId": ")" << file.GetFileId() << R"(",)" << std::endl;
-            std::cout << R"(        "Url": ")" << file.GetUrl() << R"(",)" << std::endl;
-            std::cout << R"(        "SizeInBytes": )" << file.GetSizeInBytes() << R"(,)" << std::endl;
-            std::cout << R"(        "Hashes": {)" << std::endl;
-            size_t hashCount = 0;
-            for (const auto& hash : file.GetHashes())
-            {
-                std::cout << "          \"" << ToString(hash.first) << R"(": ")" << hash.second << '"'
-                          << comma(hashCount++, file.GetHashes().size()) << std::endl;
-            }
-            std::cout << R"(        })" << std::endl;
-            std::cout << R"(      })" << comma(fileCount++, content->GetFiles().size()) << std::endl;
+            hashes[ToString(hash.first)] = hash.second;
         }
-        std::cout << R"(    ])" << std::endl;
+        fileJson["Hashes"] = hashes;
+        j["Files"].push_back(fileJson);
     }
-    std::cout << R"(  })" << std::endl;
-    std::cout << R"(})" << std::endl;
+
+    PrintLog(j.dump(2 /*indent*/));
 }
 
 void LogResult(const SFS::Result& result)
