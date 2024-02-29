@@ -3,7 +3,7 @@
 
 #pragma once
 
-#include <unordered_set>
+#include <chrono>
 
 namespace SFS
 {
@@ -16,10 +16,9 @@ struct ConnectionConfig
     unsigned maxRetries = 3;
 
     /**
-     * @brief The base delay in milliseconds between attempts for a web request if a Retry-After header is not present.
-     * This number must be 15000ms < retryDelayMs <= 60000ms. The delay between attempts will be exponential with a
-     * factor of 2.
+     * @brief The max duration for a single web request made to the SFS API. This value is enforced only after the
+     * service responds or times out.
      */
-    unsigned retryDelayMs = 15000;
+    std::chrono::milliseconds maxRequestDuration{150000};
 };
 } // namespace SFS

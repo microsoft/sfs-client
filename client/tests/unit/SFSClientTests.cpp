@@ -151,7 +151,7 @@ TEST("Testing SFSClient::Make()")
         SECTION("Creating a connectionConfig member directly with {}")
         {
             ClientConfig config{accountId, instanceId, nameSpace, {}, std::nullopt};
-            config.connectionConfig = {2, 30000};
+            config.connectionConfig = {2, std::chrono::milliseconds{30000}};
             REQUIRE(SFSClient::Make(config, sfsClient) == Result::Success);
             REQUIRE(sfsClient != nullptr);
         }
@@ -173,37 +173,6 @@ TEST("Testing SFSClient::Make()")
                     REQUIRE(ret.GetMessage() == "maxRetries must be <= 3");
                 }
             }
-        }
-
-        SECTION("Testing validation of ConnectionConfig::retryDelayMs")
-        {
-            ClientConfig config{accountId, instanceId, nameSpace, {}, std::nullopt};
-            for (unsigned i = 0; i < 100000; i = i + 5000)
-            {
-                config.connectionConfig.retryDelayMs = i;
-                if (i >= 15000 && i <= 60000)
-                {
-                    REQUIRE(SFSClient::Make(config, sfsClient) == Result::Success);
-                }
-                else
-                {
-                    const auto ret = SFSClient::Make(config, sfsClient);
-                    REQUIRE(ret.GetCode() == Result::InvalidArg);
-                    REQUIRE(ret.GetMessage() == "timeoutMs must be between 15000 and 60000");
-                }
-            }
-
-            INFO("Testing upper bound of retryDelayMs");
-            config.connectionConfig.retryDelayMs = 60001;
-            auto ret = SFSClient::Make(config, sfsClient);
-            REQUIRE(ret.GetCode() == Result::InvalidArg);
-            REQUIRE(ret.GetMessage() == "timeoutMs must be between 15000 and 60000");
-
-            INFO("Testing lower bound of retryDelayMs");
-            config.connectionConfig.retryDelayMs = 14999;
-            ret = SFSClient::Make(config, sfsClient);
-            REQUIRE(ret.GetCode() == Result::InvalidArg);
-            REQUIRE(ret.GetMessage() == "timeoutMs must be between 15000 and 60000");
         }
     }
 

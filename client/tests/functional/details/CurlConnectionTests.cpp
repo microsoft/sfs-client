@@ -6,6 +6,7 @@
 #include "../../util/TestHelper.h"
 #include "ReportingHandler.h"
 #include "SFSUrlComponents.h"
+#include "TestOverride.h"
 #include "connection/CurlConnection.h"
 #include "connection/CurlConnectionManager.h"
 #include "connection/HttpHeader.h"
@@ -369,6 +370,12 @@ TEST("Testing MS-CV is sent to server")
 
 TEST("Testing retry behavior")
 {
+    if (!AreTestOverridesAllowed())
+    {
+        INFO("Skipping. Test overrides not enabled");
+        return;
+    }
+
     ReportingHandler handler;
     handler.SetLoggingCallback(LogCallbackToTest);
 
@@ -386,9 +393,7 @@ TEST("Testing retry behavior")
     SECTION("Test exponential backoff")
     {
         INFO("Sets the retry delay to 50ms to speed up the test");
-        ConnectionConfig config;
-        config.retryDelayMs = 50;
-        connection->SetConfig(config);
+        ScopedTestOverride override(TestOverride::BaseRetryDelayMs, 50);
 
         const int retriableError = 503; // ServerBusy
 
@@ -420,12 +425,23 @@ TEST("Testing retry behavior")
         }
 
         forcedHttpErrors.push(retriableError);
-        SECTION("Should take at least 150ms (50ms + 2*50ms) with two retriable error")
+        SECTION("Should take at least 150ms (50ms + 2*50ms) with two retriable errors")
         {
             server.SetForcedHttpErrors(forcedHttpErrors);
             const auto time = RunTimedGet();
             REQUIRE(time >= 150LL);
             REQUIRE(time < 150LL + allowedTimeDeviation);
+        }
+
+        SECTION("Should fail after first retry if we limit max duration to 75ms")
+        {
+            ConnectionConfig config;
+            config.maxRequestDuration = std::chrono::milliseconds{75};
+            connection->SetConfig(config);
+
+            server.SetForcedHttpErrors(forcedHttpErrors);
+            const auto time = RunTimedGet(false /*success*/);
+            REQUIRE(time < 75LL + allowedTimeDeviation);
         }
 
         forcedHttpErrors.push(retriableError);
@@ -435,6 +451,17 @@ TEST("Testing retry behavior")
             const auto time = RunTimedGet();
             REQUIRE(time >= 300LL);
             REQUIRE(time < 300LL + allowedTimeDeviation);
+        }
+
+        SECTION("Should fail after second retry if we limit max duration to 200ms")
+        {
+            ConnectionConfig config;
+            config.maxRequestDuration = std::chrono::milliseconds{100};
+            connection->SetConfig(config);
+
+            server.SetForcedHttpErrors(forcedHttpErrors);
+            const auto time = RunTimedGet(false /*success*/);
+            REQUIRE(time < 200LL + allowedTimeDeviation);
         }
 
         forcedHttpErrors.push(retriableError);
@@ -450,9 +477,7 @@ TEST("Testing retry behavior")
     SECTION("Test retriable errors with Retry-After headers")
     {
         INFO("Sets the retry delay to 200ms to speed up the test");
-        ConnectionConfig config;
-        config.retryDelayMs = 200;
-        connection->SetConfig(config);
+        ScopedTestOverride override(TestOverride::BaseRetryDelayMs, 200);
 
         const int retriableError = 503;  // ServerBusy
         const int retriableError2 = 502; // BadGateway
@@ -508,9 +533,7 @@ TEST("Testing retry behavior")
     SECTION("Test maxRetries")
     {
         INFO("Sets the retry delay to 1ms to speed up the test");
-        ConnectionConfig config;
-        config.retryDelayMs = 1;
-        connection->SetConfig(config);
+        ScopedTestOverride override(TestOverride::BaseRetryDelayMs, 1);
 
         const int retriableError = 503; // ServerBusy
 
@@ -529,6 +552,7 @@ TEST("Testing retry behavior")
 
         SECTION("Reducing retries to 2")
         {
+            ConnectionConfig config;
             config.maxRetries = 2;
             connection->SetConfig(config);
 
@@ -547,6 +571,7 @@ TEST("Testing retry behavior")
 
         SECTION("Reducing retries to 0")
         {
+            ConnectionConfig config;
             config.maxRetries = 0;
             connection->SetConfig(config);
 

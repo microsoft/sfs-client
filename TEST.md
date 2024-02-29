@@ -16,5 +16,5 @@ When these test overrides are enabled, a few environment variables can be used t
 
 | Environment Variable                          | Description                                                                                 |
 |-----------------------------------------------|---------------------------------------------------------------------------------------------|
+| SFS_TEST_BASE_RETRY_DELAY_MS                  | Set this to override the base retry delay of 15s.                                           |
 | SFS_TEST_OVERRIDE_BASE_URL                    | Set this to any string value which will be used as the SFS URL rather than the default one. |
-| SFS_TEST_OVERRIDE_NO_CONNECTION_CONFIG_LIMITS | Set this to remove the limitations on the values of ConnectionConfig.                       |

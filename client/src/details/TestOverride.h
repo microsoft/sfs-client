@@ -18,8 +18,8 @@ bool AreTestOverridesAllowed();
 
 enum class TestOverride
 {
-    BaseUrl,                 // String. Allows one to override the base URL used for all requests
-    NoConnectionConfigLimits // Bool. Allows one to disable the ConnectionConfig limits
+    BaseRetryDelayMs, // Integer. Allows one to override the base retry delay.
+    BaseUrl,          // String. Allows one to override the base URL used for all requests
 };
 
 /**
@@ -35,14 +35,16 @@ std::string GetEnvVarNameFromOverride(TestOverride override);
 std::optional<std::string> GetTestOverride(TestOverride override);
 
 /**
- * @return true if the test override is set
+ * @brief Get the value of a test override as int
+ * @details std::nullopt is returned if the environment variable is not set or in case of failure.
  */
-bool HasTestOverride(TestOverride override);
+std::optional<int> GetTestOverrideAsInt(TestOverride override);
 
 class ScopedTestOverride
 {
   public:
     ScopedTestOverride(TestOverride override, const std::string& value);
+    ScopedTestOverride(TestOverride override, int value);
 
   private:
     SFS::details::env::ScopedEnv m_scopedEnv;

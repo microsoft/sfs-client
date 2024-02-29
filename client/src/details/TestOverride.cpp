@@ -20,10 +20,10 @@ std::string test::GetEnvVarNameFromOverride(TestOverride override)
 {
     switch (override)
     {
+    case TestOverride::BaseRetryDelayMs:
+        return "SFS_TEST_BASE_RETRY_DELAY_MS";
     case TestOverride::BaseUrl:
         return "SFS_TEST_OVERRIDE_BASE_URL";
-    case TestOverride::NoConnectionConfigLimits:
-        return "SFS_TEST_OVERRIDE_NO_CONNECTION_CONFIG_LIMITS";
     }
     return "";
 }
@@ -38,12 +38,22 @@ std::optional<std::string> test::GetTestOverride(TestOverride override)
     return details::env::GetEnv(GetEnvVarNameFromOverride(override));
 }
 
-bool test::HasTestOverride(TestOverride override)
+std::optional<int> test::GetTestOverrideAsInt(TestOverride override)
 {
-    return GetTestOverride(override).has_value();
+    auto str = GetTestOverride(override);
+    if (str)
+    {
+        return std::stoi(*str);
+    }
+    return std::nullopt;
 }
 
 ScopedTestOverride::ScopedTestOverride(TestOverride override, const std::string& value)
     : m_scopedEnv(GetEnvVarNameFromOverride(override), value)
+{
+}
+
+ScopedTestOverride::ScopedTestOverride(TestOverride override, int value)
+    : m_scopedEnv(GetEnvVarNameFromOverride(override), std::to_string(value))
 {
 }

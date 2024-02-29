@@ -7,7 +7,6 @@
 #include "details/SFSClientImpl.h"
 #include "details/connection/Connection.h"
 #include "details/connection/CurlConnectionManager.h"
-#include "details/TestOverride.h"
 
 using namespace SFS;
 using namespace SFS::details;
@@ -16,13 +15,7 @@ namespace
 {
 void ValidateConnectionConfig(const ConnectionConfig& config)
 {
-    if (!test::HasTestOverride(test::TestOverride::NoConnectionConfigLimits))
-    {
-        THROW_CODE_IF(InvalidArg, config.maxRetries > 3, "maxRetries must be <= 3");
-        THROW_CODE_IF(InvalidArg,
-                      config.retryDelayMs < 15000 || config.retryDelayMs > 60000,
-                      "timeoutMs must be between 15000 and 60000");
-    }
+    THROW_CODE_IF(InvalidArg, config.maxRetries > 3, "maxRetries must be <= 3");
 }
 } // namespace
 

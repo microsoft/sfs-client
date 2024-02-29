@@ -115,12 +115,12 @@ TEST("Testing SFSClient retry behavior")
 {
     if (!AreTestOverridesAllowed())
     {
+        INFO("Skipping. Test overrides not enabled");
         return;
     }
 
     MockWebServer server;
     ScopedTestOverride urlOverride(TestOverride::BaseUrl, server.GetBaseUrl());
-    ScopedTestOverride connectionOverride(test::TestOverride::NoConnectionConfigLimits, "true");
 
     server.RegisterProduct(c_productName, c_version);
     RequestParams params;
@@ -133,8 +133,8 @@ TEST("Testing SFSClient retry behavior")
     SECTION("Test exponential backoff")
     {
         INFO("Sets the retry delay to 50ms to speed up the test");
+        ScopedTestOverride override(TestOverride::BaseRetryDelayMs, 50);
 
-        clientConfig.connectionConfig.retryDelayMs = 50;
         REQUIRE(SFSClient::Make(clientConfig, sfsClient));
         REQUIRE(sfsClient != nullptr);
 
@@ -167,12 +167,22 @@ TEST("Testing SFSClient retry behavior")
         }
 
         forcedHttpErrors.push(retriableError);
-        SECTION("Should take at least 150ms (50ms + 2*50ms) with two retriable error")
+        SECTION("Should take at least 150ms (50ms + 2*50ms) with two retriable errors")
         {
             server.SetForcedHttpErrors(forcedHttpErrors);
             const auto time = RunTimedGet();
             REQUIRE(time >= 150LL);
             REQUIRE(time < 150LL + allowedTimeDeviation);
+        }
+
+        SECTION("Should fail after first retry if we limit max duration to 75ms")
+        {
+            clientConfig.connectionConfig.maxRequestDuration = std::chrono::milliseconds{75};
+            REQUIRE(SFSClient::Make(clientConfig, sfsClient));
+
+            server.SetForcedHttpErrors(forcedHttpErrors);
+            const auto time = RunTimedGet(false /*success*/);
+            REQUIRE(time < 75LL + allowedTimeDeviation);
         }
 
         forcedHttpErrors.push(retriableError);
@@ -182,6 +192,16 @@ TEST("Testing SFSClient retry behavior")
             const auto time = RunTimedGet();
             REQUIRE(time >= 300LL);
             REQUIRE(time < 300LL + allowedTimeDeviation);
+        }
+
+        SECTION("Should fail after second retry if we limit max duration to 200ms")
+        {
+            clientConfig.connectionConfig.maxRequestDuration = std::chrono::milliseconds{200};
+            REQUIRE(SFSClient::Make(clientConfig, sfsClient));
+
+            server.SetForcedHttpErrors(forcedHttpErrors);
+            const auto time = RunTimedGet(false /*success*/);
+            REQUIRE(time < 200LL + allowedTimeDeviation);
         }
 
         forcedHttpErrors.push(retriableError);
@@ -197,8 +217,8 @@ TEST("Testing SFSClient retry behavior")
     SECTION("Test retriable errors with Retry-After headers")
     {
         INFO("Sets the retry delay to 200ms to speed up the test");
+        ScopedTestOverride override(TestOverride::BaseRetryDelayMs, 200);
 
-        clientConfig.connectionConfig.retryDelayMs = 200;
         REQUIRE(SFSClient::Make(clientConfig, sfsClient));
         REQUIRE(sfsClient != nullptr);
 
@@ -241,7 +261,7 @@ TEST("Testing SFSClient retry behavior")
     SECTION("Test maxRetries")
     {
         INFO("Sets the retry delay to 1ms to speed up the test");
-        clientConfig.connectionConfig.retryDelayMs = 1;
+        ScopedTestOverride override(TestOverride::BaseRetryDelayMs, 1);
 
         const int retriableError = 503; // ServerBusy
 

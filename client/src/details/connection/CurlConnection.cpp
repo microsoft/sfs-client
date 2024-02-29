@@ -5,11 +5,11 @@
 
 #include "../ErrorHandling.h"
 #include "../ReportingHandler.h"
+#include "../TestOverride.h"
 #include "HttpHeader.h"
 
 #include <curl/curl.h>
 
-#include <chrono>
 #include <cstring>
 #include <optional>
 #include <thread>
@@ -201,13 +201,13 @@ std::optional<std::string> GetResponseHeader(CURL* handle,
     return std::nullopt;
 }
 
-int ParseRetryAfterValue(const std::string& retryAfter, const ReportingHandler& reportingHandler)
+std::chrono::milliseconds ParseRetryAfterValue(const std::string& retryAfter, const ReportingHandler& reportingHandler)
 {
     LOG_INFO(reportingHandler, "Parsing Retry-After value [%s]", retryAfter.c_str());
-    int retryAfterSec = 0;
+    std::chrono::seconds retryAfterSec{0};
     try
     {
-        retryAfterSec = std::stoi(retryAfter);
+        retryAfterSec = std::chrono::seconds(std::stoi(retryAfter));
     }
     catch (std::invalid_argument&)
     {
@@ -222,20 +222,20 @@ int ParseRetryAfterValue(const std::string& retryAfter, const ReportingHandler& 
 
         // Get number of seconds since epoch for now to calculate the difference
         const auto epoch = std::chrono::system_clock::now().time_since_epoch();
-        const auto nowSecSinceEpoch = std::chrono::duration_cast<std::chrono::seconds>(epoch).count();
+        const auto nowSecSinceEpoch = std::chrono::duration_cast<std::chrono::seconds>(epoch);
 
-        retryAfterSec = static_cast<int>(retryAfterSecSinceEpoch - nowSecSinceEpoch);
+        retryAfterSec = std::chrono::seconds(retryAfterSecSinceEpoch) - nowSecSinceEpoch;
     }
     catch (std::out_of_range&)
     {
         THROW_LOG(Result(Result::ConnectionUnexpectedError, "Retry-After header value is not in the expected range"),
                   reportingHandler);
     }
-    if (retryAfterSec <= 0)
+    if (retryAfterSec.count() <= 0)
     {
         THROW_LOG(Result(Result::ConnectionUnexpectedError, "Invalid Retry-After header value"), reportingHandler);
     }
-    return retryAfterSec;
+    return std::chrono::duration_cast<std::chrono::milliseconds>(retryAfterSec);
 }
 } // namespace
 
@@ -334,6 +334,8 @@ std::string CurlConnection::CurlPerform(const std::string& url, CurlHeaderList& 
     THROW_IF_CURL_SETUP_ERROR(curl_easy_setopt(m_handle, CURLOPT_WRITEFUNCTION, WriteCallback));
     THROW_IF_CURL_SETUP_ERROR(curl_easy_setopt(m_handle, CURLOPT_WRITEDATA, &readBuffer));
 
+    auto start = std::chrono::steady_clock::now();
+
     // Retry the connection a specified number of times
     const unsigned totalAttempts = 1 + m_config.maxRetries;
     for (unsigned i = 0; i < totalAttempts; i++)
@@ -361,13 +363,16 @@ std::string CurlConnection::CurlPerform(const std::string& url, CurlHeaderList& 
             break;
         }
 
-        ProcessRetry(attempt, lastAttempt, httpCode);
+        ProcessRetry(attempt, lastAttempt, httpCode, start);
     }
 
     return readBuffer;
 }
 
-void CurlConnection::ProcessRetry(int attempt, bool lastAttempt, long httpCode)
+void CurlConnection::ProcessRetry(int attempt,
+                                  bool lastAttempt,
+                                  long httpCode,
+                                  const std::chrono::steady_clock::time_point& start)
 {
     const Result httpResult = HttpCodeToResult(httpCode);
     if (lastAttempt)
@@ -383,23 +388,48 @@ void CurlConnection::ProcessRetry(int attempt, bool lastAttempt, long httpCode)
     }
 
     using namespace std::chrono;
+    auto ThrowIfOverExpectedTime = [&](const steady_clock::time_point& end, const char* currentStr) {
+        if (auto curDuration = duration_cast<milliseconds>(end - start); curDuration > m_config.maxRequestDuration)
+        {
+            LOG_INFO(m_handler,
+                     "The %s duration of %lldms is bigger than the max request duration of %lldms",
+                     currentStr,
+                     curDuration.count(),
+                     m_config.maxRequestDuration.count());
+            THROW_IF_FAILED_LOG(httpResult, m_handler);
+        }
+    };
+
+    ThrowIfOverExpectedTime(steady_clock::now(), "current");
 
     // Wait before retrying. Prefer the Retry-After information if available
-    unsigned retryDelayMs = 0;
+    milliseconds retryDelay{0};
     const std::optional<std::string> retryAfter = GetResponseHeader(m_handle, HttpHeader::RetryAfter, m_handler);
     if (retryAfter)
     {
         // TODO #93: Enforce Retry-After value across calls to avoid caller spamming server
-        const int retryAfterSec = ParseRetryAfterValue(*retryAfter, m_handler);
-        retryDelayMs = static_cast<unsigned>(duration_cast<milliseconds>(seconds(retryAfterSec)).count());
+        retryDelay = ParseRetryAfterValue(*retryAfter, m_handler);
     }
     else
     {
         // Apply exponential back-off with a factor of 2
-        retryDelayMs = m_config.retryDelayMs * (1 << (attempt - 1));
+        static milliseconds s_baseRetryDelay{15000}; // Value recommended as interval by the service
+
+        milliseconds baseRetryDelay = s_baseRetryDelay;
+
+        // Value can be overriden in tests
+        if (auto override = test::GetTestOverrideAsInt(test::TestOverride::BaseRetryDelayMs))
+        {
+            baseRetryDelay = std::chrono::milliseconds{*override};
+        }
+
+        retryDelay = baseRetryDelay * (1 << (attempt - 1));
     }
 
+    // Throw if waiting will go over the expected max duration
+    ThrowIfOverExpectedTime(steady_clock::now() + retryDelay, "expected");
+
     LOG_IF_FAILED(httpResult, m_handler);
-    LOG_INFO(m_handler, "Sleeping for %u ms", retryDelayMs);
-    std::this_thread::sleep_for(std::chrono::milliseconds(retryDelayMs));
+    LOG_INFO(m_handler, "Sleeping for %lld ms", retryDelay.count());
+    std::this_thread::sleep_for(retryDelay);
 }
