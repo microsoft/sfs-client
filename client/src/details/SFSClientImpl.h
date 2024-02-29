@@ -34,6 +34,13 @@ class SFSClientImpl : public SFSClientInterface
      */
     std::unique_ptr<Content> GetLatestDownloadInfo(const RequestParams& requestParams) const override;
 
+    /**
+     * @brief Retrieve combined metadata & download URLs from the latest version of specified apps
+     * @note At the moment only a single product request is supported
+     * @param requestParams Parameters that define this request
+     */
+    std::unique_ptr<AppContent> GetLatestAppDownloadInfo(const RequestParams& requestParams) const override;
+
     //
     // Individual APIs 1:1 with service endpoints (SFSClientInterface)
     //

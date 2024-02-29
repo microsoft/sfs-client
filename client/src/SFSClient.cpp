@@ -43,6 +43,15 @@ try
 }
 SFS_CATCH_RETURN()
 
+Result SFSClient::GetLatestAppDownloadInfo(const RequestParams& requestParams,
+                                           std::unique_ptr<AppContent>& content) const noexcept
+try
+{
+    content = m_impl->GetLatestAppDownloadInfo(requestParams);
+    return Result::Success;
+}
+SFS_CATCH_RETURN()
+
 const char* SFSClient::GetVersion() noexcept
 {
 #ifdef SFS_GIT_INFO

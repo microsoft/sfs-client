@@ -3,6 +3,7 @@
 
 #pragma once
 
+#include "AppContent.h"
 #include "ClientConfig.h"
 #include "Content.h"
 #include "Logging.h"
@@ -53,6 +54,15 @@ class SFSClient
      */
     [[nodiscard]] Result GetLatestDownloadInfo(const RequestParams& requestParams,
                                                std::unique_ptr<Content>& content) const noexcept;
+
+    /**
+     * @brief Retrieve combined metadata & download URLs from the latest version of specified apps
+     * @note At the moment only a single product request is supported
+     * @param requestParams Parameters that define this request
+     * @param content A pointer to an AppContent instance that is populated with the result
+     */
+    [[nodiscard]] Result GetLatestAppDownloadInfo(const RequestParams& requestParams,
+                                                  std::unique_ptr<AppContent>& content) const noexcept;
 
     /**
      * @return The version of the SFSClient library

@@ -3,6 +3,7 @@
 
 #include "SFSClientImpl.h"
 
+#include "AppContent.h"
 #include "Content.h"
 #include "ErrorHandling.h"
 #include "Logging.h"
@@ -288,8 +289,6 @@ try
 {
     ValidateRequestParams(requestParams, m_reportingHandler);
 
-    // TODO #50: Adapt retrieval to storeapps flow with pre-requisites once that is implemented server-side
-
     const auto connection = MakeConnection(ConnectionConfig(requestParams));
 
     auto versionEntity = GetLatestVersion(requestParams.productRequests[0], *connection);
@@ -301,6 +300,63 @@ try
 
     std::unique_ptr<Content> content;
     THROW_IF_FAILED_LOG(Content::Make(std::move(contentId), std::move(files), content), m_reportingHandler);
+
+    return content;
+}
+SFS_CATCH_LOG_RETHROW(m_reportingHandler)
+
+template <typename ConnectionManagerT>
+std::unique_ptr<AppContent> SFSClientImpl<ConnectionManagerT>::GetLatestAppDownloadInfo(
+    const RequestParams& requestParams) const
+try
+{
+    ValidateRequestParams(requestParams, m_reportingHandler);
+
+    // TODO #150: For now apps are only coming from the "storeapps" instanceId and the service has requested
+    // we double check for it. In the future we should remove this check and allow the user to specify any instanceId
+    THROW_CODE_IF_LOG(Unexpected,
+                      AreNotEqualI(m_instanceId, "storeapps"),
+                      m_reportingHandler,
+                      "At this moment only the \"storeapps\" instanceId can send app requests");
+
+    const auto connection = MakeConnection(ConnectionConfig(requestParams));
+
+    auto versionEntity = GetLatestVersion(requestParams.productRequests[0], *connection);
+
+    auto appVersionEntity = AppVersionEntity::GetAppVersionEntityPtr(versionEntity, m_reportingHandler);
+    auto contentId = AppVersionEntity::ToContentId(std::move(*appVersionEntity), m_reportingHandler);
+
+    LOG_INFO(m_reportingHandler, "Getting download info for main app content");
+    const auto& product = requestParams.productRequests[0].product;
+    auto fileEntities = GetDownloadInfo(product, contentId->GetVersion(), *connection);
+    auto files = AppFileEntity::FileEntitiesToAppFileVector(std::move(fileEntities), m_reportingHandler);
+
+    std::vector<AppPrerequisiteContent> prerequisites;
+    for (auto& prereq : appVersionEntity->prerequisites)
+    {
+        LOG_INFO(m_reportingHandler, "Getting download info for prerequisite [%s]", prereq.contentId.name.c_str());
+        auto prereqContentId = GenericVersionEntity::ToContentId(std::move(prereq), m_reportingHandler);
+
+        auto prereqFileEntities =
+            GetDownloadInfo(prereqContentId->GetName(), prereqContentId->GetVersion(), *connection);
+        auto prereqFiles =
+            AppFileEntity::FileEntitiesToAppFileVector(std::move(prereqFileEntities), m_reportingHandler);
+
+        std::unique_ptr<AppPrerequisiteContent> prereqContent;
+        THROW_IF_FAILED_LOG(
+            AppPrerequisiteContent::Make(std::move(prereqContentId), std::move(prereqFiles), prereqContent),
+            m_reportingHandler);
+
+        prerequisites.push_back(std::move(*prereqContent));
+    }
+
+    std::unique_ptr<AppContent> content;
+    THROW_IF_FAILED_LOG(AppContent::Make(std::move(contentId),
+                                         std::move(appVersionEntity->updateId),
+                                         std::move(prerequisites),
+                                         std::move(files),
+                                         content),
+                        m_reportingHandler);
 
     return content;
 }
