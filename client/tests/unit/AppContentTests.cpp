@@ -23,18 +23,7 @@ std::unique_ptr<ContentId> GetContentId(const std::string& nameSpace,
     REQUIRE(ContentId::Make(nameSpace, name, version, contentId) == Result::Success);
     REQUIRE(contentId != nullptr);
     return contentId;
-};
-
-std::unique_ptr<File> GetFile(const std::string& fileId,
-                              const std::string& url,
-                              uint64_t sizeInBytes,
-                              const std::unordered_map<HashType, std::string>& hashes)
-{
-    std::unique_ptr<File> file;
-    REQUIRE(File::Make(fileId, url, sizeInBytes, hashes, file) == Result::Success);
-    REQUIRE(file != nullptr);
-    return file;
-};
+}
 
 std::unique_ptr<AppFile> GetAppFile(const std::string& fileId,
                                     const std::string& url,
@@ -55,34 +44,47 @@ std::unique_ptr<AppFile> GetAppFile(const std::string& fileId,
                           file) == Result::Success);
     REQUIRE(file != nullptr);
     return file;
-};
+}
 
-std::unique_ptr<Content> GetContent(const std::string& contentNameSpace,
-                                    const std::string& contentName,
-                                    const std::string& contentVersion,
-                                    const std::vector<File>& files)
+std::unique_ptr<AppPrerequisiteContent> GetPrerequisiteContent(const std::string& contentNameSpace,
+                                                               const std::string& contentName,
+                                                               const std::string& contentVersion,
+                                                               const std::vector<AppFile>& files)
 {
-    std::unique_ptr<Content> content;
-    REQUIRE(Content::Make(contentNameSpace, contentName, contentVersion, files, content) == Result::Success);
+    std::unique_ptr<ContentId> contentId = GetContentId(contentNameSpace, contentName, contentVersion);
+    std::vector<AppFile> clonedFiles;
+    for (auto& file : files)
+    {
+        clonedFiles.push_back(std::move(*GetAppFile(file.GetFileId(),
+                                                    file.GetUrl(),
+                                                    file.GetSizeInBytes(),
+                                                    file.GetHashes(),
+                                                    file.GetApplicabilityDetails().GetArchitectures(),
+                                                    file.GetApplicabilityDetails().GetPlatformApplicabilityForPackage(),
+                                                    file.GetFileMoniker())));
+    }
+
+    std::unique_ptr<AppPrerequisiteContent> content;
+    REQUIRE(AppPrerequisiteContent::Make(std::move(contentId), std::move(clonedFiles), content) == Result::Success);
     REQUIRE(content != nullptr);
     return content;
-};
+}
 
 std::unique_ptr<AppContent> GetAppContent(const std::string& contentNameSpace,
                                           const std::string& contentName,
                                           const std::string& contentVersion,
                                           const std::string& updateId,
-                                          const std::vector<Content>& prerequisites,
+                                          const std::vector<AppPrerequisiteContent>& prerequisites,
                                           const std::vector<AppFile>& files)
 {
     std::unique_ptr<ContentId> contentId = GetContentId(contentNameSpace, contentName, contentVersion);
-    std::vector<Content> clonedPreqs;
+    std::vector<AppPrerequisiteContent> clonedPreqs;
     for (const auto& prereq : prerequisites)
     {
-        clonedPreqs.push_back(std::move(*GetContent(prereq.GetContentId().GetNameSpace(),
-                                                    prereq.GetContentId().GetName(),
-                                                    prereq.GetContentId().GetVersion(),
-                                                    prereq.GetFiles())));
+        clonedPreqs.push_back(std::move(*GetPrerequisiteContent(prereq.GetContentId().GetNameSpace(),
+                                                                prereq.GetContentId().GetName(),
+                                                                prereq.GetContentId().GetVersion(),
+                                                                prereq.GetFiles())));
     }
 
     std::vector<AppFile> clonedFiles;
@@ -103,7 +105,7 @@ std::unique_ptr<AppContent> GetAppContent(const std::string& contentNameSpace,
         Result::Success);
     REQUIRE(appContent != nullptr);
     return appContent;
-};
+}
 } // namespace
 
 TEST("Testing AppFile::Make()")
@@ -210,14 +212,18 @@ TEST("Testing AppContent::Make()")
     files.push_back(std::move(*file1));
     files.push_back(std::move(*file2));
 
-    std::vector<File> prereqFiles;
-    prereqFiles.push_back(std::move(*GetFile("prereqFileId", "url", 1 /*sizeInBytes*/, {{HashType::Sha1, "sha1"}})));
+    std::vector<AppFile> prereqFiles;
+    prereqFiles.push_back(std::move(*GetAppFile("prereqFileId",
+                                                "url",
+                                                1 /*sizeInBytes*/,
+                                                {{HashType::Sha1, "sha1"}},
+                                                {Architecture::amd64},
+                                                {"myPlatformApplicabilityForPackage"},
+                                                "fileMoniker")));
 
-    std::unique_ptr<Content> prereq;
-    REQUIRE(Content::Make(contentNameSpace, "prereqName", "prereqVersion", prereqFiles, prereq) == Result::Success);
-
-    std::vector<Content> prerequisites;
-    prerequisites.push_back(std::move(*prereq));
+    std::vector<AppPrerequisiteContent> prerequisites;
+    prerequisites.push_back(
+        std::move(*GetPrerequisiteContent(contentNameSpace, "prereqName", "prereqVersion", prereqFiles)));
 
     std::unique_ptr<AppContent> appContent =
         GetAppContent(contentNameSpace, contentName, contentVersion, "updateId", prerequisites, files);
@@ -242,14 +248,18 @@ TEST("Testing AppContent equality operators")
     std::vector<AppFile> files;
     files.push_back(std::move(*file));
 
-    std::vector<File> prereqFiles;
-    prereqFiles.push_back(std::move(*GetFile("prereqFileId", "url", 1 /*sizeInBytes*/, {{HashType::Sha1, "sha1"}})));
+    std::vector<AppFile> prereqFiles;
+    prereqFiles.push_back(std::move(*GetAppFile("prereqFileId",
+                                                "url",
+                                                1 /*sizeInBytes*/,
+                                                {{HashType::Sha1, "sha1"}},
+                                                {Architecture::amd64},
+                                                {"myPlatformApplicabilityForPackage"},
+                                                "fileMoniker")));
 
-    std::unique_ptr<Content> prereq;
-    REQUIRE(Content::Make(contentNameSpace, "prereqName", "prereqVersion", prereqFiles, prereq) == Result::Success);
-
-    std::vector<Content> prerequisites;
-    prerequisites.push_back(std::move(*prereq));
+    std::vector<AppPrerequisiteContent> prerequisites;
+    prerequisites.push_back(
+        std::move(*GetPrerequisiteContent(contentNameSpace, "prereqName", "prereqVersion", prereqFiles)));
 
     const std::unique_ptr<AppContent> content =
         GetAppContent(contentNameSpace, contentName, contentVersion, updateId, prerequisites, files);

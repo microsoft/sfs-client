@@ -54,6 +54,12 @@ bool operator==(const Content& lhs, const Content& rhs);
 /// @brief Compares two Content objects for inequality. The values of members are strictly compared.
 bool operator!=(const Content& lhs, const Content& rhs);
 
+/// @brief Compares two AppPrerequisiteContent objects for equality. The values of members are strictly compared.
+bool operator==(const AppPrerequisiteContent& lhs, const AppPrerequisiteContent& rhs);
+
+/// @brief Compares two AppPrerequisiteContent objects for inequality. The values of members are strictly compared.
+bool operator!=(const AppPrerequisiteContent& lhs, const AppPrerequisiteContent& rhs);
+
 /// @brief Compares two AppContent objects for equality. The values of members are strictly compared.
 bool operator==(const AppContent& lhs, const AppContent& rhs);
 

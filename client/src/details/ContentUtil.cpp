@@ -185,14 +185,32 @@ bool contentutil::operator!=(const Content& lhs, const Content& rhs)
     return !(lhs == rhs);
 }
 
+bool contentutil::operator==(const AppPrerequisiteContent& lhs, const AppPrerequisiteContent& rhs)
+{
+    auto areFilesEqual = [&lhs, &rhs]() {
+        return std::is_permutation(lhs.GetFiles().begin(),
+                                   lhs.GetFiles().end(),
+                                   rhs.GetFiles().begin(),
+                                   rhs.GetFiles().end(),
+                                   [](const AppFile& flhs, const AppFile& frhs) { return flhs == frhs; });
+    };
+    return lhs.GetContentId() == rhs.GetContentId() && areFilesEqual();
+}
+
+bool contentutil::operator!=(const AppPrerequisiteContent& lhs, const AppPrerequisiteContent& rhs)
+{
+    return !(lhs == rhs);
+}
+
 bool contentutil::operator==(const AppContent& lhs, const AppContent& rhs)
 {
     auto arePrerequisitesEqual = [&lhs, &rhs]() {
-        return std::equal(lhs.GetPrerequisites().begin(),
-                          lhs.GetPrerequisites().end(),
-                          rhs.GetPrerequisites().begin(),
-                          rhs.GetPrerequisites().end(),
-                          [](const Content& clhs, const Content& crhs) { return clhs == crhs; });
+        return std::equal(
+            lhs.GetPrerequisites().begin(),
+            lhs.GetPrerequisites().end(),
+            rhs.GetPrerequisites().begin(),
+            rhs.GetPrerequisites().end(),
+            [](const AppPrerequisiteContent& clhs, const AppPrerequisiteContent& crhs) { return clhs == crhs; });
     };
     auto areFilesEqual = [&lhs, &rhs]() {
         return std::is_permutation(lhs.GetFiles().begin(),

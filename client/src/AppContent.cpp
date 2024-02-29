@@ -59,9 +59,42 @@ const std::string& AppFile::GetFileMoniker() const noexcept
     return m_fileMoniker;
 }
 
+Result AppPrerequisiteContent::Make(std::unique_ptr<ContentId>&& contentId,
+                                    std::vector<AppFile>&& files,
+                                    std::unique_ptr<AppPrerequisiteContent>& out) noexcept
+try
+{
+    out.reset();
+
+    std::unique_ptr<AppPrerequisiteContent> tmp(new AppPrerequisiteContent());
+    tmp->m_contentId = std::move(contentId);
+    tmp->m_files = std::move(files);
+
+    out = std::move(tmp);
+
+    return Result::Success;
+}
+SFS_CATCH_RETURN()
+
+AppPrerequisiteContent::AppPrerequisiteContent(AppPrerequisiteContent&& other) noexcept
+{
+    m_contentId = std::move(other.m_contentId);
+    m_files = std::move(other.m_files);
+}
+
+const ContentId& AppPrerequisiteContent::GetContentId() const noexcept
+{
+    return *m_contentId;
+}
+
+const std::vector<AppFile>& AppPrerequisiteContent::GetFiles() const noexcept
+{
+    return m_files;
+}
+
 Result AppContent::Make(std::unique_ptr<ContentId>&& contentId,
                         std::string updateId,
-                        std::vector<Content>&& prerequisites,
+                        std::vector<AppPrerequisiteContent>&& prerequisites,
                         std::vector<AppFile>&& files,
                         std::unique_ptr<AppContent>& out) noexcept
 try
@@ -103,7 +136,7 @@ const std::vector<AppFile>& AppContent::GetFiles() const noexcept
     return m_files;
 }
 
-const std::vector<Content>& AppContent::GetPrerequisites() const noexcept
+const std::vector<AppPrerequisiteContent>& AppContent::GetPrerequisites() const noexcept
 {
     return m_prerequisites;
 }
