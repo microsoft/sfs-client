@@ -6,6 +6,7 @@
 #include "ReportingHandler.h"
 #include "Result.h"
 #include "connection/CurlConnection.h"
+#include "connection/mock/MockConnection.h"
 
 #include <catch2/catch_test_macros.hpp>
 #include <catch2/matchers/catch_matchers_string.hpp>
@@ -24,7 +25,7 @@ class MockCurlConnection : public CurlConnection
 {
   public:
     MockCurlConnection(const ReportingHandler& handler, Result::Code& responseCode, std::string& response)
-        : CurlConnection(handler)
+        : CurlConnection({}, handler)
         , m_responseCode(responseCode)
         , m_response(response)
     {
@@ -83,15 +84,23 @@ TEST("Testing CurlConnection()")
         REQUIRE_NOTHROW(out = connection->Post("url", body.dump()));
         REQUIRE(out == response);
     }
+}
 
-    SECTION("Testing CurlConnection::SetCorrelationVector()")
-    {
-        REQUIRE_THROWS_CODE_MSG(connection->SetCorrelationVector(""), InvalidArg, "cv must not be empty");
-        REQUIRE_THROWS_CODE_MSG_MATCHES(
-            connection->SetCorrelationVector("cv"),
-            InvalidArg,
-            Catch::Matchers::ContainsSubstring("baseCV is not a valid correlation vector:"));
+TEST("Testing CurlConnection constructor passing a cv")
+{
+    ReportingHandler handler;
+    handler.SetLoggingCallback(LogCallbackToTest);
 
-        REQUIRE_NOTHROW(connection->SetCorrelationVector("aaaaaaaaaaaaaaaa.1"));
-    }
+    ConnectionConfig config;
+    config.baseCV = "";
+
+    REQUIRE_THROWS_CODE_MSG(std::make_unique<CurlConnection>(config, handler), InvalidArg, "cv must not be empty");
+
+    config.baseCV = "cv";
+    REQUIRE_THROWS_CODE_MSG_MATCHES(std::make_unique<CurlConnection>(config, handler),
+                                    InvalidArg,
+                                    Catch::Matchers::ContainsSubstring("baseCV is not a valid correlation vector:"));
+
+    config.baseCV = "aaaaaaaaaaaaaaaa.1";
+    REQUIRE_NOTHROW(std::make_unique<CurlConnection>(config, handler));
 }

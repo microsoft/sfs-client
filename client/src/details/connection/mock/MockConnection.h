@@ -14,7 +14,7 @@ class ReportingHandler;
 class MockConnection : public Connection
 {
   public:
-    MockConnection(const ReportingHandler& handler);
+    MockConnection(const ConnectionConfig& config, const ReportingHandler& handler);
     ~MockConnection() override;
 
     std::string Get(const std::string& url) override;

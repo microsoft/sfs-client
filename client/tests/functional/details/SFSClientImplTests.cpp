@@ -67,7 +67,9 @@ TEST("Testing class SFSClientImpl()")
     server.RegisterProduct("productName", "0.0.0.1");
 
     const std::string cv = "aaaaaaaaaaaaaaaa.1";
-    auto connection = sfsClient.MakeConnection(cv);
+    ConnectionConfig config;
+    config.baseCV = cv;
+    auto connection = sfsClient.MakeConnection(config);
 
     SECTION("Testing SFSClientImpl::GetLatestVersion()")
     {

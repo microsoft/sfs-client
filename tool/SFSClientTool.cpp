@@ -276,9 +276,15 @@ int main(int argc, char* argv[])
     PrintLog("Initializing SFSClient with accountId: " + settings.accountId +
              (settings.instanceId.empty() ? "" : ", instanceId: " + settings.instanceId) +
              (settings.nameSpace.empty() ? "" : ", namespace: " + settings.nameSpace));
+
+    ClientConfig config;
+    config.accountId = settings.accountId;
+    config.instanceId = settings.instanceId;
+    config.nameSpace = settings.nameSpace;
+    config.logCallbackFn = LoggingCallback;
+
     std::unique_ptr<SFSClient> sfsClient;
-    auto result =
-        SFSClient::Make({settings.accountId, settings.instanceId, settings.nameSpace, LoggingCallback}, sfsClient);
+    auto result = SFSClient::Make(config, sfsClient);
     if (!result)
     {
         PrintError("Failed to initialize SFSClient.");

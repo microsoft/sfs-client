@@ -18,7 +18,8 @@ bool AreTestOverridesAllowed();
 
 enum class TestOverride
 {
-    BaseUrl
+    BaseRetryDelayMs, // Integer. Allows one to override the base retry delay.
+    BaseUrl,          // String. Allows one to override the base URL used for all requests
 };
 
 /**
@@ -33,10 +34,17 @@ std::string GetEnvVarNameFromOverride(TestOverride override);
  */
 std::optional<std::string> GetTestOverride(TestOverride override);
 
+/**
+ * @brief Get the value of a test override as int
+ * @details std::nullopt is returned if the environment variable is not set or in case of failure.
+ */
+std::optional<int> GetTestOverrideAsInt(TestOverride override);
+
 class ScopedTestOverride
 {
   public:
     ScopedTestOverride(TestOverride override, const std::string& value);
+    ScopedTestOverride(TestOverride override, int value);
 
   private:
     SFS::details::env::ScopedEnv m_scopedEnv;

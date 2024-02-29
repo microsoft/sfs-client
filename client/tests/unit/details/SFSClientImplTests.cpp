@@ -31,7 +31,7 @@ class MockCurlConnection : public CurlConnection
                        std::string& getResponse,
                        std::string& postResponse,
                        bool& expectEmptyPostBody)
-        : CurlConnection(handler)
+        : CurlConnection({}, handler)
         , m_responseCode(responseCode)
         , m_getResponse(getResponse)
         , m_postResponse(postResponse)
@@ -267,7 +267,9 @@ TEST("Testing class SFSClientImpl()")
 
 TEST("Testing SFSClientImpl::SetCustomBaseUrl()")
 {
-    SFSClientImpl<MockConnectionManager> sfsClient({"testAccountId", "testInstanceId", "testNameSpace", std::nullopt});
+    ClientConfig config;
+    config.accountId = "testAccountId";
+    SFSClientImpl<MockConnectionManager> sfsClient(std::move(config));
 
     REQUIRE(sfsClient.GetBaseUrl() == "https://testAccountId.api.cdp.microsoft.com");
 
@@ -277,7 +279,9 @@ TEST("Testing SFSClientImpl::SetCustomBaseUrl()")
 
 TEST("Testing test override SFS_TEST_OVERRIDE_BASE_URL")
 {
-    SFSClientImpl<MockConnectionManager> sfsClient({"testAccountId", "testInstanceId", "testNameSpace", std::nullopt});
+    ClientConfig config;
+    config.accountId = "testAccountId";
+    SFSClientImpl<MockConnectionManager> sfsClient(std::move(config));
 
     REQUIRE(sfsClient.GetBaseUrl() == "https://testAccountId.api.cdp.microsoft.com");
 

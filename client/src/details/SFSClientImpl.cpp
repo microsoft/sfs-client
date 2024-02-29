@@ -303,15 +303,9 @@ try
 SFS_CATCH_LOG_RETHROW(m_reportingHandler)
 
 template <typename ConnectionManagerT>
-std::unique_ptr<Connection> SFSClientImpl<ConnectionManagerT>::MakeConnection(const std::optional<std::string>& cv)
+std::unique_ptr<Connection> SFSClientImpl<ConnectionManagerT>::MakeConnection(const ConnectionConfig& config)
 {
-    auto connection = m_connectionManager->MakeConnection();
-    if (cv)
-    {
-        connection->SetCorrelationVector(*cv);
-    }
-
-    return connection;
+    return m_connectionManager->MakeConnection(config);
 }
 
 template <typename ConnectionManagerT>

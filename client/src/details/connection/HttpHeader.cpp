@@ -13,6 +13,8 @@ std::string SFS::details::ToString(HttpHeader header)
         return "Content-Type";
     case HttpHeader::MSCV:
         return microsoft::correlation_vector::HEADER_NAME;
+    case HttpHeader::RetryAfter:
+        return "Retry-After";
     }
 
     return "";

@@ -11,6 +11,8 @@ namespace SFS
 {
 using TargetingAttributes = std::unordered_map<std::string, std::string>;
 
+constexpr unsigned c_maxRetries = 3;
+
 struct ProductRequest
 {
     /// @brief The name or GUID that uniquely represents the product in the service (required)
@@ -31,5 +33,8 @@ struct RequestParams
     /// @brief Base CorrelationVector to be used in the request for service telemetry stitching (optional)
     /// @note If not provided, a new CorrelationVector will be generated
     std::optional<std::string> baseCV;
+
+    /// @brief Retry for a web request after a failed attempt. If true, client will retry up to c_maxRetries times
+    bool retryOnError{true};
 };
 } // namespace SFS

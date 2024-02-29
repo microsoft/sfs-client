@@ -6,7 +6,8 @@
 using namespace SFS;
 using namespace SFS::details;
 
-MockConnection::MockConnection(const ReportingHandler& handler) : Connection(handler)
+MockConnection::MockConnection(const ConnectionConfig& config, const ReportingHandler& handler)
+    : Connection(config, handler)
 {
 }
 

@@ -54,7 +54,10 @@ try
 
     // TODO #50: Adapt retrieval to storeapps flow with pre-requisites once that is implemented server-side
 
-    const auto connection = m_impl->MakeConnection(requestParams.baseCV);
+    ConnectionConfig connectionConfig;
+    connectionConfig.maxRetries = requestParams.retryOnError ? c_maxRetries : 0;
+    connectionConfig.baseCV = requestParams.baseCV;
+    const auto connection = m_impl->MakeConnection(connectionConfig);
 
     auto contentId = m_impl->GetLatestVersion(requestParams.productRequests[0], *connection);
     auto files = m_impl->GetDownloadInfo(product, contentId->GetVersion(), *connection);
