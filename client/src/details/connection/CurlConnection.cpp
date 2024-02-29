@@ -367,7 +367,7 @@ std::string CurlConnection::CurlPerform(const std::string& url, CurlHeaderList& 
         const Result httpResult = HttpCodeToResult(httpCode);
         if (!CanRetryRequest(lastAttempt, httpCode))
         {
-            THROW_IF_FAILED_LOG(httpResult, m_handler);
+            THROW_LOG(httpResult, m_handler);
         }
 
         ProcessRetry(attempt, httpResult);
