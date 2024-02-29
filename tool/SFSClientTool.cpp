@@ -165,7 +165,7 @@ void DisplayResults(const std::unique_ptr<Content>& content)
 {
     if (!content)
     {
-        std::cout << "No results found." << std::endl;
+        PrintError("No results found.");
         return;
     }
 
@@ -177,22 +177,19 @@ void DisplayResults(const std::unique_ptr<Content>& content)
     j["ContentId"]["Version"] = content->GetContentId().GetVersion();
 
     j["Files"] = json::array();
-    if (content->GetFiles().size()> 0)
+    for (const auto& file : content->GetFiles())
     {
-        for (const auto& file : content->GetFiles())
+        json fileJson = json::object();
+        fileJson["FileId"] = file.GetFileId();
+        fileJson["Url"] = file.GetUrl();
+        fileJson["SizeInBytes"] = file.GetSizeInBytes();
+        json hashes = json::object();
+        for (const auto& hash : file.GetHashes())
         {
-            json fileJson = json::object();
-            fileJson["FileId"] = file.GetFileId();
-            fileJson["Url"] = file.GetUrl();
-            fileJson["SizeInBytes"] = file.GetSizeInBytes();
-            json hashes = json::object();
-            for (const auto& hash : file.GetHashes())
-            {
-                hashes[ToString(hash.first)] = hash.second;
-            }
-            fileJson["Hashes"] = hashes;
-            j["Files"].push_back(fileJson);
+            hashes[ToString(hash.first)] = hash.second;
         }
+        fileJson["Hashes"] = hashes;
+        j["Files"].push_back(fileJson);
     }
 
     PrintLog(j.dump(2 /*indent*/));
