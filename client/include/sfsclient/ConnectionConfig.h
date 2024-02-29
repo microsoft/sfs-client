@@ -19,6 +19,6 @@ struct ConnectionConfig
      * @brief The max duration for a single web request made to the SFS API. This value is enforced only after the
      * service responds or times out.
      */
-    std::chrono::milliseconds maxRequestDuration{150000};
+    std::chrono::minutes maxRequestDuration{2};
 };
 } // namespace SFS

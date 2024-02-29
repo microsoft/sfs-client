@@ -122,7 +122,7 @@ TEST("Testing setting ConnectionConfig")
         REQUIRE_NOTHROW(connection->SetConfig(config));
 
         ConnectionConfig config2;
-        config2.maxRequestDuration = std::chrono::milliseconds{15000};
+        config2.maxRequestDuration = std::chrono::minutes{3};
         REQUIRE_NOTHROW(connection->SetConfig(config2));
     }
 }
