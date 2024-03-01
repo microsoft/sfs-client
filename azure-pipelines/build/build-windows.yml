@@ -1,0 +1,41 @@
+# Pipeline to build the SFS Client in Azure Pipelines so it can be scanned in compliance processes.
+
+trigger:
+  branches:
+    include:
+      - main
+
+pr:
+  branches:
+    include:
+      - main
+
+pool:
+  vmImage: "windows-2022"
+
+jobs:
+- job: Windows Build
+
+    steps:
+    - checkout: self
+
+    - template: templates/install-winget.yml
+      displayName: Install Winget
+
+    - task: PowerShell@2
+      displayName: Setup
+      inputs:
+        targetType: 'inline'
+        script: .\scripts\Setup.ps1 -NoBuildTools
+
+    - task: PowerShell@2
+      displayName: Build
+      inputs:
+        targetType: 'inline'
+        script: .\scripts\Build.ps1
+
+    - task: PowerShell@2
+      displayName: Test
+      inputs:
+        targetType: 'inline'
+        script: .\scripts\Test.ps1 -OutputOnFailure
