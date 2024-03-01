@@ -42,6 +42,12 @@ bool operator==(const File& lhs, const File& rhs);
 /// @brief Compares two File objects for inequality. The values of members are strictly compared.
 bool operator!=(const File& lhs, const File& rhs);
 
+/// @brief Compares two ApplicabilityDetails objects for equality. The values of members are strictly compared.
+bool operator==(const ApplicabilityDetails& lhs, const ApplicabilityDetails& rhs);
+
+/// @brief Compares two ApplicabilityDetails objects for inequality. The values of members are strictly compared.
+bool operator!=(const ApplicabilityDetails& lhs, const ApplicabilityDetails& rhs);
+
 /// @brief Compares two AppFile objects for equality. The values of members are strictly compared.
 bool operator==(const AppFile& lhs, const AppFile& rhs);
 

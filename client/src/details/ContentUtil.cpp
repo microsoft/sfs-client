@@ -156,6 +156,18 @@ bool contentutil::operator!=(const File& lhs, const File& rhs)
     return !(lhs == rhs);
 }
 
+bool contentutil::operator==(const ApplicabilityDetails& lhs, const ApplicabilityDetails& rhs)
+{
+    // String characters can be UTF-8 encoded, so we need to compare them in a case-sensitive manner.
+    return lhs.GetArchitectures() == rhs.GetArchitectures() &&
+           lhs.GetPlatformApplicabilityForPackage() == rhs.GetPlatformApplicabilityForPackage();
+}
+
+bool contentutil::operator!=(const ApplicabilityDetails& lhs, const ApplicabilityDetails& rhs)
+{
+    return !(lhs == rhs);
+}
+
 bool contentutil::operator==(const AppFile& lhs, const AppFile& rhs)
 {
     // String characters can be UTF-8 encoded, so we need to compare them in a case-sensitive manner.

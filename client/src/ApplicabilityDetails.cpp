@@ -33,15 +33,3 @@ const std::vector<std::string>& ApplicabilityDetails::GetPlatformApplicabilityFo
 {
     return m_platformApplicabilityForPackage;
 }
-
-bool ApplicabilityDetails::operator==(const ApplicabilityDetails& other) const noexcept
-{
-    // String characters can be UTF-8 encoded, so we need to compare them in a case-sensitive manner.
-    return m_architectures == other.m_architectures &&
-           m_platformApplicabilityForPackage == other.m_platformApplicabilityForPackage;
-}
-
-bool ApplicabilityDetails::operator!=(const ApplicabilityDetails& other) const noexcept
-{
-    return !(*this == other);
-}

@@ -1,13 +1,15 @@
 // Copyright (c) Microsoft Corporation.
 // Licensed under the MIT License.
 
-#include "sfsclient/ApplicabilityDetails.h"
+#include "ApplicabilityDetails.h"
+#include "ContentUtil.h"
 
 #include <catch2/catch_test_macros.hpp>
 
 #define TEST(...) TEST_CASE("[ApplicabilityDetailsTests] " __VA_ARGS__)
 
 using namespace SFS;
+using namespace SFS::details::contentutil;
 
 namespace
 {
@@ -37,8 +39,8 @@ TEST("Testing ApplicabilityDetails::Make()")
         SECTION("Equal")
         {
             auto CompareDetailsEqual = [&details](const std::unique_ptr<ApplicabilityDetails>& sameDetails) {
-                REQUIRE(*details == *sameDetails);
-                REQUIRE_FALSE(*details != *sameDetails);
+                REQUIRE((*details == *sameDetails));
+                REQUIRE_FALSE((*details != *sameDetails));
             };
 
             CompareDetailsEqual(GetDetails(architectures, platformApplicabilityForPackage));
@@ -47,8 +49,8 @@ TEST("Testing ApplicabilityDetails::Make()")
         SECTION("Not equal")
         {
             auto CompareDetailsNotEqual = [&details](const std::unique_ptr<ApplicabilityDetails>& otherDetails) {
-                REQUIRE(*details != *otherDetails);
-                REQUIRE_FALSE(*details == *otherDetails);
+                REQUIRE((*details != *otherDetails));
+                REQUIRE_FALSE((*details == *otherDetails));
             };
 
             CompareDetailsNotEqual(GetDetails({}, platformApplicabilityForPackage));

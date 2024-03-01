@@ -30,9 +30,6 @@ class ApplicabilityDetails
     const std::vector<Architecture>& GetArchitectures() const noexcept;
     const std::vector<std::string>& GetPlatformApplicabilityForPackage() const noexcept;
 
-    bool operator==(const ApplicabilityDetails& other) const noexcept;
-    bool operator!=(const ApplicabilityDetails& other) const noexcept;
-
   private:
     ApplicabilityDetails() = default;
 
