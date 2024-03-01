@@ -25,7 +25,7 @@ std::unique_ptr<ApplicabilityDetails> GetDetails(const std::vector<Architecture>
 
 TEST("Testing ApplicabilityDetails::Make()")
 {
-    const std::vector<Architecture> architectures{Architecture::x86, Architecture::amd64};
+    const std::vector<Architecture> architectures{Architecture::x86, Architecture::Amd64};
     const std::vector<std::string> platformApplicabilityForPackage{"Windows.Desktop", "Windows.Server"};
     const std::string fileMoniker{"myApp"};
 

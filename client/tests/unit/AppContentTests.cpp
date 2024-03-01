@@ -114,7 +114,7 @@ TEST("Testing AppFile::Make()")
     const std::string url{"myUrl"};
     const uint64_t sizeInBytes{1234};
     const std::unordered_map<HashType, std::string> hashes{{HashType::Sha1, "mySha1"}, {HashType::Sha256, "mySha256"}};
-    const std::vector<Architecture> architectures{Architecture::amd64};
+    const std::vector<Architecture> architectures{Architecture::Amd64};
     const std::vector<std::string> platformApplicabilityForPackage{"myPlatformApplicabilityForPackage"};
     const std::string fileMoniker{"myFileMoniker"};
 
@@ -197,14 +197,14 @@ TEST("Testing AppContent::Make()")
                                                 "url1",
                                                 1 /*sizeInBytes*/,
                                                 {{HashType::Sha1, "sha1"}},
-                                                {Architecture::amd64},
+                                                {Architecture::Amd64},
                                                 {"myPlatformApplicabilityForPackage1"},
                                                 "fileMoniker1");
     std::unique_ptr<AppFile> file2 = GetAppFile("fileId2",
                                                 "url2",
                                                 1 /*sizeInBytes*/,
                                                 {{HashType::Sha256, "sha256"}},
-                                                {Architecture::amd64},
+                                                {Architecture::Amd64},
                                                 {"myPlatformApplicabilityForPackage1"},
                                                 "fileMoniker1");
 
@@ -217,7 +217,7 @@ TEST("Testing AppContent::Make()")
                                                 "url",
                                                 1 /*sizeInBytes*/,
                                                 {{HashType::Sha1, "sha1"}},
-                                                {Architecture::amd64},
+                                                {Architecture::Amd64},
                                                 {"myPlatformApplicabilityForPackage"},
                                                 "fileMoniker")));
 
@@ -241,7 +241,7 @@ TEST("Testing AppContent equality operators")
                                                "url",
                                                1 /*sizeInBytes*/,
                                                {{HashType::Sha1, "sha1"}},
-                                               {Architecture::amd64},
+                                               {Architecture::Amd64},
                                                {"myPlatformApplicabilityForPackage"},
                                                "fileMoniker");
 
@@ -253,7 +253,7 @@ TEST("Testing AppContent equality operators")
                                                 "url",
                                                 1 /*sizeInBytes*/,
                                                 {{HashType::Sha1, "sha1"}},
-                                                {Architecture::amd64},
+                                                {Architecture::Amd64},
                                                 {"myPlatformApplicabilityForPackage"},
                                                 "fileMoniker")));
 

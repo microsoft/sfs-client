@@ -13,8 +13,11 @@ namespace SFS
 {
 enum class Architecture
 {
+    Amd64,
+    Arm,
+    Arm64,
+    None,
     x86,
-    amd64
 };
 
 class ApplicabilityDetails
