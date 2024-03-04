@@ -15,6 +15,7 @@ steps:
 - task: PowerShell@2
   displayName: Install WinGet
   inputs:
+    pwsh: true
     targetType: 'inline'
     script: |
       # Check it doesn't exist to avoid installing it without need
@@ -35,11 +36,11 @@ steps:
           Write-Host "Downloading Winget dependency VCLibs"
           Invoke-WebRequest -Uri https://aka.ms/Microsoft.VCLibs.x64.14.00.Desktop.appx -OutFile $VCLibsInstaller
         }
-        $XamlInstaller = "Microsoft.UI.Xaml.2.7.x64.appxx"
+        $XamlInstaller = "Microsoft.UI.Xaml.2.8.x64.appxx"
         if (!(Test-Path $XamlInstaller))
         {
           Write-Host "Downloading Winget dependency Xaml"
-          Invoke-WebRequest -Uri https://github.com/microsoft/microsoft-ui-xaml/releases/download/v2.7.3/Microsoft.UI.Xaml.2.7.x64.appx -OutFile $XamlInstaller
+          Invoke-WebRequest -Uri https://github.com/microsoft/microsoft-ui-xaml/releases/download/v2.8.6/Microsoft.UI.Xaml.2.8.x64.appx -OutFile $XamlInstaller
         }
 
         Import-Module -Name Appx -UseWindowsPowershell | Out-Null
