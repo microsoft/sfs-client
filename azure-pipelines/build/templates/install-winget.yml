@@ -1,7 +1,7 @@
 # Template: Installs WinGet from sources, caching the installation files if possible
 
 parameters:
-- name: winget-installation-cache
+- name: wingetInstallationCache
   type: string
   default: 'winget-installation-cache'
 
@@ -9,7 +9,7 @@ steps:
 - task: Cache@2
   inputs:
     key: 'cache-winget-installation'
-    path: ${{parameters.winget-installation-cache}}
+    path: ${{ parameters.wingetInstallationCache }}
 
 # Winget is not available in the Windows Server 2022 image. We can still install it in "experimental" mode manually though.
 - task: PowerShell@2
@@ -20,8 +20,8 @@ steps:
       # Check it doesn't exist to avoid installing it without need
       if (!(Get-Command 'winget.exe' -CommandType Application -ErrorAction SilentlyContinue))
       {
-        New-Item -ItemType Directory ${{ inputs.winget-installation-cache }} -Force | Out-Null
-        Set-Location ${{ inputs.winget-installation-cache }}
+        New-Item -ItemType Directory ${{ parameters.wingetInstallationCache }} -Force | Out-Null
+        Set-Location ${{ parameters.wingetInstallationCache }}
         $ProgressPreference = "silentlyContinue"
         $WingetInstaller = "Microsoft.DesktopAppInstaller_8wekyb3d8bbwe.msixbundle"
         if (!(Test-Path $WingetInstaller))
