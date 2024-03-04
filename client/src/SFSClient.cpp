@@ -4,6 +4,7 @@
 #include "SFSClient.h"
 
 #include "details/ErrorHandling.h"
+#include "details/ReportingHandler.h"
 #include "details/SFSClientImpl.h"
 #include "details/connection/Connection.h"
 #include "details/connection/CurlConnectionManager.h"
@@ -27,6 +28,12 @@ try
     std::unique_ptr<SFSClient> tmp(new SFSClient());
     tmp->m_impl = std::make_unique<details::SFSClientImpl<CurlConnectionManager>>(std::move(config));
     out = std::move(tmp);
+
+    LOG_INFO(out->m_impl->GetReportingHandler(), "SFSClient instance created successfully. Version: %s", GetVersion());
+#ifdef SFS_GIT_INFO
+    LOG_INFO(out->m_impl->GetReportingHandler(), "Git info: %s", SFS_GIT_INFO);
+#endif
+
     return Result::Success;
 }
 SFS_CATCH_RETURN()
@@ -90,3 +97,8 @@ try
     return Result::NotImpl;
 }
 SFS_CATCH_RETURN()
+
+const char* SFSClient::GetVersion() noexcept
+{
+    return SFS_VERSION;
+}

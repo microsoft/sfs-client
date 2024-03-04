@@ -53,6 +53,28 @@ target_link_libraries(${PROJECT_NAME} PRIVATE CURL::libcurl)
 target_link_libraries(${PROJECT_NAME} PRIVATE nlohmann_json::nlohmann_json)
 target_link_libraries(${PROJECT_NAME} PRIVATE correlation_vector)
 
+# Pick up git revision to add to logging
+include(FindGit)
+if(GIT_FOUND)
+    execute_process(
+        COMMAND ${GIT_EXECUTABLE} rev-parse --abbrev-ref HEAD
+        WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
+        OUTPUT_VARIABLE SFS_GIT_HEAD_NAME
+        OUTPUT_STRIP_TRAILING_WHITESPACE)
+    execute_process(
+        COMMAND ${GIT_EXECUTABLE} rev-parse --short HEAD
+        WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
+        OUTPUT_VARIABLE SFS_GIT_HEAD_REVISION
+        OUTPUT_STRIP_TRAILING_WHITESPACE)
+
+    target_compile_definitions(
+        ${PROJECT_NAME}
+        PRIVATE SFS_GIT_INFO="${SFS_GIT_HEAD_NAME}:${SFS_GIT_HEAD_REVISION}")
+endif()
+
+target_compile_definitions(${PROJECT_NAME}
+                           PRIVATE SFS_VERSION="${SFS_LIBRARY_VERSION}")
+
 if(SFS_ENABLE_TEST_OVERRIDES)
     target_compile_definitions(${PROJECT_NAME}
                                PRIVATE SFS_ENABLE_TEST_OVERRIDES=1)

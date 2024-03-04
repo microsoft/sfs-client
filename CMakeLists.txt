@@ -11,9 +11,16 @@ if(WIN32 AND NOT DEFINED VCPKG_TARGET_TRIPLET)
     set(VCPKG_TARGET_TRIPLET "x64-windows-static-custom")
 endif()
 
+# Semver versioning. Given MAJOR.MINOR.PATCH, increment the:
+#
+# 1. MAJOR version when you make incompatible API changes
+# 2. MINOR version when you add functionality in a backward compatible manner
+# 3. PATCH version when you make backward compatible bug fixes
+set(SFS_LIBRARY_VERSION "0.1.0")
+
 project(
     SFSClient
-    VERSION 0.1
+    VERSION ${SFS_LIBRARY_VERSION}
     LANGUAGES CXX)
 
 set(CMAKE_CXX_STANDARD 17)
