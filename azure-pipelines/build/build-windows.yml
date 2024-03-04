@@ -14,13 +14,12 @@ pool:
   vmImage: "windows-2022"
 
 jobs:
-- job: Windows Build
+- job: windows-build
 
-    steps:
+  steps:
     - checkout: self
 
     - template: templates/install-winget.yml
-      displayName: Install Winget
 
     - task: PowerShell@2
       displayName: Setup
