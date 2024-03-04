@@ -53,6 +53,9 @@ target_link_libraries(${PROJECT_NAME} PRIVATE CURL::libcurl)
 target_link_libraries(${PROJECT_NAME} PRIVATE nlohmann_json::nlohmann_json)
 target_link_libraries(${PROJECT_NAME} PRIVATE correlation_vector)
 
+target_compile_definitions(${PROJECT_NAME}
+                           PRIVATE SFS_VERSION="${CMAKE_PROJECT_VERSION}")
+
 if(SFS_ENABLE_TEST_OVERRIDES)
     target_compile_definitions(${PROJECT_NAME}
                                PRIVATE SFS_ENABLE_TEST_OVERRIDES=1)

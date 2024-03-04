@@ -81,6 +81,11 @@ class SFSClient
     [[nodiscard]] Result GetApplicabilityDetails(const Content& content,
                                                  std::unique_ptr<ApplicabilityDetails>& details) const noexcept;
 
+    /**
+     * @return The version of the SFSClient library
+     */
+    static const char* GetVersion() noexcept;
+
   private:
     /**
      * @brief Construct a new SFSClient object
