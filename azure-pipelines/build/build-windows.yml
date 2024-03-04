@@ -14,7 +14,7 @@ pool:
   vmImage: "windows-2022"
 
 jobs:
-- job: windows-build
+- job: windowsBuild
 
   steps:
     - checkout: self
