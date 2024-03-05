@@ -143,20 +143,21 @@ void ValidateVersionEntity(const VersionEntity& versionEntity,
 
 void ValidateBatchVersionEntity(const VersionEntities& versionEntities,
                                 const std::string& nameSpace,
-                                const std::unordered_set<std::string>& products,
+                                const std::unordered_set<std::string>& requestedProducts,
                                 const ReportingHandler& handler)
 {
     for (const auto& entity : versionEntities)
     {
         THROW_CODE_IF_LOG(ServiceInvalidResponse,
-                          products.count(entity->contentId.name) == 0,
+                          requestedProducts.count(entity->contentId.name) == 0,
                           handler,
-                          "Response of product [" + entity->contentId.name + "] does not match the requested products");
+                          "Received product [" + entity->contentId.name +
+                              "] which is not one of the requested products");
         THROW_CODE_IF_LOG(ServiceInvalidResponse,
                           AreNotEqualI(entity->contentId.nameSpace, nameSpace),
                           handler,
-                          "Response of product [" + entity->contentId.name +
-                              "] does not match the requested namespace");
+                          "Received product [" + entity->contentId.name + "] with a namespace [" +
+                              entity->contentId.nameSpace + "] that does not match the requested namespace");
 
         LOG_INFO(handler,
                  "Received a response for product [%s] with version %s",
@@ -221,12 +222,12 @@ try
     SFS_INFO("Requesting latest version of multiple products from URL [%s]", url.c_str());
 
     // Creating request body
-    std::unordered_set<std::string> products;
+    std::unordered_set<std::string> requestedProducts;
     json body = json::array();
     for (const auto& [product, attributes] : productRequests)
     {
         SFS_INFO("Product #%zu: [%s]", body.size() + size_t{1}, product.c_str());
-        products.insert(product);
+        requestedProducts.insert(product);
 
         body.push_back({{"TargetingAttributes", attributes}, {"Product", product}});
     }
@@ -239,7 +240,7 @@ try
         ParseServerMethodStringToJson(postResponse, "GetLatestVersionBatch", m_reportingHandler);
 
     auto entities = ConvertLatestVersionBatchResponseToVersionEntities(versionResponse, m_reportingHandler);
-    ValidateBatchVersionEntity(entities, m_nameSpace, products, m_reportingHandler);
+    ValidateBatchVersionEntity(entities, m_nameSpace, requestedProducts, m_reportingHandler);
 
     return entities;
 }
