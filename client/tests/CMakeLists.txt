@@ -48,6 +48,8 @@ catch_discover_tests(${PROJECT_NAME})
 set_target_properties(${PROJECT_NAME} PROPERTIES RUNTIME_OUTPUT_DIRECTORY
                                                  ${CMAKE_BINARY_DIR}/tests/bin/)
 
+set_compile_options_for_target(${PROJECT_NAME})
+
 if(SFS_ENABLE_TEST_OVERRIDES)
     target_compile_definitions(${PROJECT_NAME}
                                PRIVATE SFS_ENABLE_TEST_OVERRIDES=1)

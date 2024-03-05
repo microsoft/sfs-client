@@ -73,6 +73,8 @@ if(GIT_FOUND)
         PRIVATE SFS_GIT_INFO="${SFS_GIT_HEAD_NAME}:${SFS_GIT_HEAD_REVISION}")
 endif()
 
+set_compile_options_for_target(${PROJECT_NAME})
+
 target_compile_definitions(${PROJECT_NAME}
                            PRIVATE SFS_VERSION="${SFS_LIBRARY_VERSION}")
 
