@@ -1,14 +1,10 @@
 # Pipeline to build the SFS Client in Azure Pipelines so it can be scanned in compliance processes.
 
 trigger:
-  branches:
-    include:
-      - main
+- main
 
 pr:
-  branches:
-    include:
-      - main
+- main
 
 pool:
   vmImage: "windows-2022"
