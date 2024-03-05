@@ -29,14 +29,15 @@ warn() { echo -e "${COLOR_YELLOW}$*${NO_COLOR}"; }
 
 clean=false
 enable_test_overrides="OFF"
+build_samples="OFF"
 build_type="Debug"
 
-usage() { echo "Usage: $0 [-c|--clean, -b|--build-type {Debug,Release}, -t|--enable-test-overrides]" 1>&2; exit 1; }
+usage() { echo "Usage: $0 [-c|--clean, -b|--build-type {Debug,Release}, -t|--enable-test-overrides, --build-samples]" 1>&2; exit 1; }
 
 # Make sure when adding a new option to check if it requires CMake regeneration
 
 if ! opts=$(getopt \
-  --longoptions "clean,build-type:,enable-test-overrides" \
+  --longoptions "clean,build-type:,enable-test-overrides,build-samples" \
   --name "$(basename "$0")" \
   --options "cb:t" \
   -- "$@"
@@ -66,6 +67,10 @@ while [ $# -gt 0 ]; do
             ;;
         -t|--enable-test-overrides)
             enable_test_overrides="ON"
+            shift 1
+            ;;
+        --build-samples)
+            build_samples="ON"
             shift 1
             ;;
         *)
@@ -111,12 +116,20 @@ if [ -f "$cmake_cache_file" ]; then
     if test_cmake_cache_value_no_match "$cmake_cache_file" "^SFS_ENABLE_TEST_OVERRIDES:BOOL=(.*)$" "$enable_test_overrides"; then
         regenerate=true
     fi
+    if test_cmake_cache_value_no_match "$cmake_cache_file" "^BUILD_SAMPLES:BOOL=(.*)$" "$build_samples"; then
+        regenerate=true
+    fi
 fi
 
 # Configure cmake if build folder doesn't exist or if the build must be regenerated.
 # This creates build targets that will be used by the build command
 if [ ! -d "$build_folder" ] || $regenerate ; then
-    cmake -S "$git_root" -B "$build_folder" -DCMAKE_BUILD_TYPE="$build_type" -DSFS_ENABLE_TEST_OVERRIDES="$enable_test_overrides"
+    cmake \
+        -S "$git_root" \
+        -B "$build_folder" \
+        -DCMAKE_BUILD_TYPE="$build_type" \
+        -DSFS_ENABLE_TEST_OVERRIDES="$enable_test_overrides" \
+        -DBUILD_SAMPLES="$build_samples"
 fi
 
 # This is the build command. If any CMakeLists.txt files change, this will also reconfigure before building

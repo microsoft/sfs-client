@@ -27,7 +27,8 @@ param (
     [ValidateSet("Debug", "Release")]
     [string] $BuildType = "Debug",
     # Make sure when adding a new switch below to check if it requires CMake regeneration
-    [switch] $EnableTestOverrides = $false
+    [switch] $EnableTestOverrides = $false,
+    [switch] $BuildSamples = $false
 )
 
 $GitRoot = (Resolve-Path (&git -C $PSScriptRoot rev-parse --show-toplevel)).Path
@@ -46,6 +47,7 @@ if ($Clean -and (Test-Path $BuildFolder))
 $Regenerate = $false
 $CMakeCacheFile = "$BuildFolder\CMakeCache.txt"
 $EnableTestOverridesStr = if ($EnableTestOverrides) {"ON"} else {"OFF"}
+$BuildSamplesOverridesStr = if ($BuildSamples) {"ON"} else {"OFF"}
 
 function Test-CMakeCacheValueNoMatch($CMakeCacheFile, $Pattern, $ExpectedValue)
 {
@@ -61,13 +63,16 @@ if (Test-Path $CMakeCacheFile)
 {
     # Regenerate if one of the build options is set to a different value than the one passed in
     $Regenerate = Test-CMakeCacheValueNoMatch $CMakeCacheFile "^SFS_ENABLE_TEST_OVERRIDES:BOOL=(.*)$" $EnableTestOverridesStr
+    $Regenerate = Test-CMakeCacheValueNoMatch $CMakeCacheFile "^BUILD_SAMPLES:BOOL=(.*)$" $BuildSamplesOverridesStr
 }
 
 # Configure cmake if build folder doesn't exist or if the build must be regenerated.
 # This creates build targets that will be used by the build command
 if (!(Test-Path $BuildFolder) -or $Regenerate)
 {
-    cmake -S $GitRoot -B $BuildFolder "-DSFS_ENABLE_TEST_OVERRIDES=$EnableTestOverridesStr"
+    $Options = "-DSFS_ENABLE_TEST_OVERRIDES=$EnableTestOverridesStr";
+    $Options += " -DBUILD_SAMPLES=$BuildSamplesOverridesStr";
+    Invoke-Expression "cmake -S $GitRoot -B $BuildFolder $Options"
 }
 
 # This is the build command. If any CMakeLists.txt files change, this will also reconfigure before building

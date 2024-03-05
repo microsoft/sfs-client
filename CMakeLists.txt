@@ -26,6 +26,8 @@ project(
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED True)
 
+option(BUILD_SAMPLES "Indicates if samples should be built." OFF)
+
 option(
     SFS_ENABLE_TEST_OVERRIDES
     "Set SFS_ENABLE_OVERRIDES to ON to enable certain test overrides through environment variables."
