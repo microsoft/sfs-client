@@ -72,7 +72,7 @@ try
     const auto connection = m_impl->MakeConnection(connectionConfig);
 
     auto versionEntity = m_impl->GetLatestVersion(requestParams.productRequests[0], *connection);
-    auto contentId = ConvertGenericVersionEntityToContentId(std::move(*versionEntity), m_impl->GetReportingHandler());
+    auto contentId = GenericVersionEntityToContentId(std::move(*versionEntity), m_impl->GetReportingHandler());
 
     const auto& product = requestParams.productRequests[0].product;
     auto files = m_impl->GetDownloadInfo(product, contentId->GetVersion(), *connection);

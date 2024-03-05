@@ -85,8 +85,8 @@ std::unique_ptr<VersionEntity> contentutil::ParseJsonToVersionEntity(const nlohm
     return tmp;
 }
 
-std::unique_ptr<ContentId> contentutil::ConvertGenericVersionEntityToContentId(VersionEntity&& entity,
-                                                                               const ReportingHandler& handler)
+std::unique_ptr<ContentId> contentutil::GenericVersionEntityToContentId(VersionEntity&& entity,
+                                                                        const ReportingHandler& handler)
 {
     ValidateContentType(entity, ContentType::Generic, handler);
 
