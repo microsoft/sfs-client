@@ -29,15 +29,15 @@ warn() { echo -e "${COLOR_YELLOW}$*${NO_COLOR}"; }
 
 clean=false
 enable_test_overrides="OFF"
-build_samples="OFF"
+build_samples="ON"
 build_type="Debug"
 
-usage() { echo "Usage: $0 [-c|--clean, -b|--build-type {Debug,Release}, -t|--enable-test-overrides, --build-samples]" 1>&2; exit 1; }
+usage() { echo "Usage: $0 [-c|--clean, -b|--build-type {Debug,Release}, -t|--enable-test-overrides, --no-build-samples]" 1>&2; exit 1; }
 
 # Make sure when adding a new option to check if it requires CMake regeneration
 
 if ! opts=$(getopt \
-  --longoptions "clean,build-type:,enable-test-overrides,build-samples" \
+  --longoptions "clean,build-type:,enable-test-overrides,no-build-samples" \
   --name "$(basename "$0")" \
   --options "cb:t" \
   -- "$@"
@@ -69,8 +69,8 @@ while [ $# -gt 0 ]; do
             enable_test_overrides="ON"
             shift 1
             ;;
-        --build-samples)
-            build_samples="ON"
+        --no-build-samples)
+            build_samples="OFF"
             shift 1
             ;;
         *)

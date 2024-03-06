@@ -28,7 +28,7 @@ param (
     [string] $BuildType = "Debug",
     # Make sure when adding a new switch below to check if it requires CMake regeneration
     [switch] $EnableTestOverrides = $false,
-    [switch] $BuildSamples = $false
+    [switch] $NoBuildSamples = $false
 )
 
 $GitRoot = (Resolve-Path (&git -C $PSScriptRoot rev-parse --show-toplevel)).Path
@@ -47,7 +47,7 @@ if ($Clean -and (Test-Path $BuildFolder))
 $Regenerate = $false
 $CMakeCacheFile = "$BuildFolder\CMakeCache.txt"
 $EnableTestOverridesStr = if ($EnableTestOverrides) {"ON"} else {"OFF"}
-$BuildSamplesOverridesStr = if ($BuildSamples) {"ON"} else {"OFF"}
+$BuildSamplesOverridesStr = if ($NoBuildSamples) {"OFF"} else {"ON"}
 
 function Test-CMakeCacheValueNoMatch($CMakeCacheFile, $Pattern, $ExpectedValue)
 {
