@@ -26,25 +26,6 @@
       "component": {
         "type": "git",
         "git": {
-          "repositoryUrl": "https://github.com/google/brotli",
-          "commitHash": "ed738e842d2fbdf2d6459e39267a633c4a9b2f5d"
-        }
-      },
-      "developmentDependency": true,
-      "dependencyRoots": [
-        {
-          "type": "git",
-          "git": {
-            "repositoryUrl": "https://github.com/yhirose/cpp-httplib",
-            "commitHash": "5c00bbf36ba8ff47b4fb97712fc38cb2884e5b98"
-          }
-        }
-      ]
-    },
-    {
-      "component": {
-        "type": "git",
-        "git": {
           "repositoryUrl": "https://github.com/curl/curl",
           "commitHash": "d755a5f7c009dd63a61b2c745180d8ba937cbfeb"
         }
@@ -57,25 +38,6 @@
         "git": {
           "repositoryUrl": "https://github.com/c-ares/c-ares",
           "commitHash": "fddf01938d3789e06cc1c3774e4cd0c7d2a89976"
-        }
-      },
-      "developmentDependency": false,
-      "dependencyRoots": [
-        {
-          "type": "git",
-          "git": {
-            "repositoryUrl": "https://github.com/curl/curl",
-            "commitHash": "d755a5f7c009dd63a61b2c745180d8ba937cbfeb"
-          }
-        }
-      ]
-    },
-    {
-      "component": {
-        "type": "git",
-        "git": {
-          "repositoryUrl": "https://github.com/madler/zlib",
-          "commitHash": "09155eaa2f9270dc4ed1fa13e2b4b2613e6e4851"
         }
       },
       "developmentDependency": false,
