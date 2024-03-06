@@ -21,9 +21,6 @@
 
 #define TEST(...) TEST_CASE("[Functional][CurlConnectionTests] " __VA_ARGS__)
 
-// Define included by Win32 headers
-#undef GetMessage
-
 using namespace SFS;
 using namespace SFS::details;
 using namespace SFS::test;

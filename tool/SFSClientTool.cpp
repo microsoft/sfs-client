@@ -198,9 +198,9 @@ void DisplayResults(const std::unique_ptr<Content>& content)
 void LogResult(const SFS::Result& result)
 {
     std::cout << "  Result code: " << ToString(result.GetCode());
-    if (!result.GetMessage().empty())
+    if (!result.GetMsg().empty())
     {
-        std::cout << ". Message: " << result.GetMessage();
+        std::cout << ". Message: " << result.GetMsg();
     }
     std::cout << std::endl;
 }

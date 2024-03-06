@@ -16,7 +16,7 @@ TEST("Testing Result() class methods")
         Result resultSuccess(Result::Code::Success);
 
         REQUIRE(resultSuccess.GetCode() == Result::Code::Success);
-        REQUIRE(resultSuccess.GetMessage().empty());
+        REQUIRE(resultSuccess.GetMsg().empty());
         REQUIRE(resultSuccess.IsSuccess());
         REQUIRE_FALSE(resultSuccess.IsFailure());
 
@@ -35,7 +35,7 @@ TEST("Testing Result() class methods")
     {
         Result resultUnexpected(Result::Code::Unexpected, "message");
         REQUIRE(resultUnexpected.GetCode() == Result::Code::Unexpected);
-        REQUIRE(resultUnexpected.GetMessage() == "message");
+        REQUIRE(resultUnexpected.GetMsg() == "message");
         REQUIRE_FALSE(resultUnexpected.IsSuccess());
         REQUIRE(resultUnexpected.IsFailure());
 

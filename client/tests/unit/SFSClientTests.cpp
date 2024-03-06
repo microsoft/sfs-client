@@ -211,14 +211,14 @@ TEST("Testing SFSClient::GetLatestDownloadInfo()")
         params.productRequests = {{"", {}}};
         auto result = sfsClient->GetLatestDownloadInfo(params, content);
         REQUIRE(result.GetCode() == Result::InvalidArg);
-        REQUIRE(result.GetMessage() == "product cannot be empty");
+        REQUIRE(result.GetMsg() == "product cannot be empty");
         REQUIRE(content == nullptr);
 
         const TargetingAttributes attributes{{"attr1", "value"}};
         params.productRequests = {{"", attributes}};
         result = sfsClient->GetLatestDownloadInfo(params, content);
         REQUIRE(result.GetCode() == Result::InvalidArg);
-        REQUIRE(result.GetMessage() == "product cannot be empty");
+        REQUIRE(result.GetMsg() == "product cannot be empty");
         REQUIRE(content == nullptr);
     }
 
@@ -226,7 +226,7 @@ TEST("Testing SFSClient::GetLatestDownloadInfo()")
     {
         auto result = sfsClient->GetLatestDownloadInfo(params, content);
         REQUIRE(result.GetCode() == Result::InvalidArg);
-        REQUIRE(result.GetMessage() == "productRequests cannot be empty");
+        REQUIRE(result.GetMsg() == "productRequests cannot be empty");
         REQUIRE(content == nullptr);
     }
 
@@ -235,7 +235,7 @@ TEST("Testing SFSClient::GetLatestDownloadInfo()")
         params.productRequests = {{"p1", {}}, {"p2", {}}};
         auto result = sfsClient->GetLatestDownloadInfo(params, content);
         REQUIRE(result.GetCode() == Result::NotImpl);
-        REQUIRE(result.GetMessage() == "There cannot be more than 1 productRequest at the moment");
+        REQUIRE(result.GetMsg() == "There cannot be more than 1 productRequest at the moment");
         REQUIRE(content == nullptr);
     }
 
@@ -245,13 +245,13 @@ TEST("Testing SFSClient::GetLatestDownloadInfo()")
         params.baseCV = "";
         auto result = sfsClient->GetLatestDownloadInfo(params, content);
         REQUIRE(result.GetCode() == Result::InvalidArg);
-        REQUIRE(result.GetMessage() == "cv must not be empty");
+        REQUIRE(result.GetMsg() == "cv must not be empty");
         REQUIRE(content == nullptr);
 
         params.baseCV = "cv";
         result = sfsClient->GetLatestDownloadInfo(params, content);
         REQUIRE(result.GetCode() == Result::InvalidArg);
-        REQUIRE(result.GetMessage().find("baseCV is not a valid correlation vector:") == 0);
+        REQUIRE(result.GetMsg().find("baseCV is not a valid correlation vector:") == 0);
         REQUIRE(content == nullptr);
     }
 }
