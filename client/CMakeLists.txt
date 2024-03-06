@@ -26,7 +26,6 @@ target_sources(
     PRIVATE src/AppContent.cpp
             src/ApplicabilityDetails.cpp
             src/Content.cpp
-            src/DeliveryOptimizationData.cpp
             src/details/connection/Connection.cpp
             src/details/connection/ConnectionManager.cpp
             src/details/connection/CurlConnection.cpp

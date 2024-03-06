@@ -86,16 +86,6 @@ try
 }
 SFS_CATCH_RETURN()
 
-Result SFSClient::GetDeliveryOptimizationData(
-    [[maybe_unused]] const Content& content,
-    [[maybe_unused]] std::unique_ptr<DeliveryOptimizationData>& data) const noexcept
-try
-{
-    // return m_impl->GetDeliveryOptimizationData(...);
-    return Result::NotImpl;
-}
-SFS_CATCH_RETURN()
-
 Result SFSClient::GetApplicabilityDetails(
     [[maybe_unused]] const Content& content,
     [[maybe_unused]] std::unique_ptr<ApplicabilityDetails>& details) const noexcept

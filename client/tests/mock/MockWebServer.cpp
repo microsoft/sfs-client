@@ -105,6 +105,8 @@ json GeneratePostDownloadInfo(const std::string& name)
     //   ...
     // ]
 
+    // Generating DeliveryOptimizationData to simulate the server response, but it's not being parsed by the Client
+
     json response;
     response = json::array();
     response.push_back({{"Url", "http://localhost/1.json"},
