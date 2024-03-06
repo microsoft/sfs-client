@@ -13,7 +13,8 @@ enum class LogSeverity
 {
     Info,
     Warning,
-    Error
+    Error,
+    Verbose,
 };
 
 struct LogData

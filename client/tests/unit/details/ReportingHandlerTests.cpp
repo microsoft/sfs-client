@@ -58,6 +58,11 @@ TEST("Testing Severities")
     LOG_ERROR(handler, "Test");
     REQUIRE(severity.has_value());
     REQUIRE(*severity == LogSeverity::Error);
+    severity.reset();
+
+    LOG_VERBOSE(handler, "Test");
+    REQUIRE(severity.has_value());
+    REQUIRE(*severity == LogSeverity::Verbose);
 
     handler.SetLoggingCallback(nullptr);
 }
@@ -181,4 +186,5 @@ TEST("Testing ToString(LogSeverity)")
     REQUIRE(SFS::ToString(LogSeverity::Info) == "Info");
     REQUIRE(SFS::ToString(LogSeverity::Warning) == "Warning");
     REQUIRE(SFS::ToString(LogSeverity::Error) == "Error");
+    REQUIRE(SFS::ToString(LogSeverity::Verbose) == "Verbose");
 }
