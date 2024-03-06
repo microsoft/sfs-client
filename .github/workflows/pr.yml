@@ -63,7 +63,6 @@ jobs:
           ./scripts/test.sh --output-on-failure
 
       - name: Build and Test (with test overrides)
-        shell: pwsh
         run: |
           ./scripts/build.sh --enable-test-overrides
           ./scripts/test.sh --output-on-failure
