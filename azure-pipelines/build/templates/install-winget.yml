@@ -28,7 +28,7 @@ steps:
         if (!(Test-Path $WingetInstaller))
         {
           Write-Host "Downloading Winget"
-          Invoke-WebRequest -Uri https://aka.ms/getwinget -OutFile $WingetInstaller
+          Invoke-WebRequest -Uri https://github.com/microsoft/winget-cli/releases/download/v1.7.10582/$WingetInstaller -OutFile $WingetInstaller
         }
         $VCLibsInstaller = "Microsoft.VCLibs.x64.14.00.Desktop.appx"
         if (!(Test-Path $VCLibsInstaller))
