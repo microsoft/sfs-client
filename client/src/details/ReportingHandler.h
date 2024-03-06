@@ -10,17 +10,12 @@
 
 #define MAX_LOG_MESSAGE_SIZE 1024
 
-#define LOG_SEVERITY(handler, severity, format, ...)                                                                   \
-    do                                                                                                                 \
-    {                                                                                                                  \
-        char __message[MAX_LOG_MESSAGE_SIZE];                                                                          \
-        snprintf(__message, MAX_LOG_MESSAGE_SIZE, format, ##__VA_ARGS__);                                              \
-        handler.LogWithSeverity(severity, __message, __FILE__, __LINE__, __FUNCTION__);                                \
-    } while ((void)0, 0)
-
-#define LOG_INFO(handler, format, ...) LOG_SEVERITY(handler, SFS::LogSeverity::Info, format, ##__VA_ARGS__)
-#define LOG_WARNING(handler, format, ...) LOG_SEVERITY(handler, SFS::LogSeverity::Warning, format, ##__VA_ARGS__)
-#define LOG_ERROR(handler, format, ...) LOG_SEVERITY(handler, SFS::LogSeverity::Error, format, ##__VA_ARGS__)
+#define LOG_INFO(handler, format, ...)                                                                                 \
+    handler.LogWithSeverity(SFS::LogSeverity::Info, __FILE__, __LINE__, __FUNCTION__, format, ##__VA_ARGS__)
+#define LOG_WARNING(handler, format, ...)                                                                              \
+    handler.LogWithSeverity(SFS::LogSeverity::Warning, __FILE__, __LINE__, __FUNCTION__, format, ##__VA_ARGS__)
+#define LOG_ERROR(handler, format, ...)                                                                                \
+    handler.LogWithSeverity(SFS::LogSeverity::Error, __FILE__, __LINE__, __FUNCTION__, format, ##__VA_ARGS__)
 
 namespace SFS::details
 {
@@ -49,11 +44,18 @@ class ReportingHandler
      * @details Prefer calling it with macros LOG_INFO, LOG_WARNING, LOG_ERROR so file, line and function are
      * automatically populated and the message can be formatted.
      */
+    template <typename... Args>
     void LogWithSeverity(LogSeverity severity,
-                         const char* message,
                          const char* file,
                          unsigned line,
-                         const char* function) const;
+                         const char* function,
+                         const char* format,
+                         Args... args) const
+    {
+        char message[MAX_LOG_MESSAGE_SIZE];
+        snprintf(message, MAX_LOG_MESSAGE_SIZE, format, args...);
+        CallLoggingCallback(severity, message, file, line, function);
+    }
 
   private:
     void CallLoggingCallback(LogSeverity severity,

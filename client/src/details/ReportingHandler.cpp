@@ -14,15 +14,6 @@ void ReportingHandler::SetLoggingCallback(LoggingCallbackFn&& callback)
     m_loggingCallbackFn = std::move(callback);
 }
 
-void ReportingHandler::LogWithSeverity(LogSeverity severity,
-                                       const char* message,
-                                       const char* file,
-                                       unsigned line,
-                                       const char* function) const
-{
-    CallLoggingCallback(severity, message, file, line, function);
-}
-
 void ReportingHandler::CallLoggingCallback(LogSeverity severity,
                                            const char* message,
                                            const char* file,
