@@ -17,7 +17,20 @@ endif()
 if (MSVC)
     set(DO_PATCH_COMMAND "")
 else()
-    set(DO_PATCH_COMMAND sudo <SOURCE_DIR>/build/scripts/bootstrap.sh --install build)
+    # Populate LSB_RELEASE_ID_SHORT with the linux distro if available
+    find_program(LSB_RELEASE_EXEC lsb_release)
+    execute_process(COMMAND ${LSB_RELEASE_EXEC} -is
+        OUTPUT_VARIABLE LSB_RELEASE_ID_SHORT
+        OUTPUT_STRIP_TRAILING_WHITESPACE
+    )
+
+    if (LSB_RELEASE_ID_SHORT STREQUAL "Ubuntu")
+        # 1. Run bootstrap script to install Linux dependencies
+        # 2. Build & install DO Agent, which acts as a service for the REST API
+        set(DO_PATCH_COMMAND cd <SOURCE_DIR> && sudo ./build/scripts/bootstrap.sh --install build && python3 ./build/build.py --project agent --package-for deb && cd /tmp/build-deliveryoptimization-agent/linux-debug && sudo dpkg -i deliveryoptimization-agent_1.1.0_amd64.deb)
+    else()
+        message(FATAL_ERROR "Unsupported platform ${LSB_RELEASE_ID_SHORT}")
+    endif()
 endif()
 
 FetchContent_Declare(
