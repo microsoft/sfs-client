@@ -70,3 +70,7 @@ endif()
 
 add_subdirectory(client)
 add_subdirectory(tool)
+
+if(BUILD_SAMPLES)
+    add_subdirectory(samples)
+endif()
