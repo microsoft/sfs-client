@@ -223,6 +223,7 @@ std::unique_ptr<SFS::Content> GetLatestDownloadInfo(const Settings& settings)
     return content;
 }
 
+#ifdef _WIN32
 class CoInitializeWrapper
 {
   public:
@@ -236,6 +237,7 @@ class CoInitializeWrapper
         CoUninitialize();
     }
 };
+#endif
 
 std::string DOErrorToString(std::error_code error)
 {

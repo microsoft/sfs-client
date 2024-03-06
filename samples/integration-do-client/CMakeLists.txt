@@ -14,10 +14,17 @@ if(NOT DEFINED CMAKE_BUILD_TYPE)
     set(CMAKE_BUILD_TYPE debug)
 endif()
 
+if (MSVC)
+    set(DO_PATCH_COMMAND "")
+else()
+    set(DO_PATCH_COMMAND sudo <SOURCE_DIR>/build/scripts/bootstrap.sh --install build)
+endif()
+
 FetchContent_Declare(
     do-client
     GIT_REPOSITORY https://github.com/microsoft/do-client.git
     GIT_TAG d71ade6f692dd8bc319ec3228c956517e9b29292 # v1.1.0
+    PATCH_COMMAND "${DO_PATCH_COMMAND}"
 )
 FetchContent_MakeAvailable(do-client)
 
