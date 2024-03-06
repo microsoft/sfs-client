@@ -18,8 +18,6 @@
 
 #include <unordered_set>
 
-#define SFS_INFO(...) LOG_INFO(m_reportingHandler, __VA_ARGS__)
-
 using namespace SFS;
 using namespace SFS::details;
 using namespace SFS::details::contentutil;
@@ -194,10 +192,10 @@ try
     const auto& [product, attributes] = productRequest;
     const std::string url{SFSUrlComponents::GetLatestVersionUrl(GetBaseUrl(), m_instanceId, m_nameSpace, product)};
 
-    SFS_INFO("Requesting latest version of [%s] from URL [%s]", product.c_str(), url.c_str());
+    LOG_INFO(m_reportingHandler, "Requesting latest version of [%s] from URL [%s]", product.c_str(), url.c_str());
 
     const json body = {{"TargetingAttributes", attributes}};
-    SFS_INFO("Request body [%s]", body.dump().c_str());
+    LOG_VERBOSE(m_reportingHandler, "Request body [%s]", body.dump().c_str());
 
     const std::string postResponse{connection.Post(url, body.dump())};
     const json versionResponse = ParseServerMethodStringToJson(postResponse, "GetLatestVersion", m_reportingHandler);
@@ -205,7 +203,7 @@ try
     auto versionEntity = ParseJsonToVersionEntity(versionResponse, m_reportingHandler);
     ValidateVersionEntity(*versionEntity, m_nameSpace, product, m_reportingHandler);
 
-    SFS_INFO("Received a response with version %s", versionEntity->contentId.version.c_str());
+    LOG_INFO(m_reportingHandler, "Received a response with version %s", versionEntity->contentId.version.c_str());
 
     return versionEntity;
 }
@@ -219,20 +217,20 @@ try
 {
     const std::string url{SFSUrlComponents::GetLatestVersionBatchUrl(GetBaseUrl(), m_instanceId, m_nameSpace)};
 
-    SFS_INFO("Requesting latest version of multiple products from URL [%s]", url.c_str());
+    LOG_INFO(m_reportingHandler, "Requesting latest version of multiple products from URL [%s]", url.c_str());
 
     // Creating request body
     std::unordered_set<std::string> requestedProducts;
     json body = json::array();
     for (const auto& [product, attributes] : productRequests)
     {
-        SFS_INFO("Product #%zu: [%s]", body.size() + size_t{1}, product.c_str());
+        LOG_INFO(m_reportingHandler, "Product #%zu: [%s]", body.size() + size_t{1}, product.c_str());
         requestedProducts.insert(product);
 
         body.push_back({{"TargetingAttributes", attributes}, {"Product", product}});
     }
 
-    SFS_INFO("Request body [%s]", body.dump().c_str());
+    LOG_VERBOSE(m_reportingHandler, "Request body [%s]", body.dump().c_str());
 
     const std::string postResponse{connection.Post(url, body.dump())};
 
@@ -255,7 +253,11 @@ try
     const std::string url{
         SFSUrlComponents::GetSpecificVersionUrl(GetBaseUrl(), m_instanceId, m_nameSpace, product, version)};
 
-    SFS_INFO("Requesting version [%s] of [%s] from URL [%s]", version.c_str(), product.c_str(), url.c_str());
+    LOG_INFO(m_reportingHandler,
+             "Requesting version [%s] of [%s] from URL [%s]",
+             version.c_str(),
+             product.c_str(),
+             url.c_str());
 
     const std::string getResponse{connection.Get(url)};
 
@@ -264,7 +266,9 @@ try
     auto versionEntity = ParseJsonToVersionEntity(versionResponse, m_reportingHandler);
     ValidateVersionEntity(*versionEntity, m_nameSpace, product, m_reportingHandler);
 
-    SFS_INFO("Received the expected response with version %s", versionEntity->contentId.version.c_str());
+    LOG_INFO(m_reportingHandler,
+             "Received the expected response with version %s",
+             versionEntity->contentId.version.c_str());
 
     return versionEntity;
 }
@@ -279,7 +283,8 @@ try
     const std::string url{
         SFSUrlComponents::GetDownloadInfoUrl(GetBaseUrl(), m_instanceId, m_nameSpace, product, version)};
 
-    SFS_INFO("Requesting download info of version [%s] of [%s] from URL [%s]",
+    LOG_INFO(m_reportingHandler,
+             "Requesting download info of version [%s] of [%s] from URL [%s]",
              version.c_str(),
              product.c_str(),
              url.c_str());
@@ -291,7 +296,7 @@ try
 
     auto files = ConvertDownloadInfoResponseToFileVector(downloadInfoResponse, m_reportingHandler);
 
-    SFS_INFO("Received a response with %zu files", files.size());
+    LOG_INFO(m_reportingHandler, "Received a response with %zu files", files.size());
 
     return files;
 }
