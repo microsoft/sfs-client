@@ -34,13 +34,13 @@ steps:
         if (!(Test-Path $VCLibsInstaller))
         {
           Write-Host "Downloading Winget dependency VCLibs"
-          Invoke-WebRequest -Uri https://aka.ms/Microsoft.VCLibs.x64.14.00.Desktop.appx -OutFile $VCLibsInstaller
+          Invoke-WebRequest -Uri https://aka.ms/$VCLibsInstaller -OutFile $VCLibsInstaller
         }
-        $XamlInstaller = "Microsoft.UI.Xaml.2.8.x64.appxx"
+        $XamlInstaller = "Microsoft.UI.Xaml.2.8.x64.appx"
         if (!(Test-Path $XamlInstaller))
         {
           Write-Host "Downloading Winget dependency Xaml"
-          Invoke-WebRequest -Uri https://github.com/microsoft/microsoft-ui-xaml/releases/download/v2.8.6/Microsoft.UI.Xaml.2.8.x64.appx -OutFile $XamlInstaller
+          Invoke-WebRequest -Uri https://github.com/microsoft/microsoft-ui-xaml/releases/download/v2.8.6/$XamlInstaller -OutFile $XamlInstaller
         }
 
         Import-Module -Name Appx -UseWindowsPowershell | Out-Null
