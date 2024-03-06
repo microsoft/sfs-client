@@ -35,7 +35,7 @@ jobs:
       - name: Build and Test (with test overrides)
         shell: pwsh
         run: |
-          .\scripts\Build.ps1 -EnableTestOverrides
+          .\scripts\Build.ps1 -EnableTestOverrides -BuildSamples
           .\scripts\Test.ps1 -OutputOnFailure
 
       - name: Build and Test (Release)
