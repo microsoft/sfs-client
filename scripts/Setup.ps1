@@ -16,6 +16,8 @@ param (
     [switch] $NoBuildTools
 )
 
+$ErrorActionPreference = "Stop"
+
 $GitRoot = (Resolve-Path (&git -C $PSScriptRoot rev-parse --show-toplevel)).Path
 
 function Update-Env {
@@ -31,7 +33,7 @@ function Install-Python {
     if (!$?) {
         winget install python
         if (!$?) {
-            Write-Host "Failed to install Python"
+            Write-Host -ForegroundColor Red "Failed to install Python"
             exit 1
         }
     }
@@ -52,11 +54,13 @@ function Install-CMake {
     Write-Host -ForegroundColor Cyan "`nInstalling cmake if it's not installed"
 
     # Installing cmake from winget because it adds to PATH
-    cmake --version 2>&1 | Out-Null
-    if (!$?) {
+    try {
+        cmake --version
+    }
+    catch {
         winget install cmake
         if (!$?) {
-            Write-Host "Failed to install cmake"
+            Write-Host -ForegroundColor Red "Failed to install cmake"
             exit 1
         }
 
@@ -75,7 +79,11 @@ function Install-CppBuildTools {
 
     # - Microsoft.VisualStudio.Workload.VCTools is the C++ workload in the Visual Studio Build Tools
     # --wait makes the install synchronous
-    winget install Microsoft.VisualStudio.2022.BuildTools --silent --override "--wait --add ProductLang En-us --add Microsoft.VisualStudio.Workload.VCTools --includeRecommended --remove Microsoft.VisualStudio.Component.VC.CMake.Project"
+    winget install Microsoft.VisualStudio.2022.BuildTools --silent --override "--wait --add Microsoft.VisualStudio.Workload.VCTools --includeRecommended --remove Microsoft.VisualStudio.Component.VC.CMake.Project"
+    if (!$?) {
+        Write-Host -ForegroundColor Red "Failed to install build tools"
+        exit 1
+    }
 }
 
 function Install-Vcpkg {
