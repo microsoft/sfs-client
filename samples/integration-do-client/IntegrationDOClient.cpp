@@ -13,7 +13,6 @@
 
 #ifdef _WIN32
 #include <combaseapi.h>
-#undef GetMessage
 #endif
 
 namespace
@@ -139,9 +138,9 @@ int ParseArguments(const std::vector<std::string_view>& args, Settings& settings
 void LogResult(const SFS::Result& result)
 {
     std::cout << "  Result code: " << ToString(result.GetCode());
-    if (!result.GetMessage().empty())
+    if (!result.GetMsg().empty())
     {
-        std::cout << ". Message: " << result.GetMessage();
+        std::cout << ". Message: " << result.GetMsg();
     }
     std::cout << std::endl;
 }
