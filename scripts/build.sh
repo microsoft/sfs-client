@@ -116,7 +116,7 @@ if [ -f "$cmake_cache_file" ]; then
     if test_cmake_cache_value_no_match "$cmake_cache_file" "^SFS_ENABLE_TEST_OVERRIDES:BOOL=(.*)$" "$enable_test_overrides"; then
         regenerate=true
     fi
-    if test_cmake_cache_value_no_match "$cmake_cache_file" "^BUILD_SAMPLES:BOOL=(.*)$" "$build_samples"; then
+    if test_cmake_cache_value_no_match "$cmake_cache_file" "^SFS_BUILD_SAMPLES:BOOL=(.*)$" "$build_samples"; then
         regenerate=true
     fi
 fi
@@ -129,7 +129,7 @@ if [ ! -d "$build_folder" ] || $regenerate ; then
         -B "$build_folder" \
         -DCMAKE_BUILD_TYPE="$build_type" \
         -DSFS_ENABLE_TEST_OVERRIDES="$enable_test_overrides" \
-        -DBUILD_SAMPLES="$build_samples"
+        -DSFS_BUILD_SAMPLES="$build_samples"
 fi
 
 # This is the build command. If any CMakeLists.txt files change, this will also reconfigure before building

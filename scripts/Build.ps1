@@ -63,7 +63,7 @@ if (Test-Path $CMakeCacheFile)
 {
     # Regenerate if one of the build options is set to a different value than the one passed in
     $Regenerate = Test-CMakeCacheValueNoMatch $CMakeCacheFile "^SFS_ENABLE_TEST_OVERRIDES:BOOL=(.*)$" $EnableTestOverridesStr
-    $Regenerate = Test-CMakeCacheValueNoMatch $CMakeCacheFile "^BUILD_SAMPLES:BOOL=(.*)$" $BuildSamplesOverridesStr
+    $Regenerate = Test-CMakeCacheValueNoMatch $CMakeCacheFile "^SFS_BUILD_SAMPLES:BOOL=(.*)$" $BuildSamplesOverridesStr
 }
 
 # Configure cmake if build folder doesn't exist or if the build must be regenerated.
@@ -71,7 +71,7 @@ if (Test-Path $CMakeCacheFile)
 if (!(Test-Path $BuildFolder) -or $Regenerate)
 {
     $Options = "-DSFS_ENABLE_TEST_OVERRIDES=$EnableTestOverridesStr";
-    $Options += " -DBUILD_SAMPLES=$BuildSamplesOverridesStr";
+    $Options += " -DSFS_BUILD_SAMPLES=$BuildSamplesOverridesStr";
     Invoke-Expression "cmake -S $GitRoot -B $BuildFolder $Options"
 }
 

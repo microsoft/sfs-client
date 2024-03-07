@@ -26,7 +26,7 @@ project(
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED True)
 
-option(BUILD_SAMPLES "Indicates if samples should be built." OFF)
+option(SFS_BUILD_SAMPLES "Indicates if samples should be built." OFF)
 
 option(
     SFS_ENABLE_TEST_OVERRIDES
@@ -71,6 +71,6 @@ endif()
 add_subdirectory(client)
 add_subdirectory(tool)
 
-if(BUILD_SAMPLES)
+if(SFS_BUILD_SAMPLES)
     add_subdirectory(samples)
 endif()
