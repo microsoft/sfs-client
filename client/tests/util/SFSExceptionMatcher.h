@@ -13,13 +13,13 @@
 #include <string>
 
 #define REQUIRE_THROWS_CODE(call, code)                                                                                \
-    REQUIRE_THROWS_MATCHES(call, SFS::details::SFSException, SFS::test::SFSExceptionMatcher(Result::code))
+    REQUIRE_THROWS_MATCHES(call, SFS::details::SFSException, SFS::test::SFSExceptionMatcher(SFS::Result::code))
 #define REQUIRE_THROWS_CODE_MSG(call, code, message)                                                                   \
-    REQUIRE_THROWS_MATCHES(call, SFS::details::SFSException, SFS::test::SFSExceptionMatcher(Result::code, message))
+    REQUIRE_THROWS_MATCHES(call, SFS::details::SFSException, SFS::test::SFSExceptionMatcher(SFS::Result::code, message))
 #define REQUIRE_THROWS_CODE_MSG_MATCHES(call, code, matcher)                                                           \
     REQUIRE_THROWS_MATCHES(call,                                                                                       \
                            SFS::details::SFSException,                                                                 \
-                           SFS::test::SFSExceptionGenericMatcher(Result::code, matcher))
+                           SFS::test::SFSExceptionGenericMatcher(SFS::Result::code, matcher))
 
 namespace SFS::test
 {
