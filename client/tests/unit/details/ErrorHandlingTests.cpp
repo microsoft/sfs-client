@@ -234,3 +234,22 @@ TEST("Testing ErrorHandling's THROW_CODE_IF_LOG()")
         REQUIRE(!called);
     }
 }
+
+TEST("Testing ErrorHandling's THROW_CODE_IF_NOT_LOG()")
+{
+    ReportingHandler handler;
+    bool called = false;
+    handler.SetLoggingCallback([&](const auto&) { called = true; });
+
+    SECTION("Test that THROW_CODE_IF_NOT_LOG throws and logs the result if the condition is false")
+    {
+        REQUIRE_THROWS_AS([&handler]() { THROW_CODE_IF_NOT_LOG(Unexpected, false, handler); }(), SFSException);
+        REQUIRE(called);
+    }
+
+    SECTION("Test that THROW_CODE_IF_NOT_LOG does not throw and log if the condition is true")
+    {
+        REQUIRE_NOTHROW([&handler]() { THROW_CODE_IF_NOT_LOG(Unexpected, true, handler); }());
+        REQUIRE(!called);
+    }
+}

@@ -65,6 +65,9 @@
 #define THROW_CODE_IF_LOG(code, condition, handler, ...)                                                               \
     ThrowCodeIfLog(SFS::Result::code, condition, handler, __FILE__, __LINE__, ##__VA_ARGS__)
 
+#define THROW_CODE_IF_NOT_LOG(code, condition, handler, ...)                                                           \
+    ThrowCodeIfLog(SFS::Result::code, !(condition), handler, __FILE__, __LINE__, ##__VA_ARGS__)
+
 namespace SFS::details
 {
 class ReportingHandler;

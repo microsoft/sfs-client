@@ -135,10 +135,10 @@ void ValidateVersionEntity(const VersionEntity& versionEntity,
                            const std::string& product,
                            const ReportingHandler& handler)
 {
-    THROW_CODE_IF_LOG(ServiceInvalidResponse,
-                      !VerifyVersionResponseMatchesProduct(versionEntity.contentId, nameSpace, product),
-                      handler,
-                      "Response does not match the requested product");
+    THROW_CODE_IF_NOT_LOG(ServiceInvalidResponse,
+                          VerifyVersionResponseMatchesProduct(versionEntity.contentId, nameSpace, product),
+                          handler,
+                          "Response does not match the requested product");
 }
 
 void ValidateBatchVersionEntity(const VersionEntities& versionEntities,
