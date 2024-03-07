@@ -14,6 +14,9 @@ using namespace SFS::details;
 using namespace SFS::details::util;
 using json = nlohmann::json;
 
+#define THROW_INVALID_RESPONSE_IF_NOT(condition, message, handler)                                                     \
+    THROW_CODE_IF_NOT_LOG(ServiceInvalidResponse, condition, handler, message)
+
 namespace
 {
 HashType HashTypeFromString(const std::string& hashType, const ReportingHandler& handler)
@@ -31,11 +34,6 @@ HashType HashTypeFromString(const std::string& hashType, const ReportingHandler&
         THROW_LOG(Result(Result::Unexpected, "Unknown hash type: " + hashType), handler);
         return HashType::Sha1; // Unreachable code, but the compiler doesn't know that.
     }
-}
-
-void ThrowInvalidResponseIfFalse(bool condition, const std::string& message, const ReportingHandler& handler)
-{
-    THROW_CODE_IF_LOG(ServiceInvalidResponse, !condition, handler, message);
 }
 
 void ValidateContentType(const VersionEntity& versionEntity, ContentType expectedType, const ReportingHandler& handler)
@@ -64,22 +62,22 @@ std::unique_ptr<VersionEntity> contentutil::ParseJsonToVersionEntity(const nlohm
 
     std::unique_ptr<GenericVersionEntity> tmp = std::make_unique<GenericVersionEntity>();
 
-    ThrowInvalidResponseIfFalse(data.is_object(), "Response is not a JSON object", handler);
-    ThrowInvalidResponseIfFalse(data.contains("ContentId"), "Missing ContentId in response", handler);
+    THROW_INVALID_RESPONSE_IF_NOT(data.is_object(), "Response is not a JSON object", handler);
+    THROW_INVALID_RESPONSE_IF_NOT(data.contains("ContentId"), "Missing ContentId in response", handler);
 
     const auto& contentId = data["ContentId"];
-    ThrowInvalidResponseIfFalse(contentId.is_object(), "ContentId is not a JSON object", handler);
+    THROW_INVALID_RESPONSE_IF_NOT(contentId.is_object(), "ContentId is not a JSON object", handler);
 
-    ThrowInvalidResponseIfFalse(contentId.contains("Namespace"), "Missing ContentId.Namespace in response", handler);
-    ThrowInvalidResponseIfFalse(contentId["Namespace"].is_string(), "ContentId.Namespace is not a string", handler);
+    THROW_INVALID_RESPONSE_IF_NOT(contentId.contains("Namespace"), "Missing ContentId.Namespace in response", handler);
+    THROW_INVALID_RESPONSE_IF_NOT(contentId["Namespace"].is_string(), "ContentId.Namespace is not a string", handler);
     tmp->contentId.nameSpace = contentId["Namespace"];
 
-    ThrowInvalidResponseIfFalse(contentId.contains("Name"), "Missing ContentId.Name in response", handler);
-    ThrowInvalidResponseIfFalse(contentId["Name"].is_string(), "ContentId.Name is not a string", handler);
+    THROW_INVALID_RESPONSE_IF_NOT(contentId.contains("Name"), "Missing ContentId.Name in response", handler);
+    THROW_INVALID_RESPONSE_IF_NOT(contentId["Name"].is_string(), "ContentId.Name is not a string", handler);
     tmp->contentId.name = contentId["Name"];
 
-    ThrowInvalidResponseIfFalse(contentId.contains("Version"), "Missing ContentId.Version in response", handler);
-    ThrowInvalidResponseIfFalse(contentId["Version"].is_string(), "ContentId.Version is not a string", handler);
+    THROW_INVALID_RESPONSE_IF_NOT(contentId.contains("Version"), "Missing ContentId.Version in response", handler);
+    THROW_INVALID_RESPONSE_IF_NOT(contentId["Version"].is_string(), "ContentId.Version is not a string", handler);
     tmp->contentId.version = contentId["Version"];
 
     return tmp;
@@ -101,28 +99,28 @@ std::unique_ptr<ContentId> contentutil::GenericVersionEntityToContentId(VersionE
 
 std::unique_ptr<File> contentutil::FileJsonToObj(const json& file, const ReportingHandler& handler)
 {
-    ThrowInvalidResponseIfFalse(file.is_object(), "File is not a JSON object", handler);
+    THROW_INVALID_RESPONSE_IF_NOT(file.is_object(), "File is not a JSON object", handler);
 
-    ThrowInvalidResponseIfFalse(file.contains("FileId"), "Missing File.FileId in response", handler);
-    ThrowInvalidResponseIfFalse(file["FileId"].is_string(), "File.FileId is not a string", handler);
+    THROW_INVALID_RESPONSE_IF_NOT(file.contains("FileId"), "Missing File.FileId in response", handler);
+    THROW_INVALID_RESPONSE_IF_NOT(file["FileId"].is_string(), "File.FileId is not a string", handler);
     std::string fileId = file["FileId"];
 
-    ThrowInvalidResponseIfFalse(file.contains("Url"), "Missing File.Url in response", handler);
-    ThrowInvalidResponseIfFalse(file["Url"].is_string(), "File.Url is not a string", handler);
+    THROW_INVALID_RESPONSE_IF_NOT(file.contains("Url"), "Missing File.Url in response", handler);
+    THROW_INVALID_RESPONSE_IF_NOT(file["Url"].is_string(), "File.Url is not a string", handler);
     std::string url = file["Url"];
 
-    ThrowInvalidResponseIfFalse(file.contains("SizeInBytes"), "Missing File.SizeInBytes in response", handler);
-    ThrowInvalidResponseIfFalse(file["SizeInBytes"].is_number_unsigned(),
-                                "File.SizeInBytes is not an unsigned number",
-                                handler);
+    THROW_INVALID_RESPONSE_IF_NOT(file.contains("SizeInBytes"), "Missing File.SizeInBytes in response", handler);
+    THROW_INVALID_RESPONSE_IF_NOT(file["SizeInBytes"].is_number_unsigned(),
+                                  "File.SizeInBytes is not an unsigned number",
+                                  handler);
     uint64_t sizeInBytes = file["SizeInBytes"];
 
-    ThrowInvalidResponseIfFalse(file.contains("Hashes"), "Missing File.Hashes in response", handler);
-    ThrowInvalidResponseIfFalse(file["Hashes"].is_object(), "File.Hashes is not an object", handler);
+    THROW_INVALID_RESPONSE_IF_NOT(file.contains("Hashes"), "Missing File.Hashes in response", handler);
+    THROW_INVALID_RESPONSE_IF_NOT(file["Hashes"].is_object(), "File.Hashes is not an object", handler);
     std::unordered_map<HashType, std::string> hashes;
     for (const auto& [hashType, hashValue] : file["Hashes"].items())
     {
-        ThrowInvalidResponseIfFalse(hashValue.is_string(), "File.Hashes object value is not a string", handler);
+        THROW_INVALID_RESPONSE_IF_NOT(hashValue.is_string(), "File.Hashes object value is not a string", handler);
         hashes[HashTypeFromString(hashType, handler)] = hashValue;
     }
 
