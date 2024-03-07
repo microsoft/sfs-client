@@ -85,7 +85,7 @@ VersionEntities ConvertLatestVersionBatchResponseToVersionEntities(const json& d
     return entities;
 }
 
-FileEntities ConvertDownloadInfoResponseToFileEntities(const json& data, const ReportingHandler& handler)
+FileEntities DownloadInfoResponseToFileEntities(const json& data, const ReportingHandler& handler)
 {
     // Expected format is an array of FileEntity
     ThrowInvalidResponseIfFalse(data.is_array(), "Response is not a JSON array", handler);
@@ -273,7 +273,7 @@ try
     const json downloadInfoResponse =
         ParseServerMethodStringToJson(postResponse, "GetDownloadInfo", m_reportingHandler);
 
-    auto files = ConvertDownloadInfoResponseToFileEntities(downloadInfoResponse, m_reportingHandler);
+    auto files = DownloadInfoResponseToFileEntities(downloadInfoResponse, m_reportingHandler);
 
     LOG_INFO(m_reportingHandler, "Received a response with %zu files", files.size());
 
