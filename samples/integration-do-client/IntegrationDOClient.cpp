@@ -283,7 +283,6 @@ int Download(const SFS::Content& content, const std::string& baseOutDir)
             return 1;
         }
 
-        download->set_property(microsoft::deliveryoptimization::download_property::catalog_id, "dummy");
         error = download->start_and_wait_until_completion();
         if (error)
         {
