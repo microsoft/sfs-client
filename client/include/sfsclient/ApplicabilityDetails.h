@@ -13,10 +13,10 @@ namespace SFS
 {
 enum class Architecture
 {
+    None,
     Amd64,
     Arm,
     Arm64,
-    None,
     x86,
 };
 
