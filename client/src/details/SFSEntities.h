@@ -49,4 +49,26 @@ struct AppVersionEntity : public GenericVersionEntity
     std::string updateId;
     std::vector<GenericVersionEntity> prerequisites;
 };
+
+struct FileEntity
+{
+    virtual ~FileEntity()
+    {
+    }
+
+    virtual ContentType GetContentType() const = 0;
+
+    std::string fileId;
+    std::string url;
+    uint64_t sizeInBytes;
+    std::unordered_map<std::string, std::string> hashes;
+};
+
+struct GenericFileEntity : public FileEntity
+{
+    ContentType GetContentType() const override
+    {
+        return ContentType::Generic;
+    }
+};
 } // namespace SFS::details
