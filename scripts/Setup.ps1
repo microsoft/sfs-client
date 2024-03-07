@@ -33,7 +33,7 @@ function Install-Python {
     if (!$?) {
         winget install python
         if (!$?) {
-            Write-Host "Failed to install Python"
+            Write-Host -ForegroundColor Red "Failed to install Python"
             exit 1
         }
     }
@@ -60,7 +60,7 @@ function Install-CMake {
     catch {
         winget install cmake
         if (!$?) {
-            Write-Host "Failed to install cmake"
+            Write-Host -ForegroundColor Red "Failed to install cmake"
             exit 1
         }
 
@@ -81,7 +81,7 @@ function Install-CppBuildTools {
     # --wait makes the install synchronous
     winget install Microsoft.VisualStudio.2022.BuildTools --silent --override "--wait --add Microsoft.VisualStudio.Workload.VCTools --includeRecommended --remove Microsoft.VisualStudio.Component.VC.CMake.Project"
     if (!$?) {
-        Write-Host "Failed to install build tools"
+        Write-Host -ForegroundColor Red "Failed to install build tools"
         exit 1
     }
 }
