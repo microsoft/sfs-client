@@ -270,6 +270,8 @@ int Download(const SFS::Content& content, const std::string& baseOutDir)
 
         if (std::filesystem::exists(outFilePath))
         {
+            // In a real implementation, one would check the file sha1 or sha256 hash to see if the file is the same as
+            // the current one
             PrintLog("File already exists, cannot download again. Skipping.");
             continue;
         }
