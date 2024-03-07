@@ -28,7 +28,7 @@ Result::Code Result::GetCode() const noexcept
     return m_code;
 }
 
-const std::string& Result::GetMessage() const noexcept
+const std::string& Result::GetMsg() const noexcept
 {
     return m_message;
 }

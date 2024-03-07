@@ -24,5 +24,5 @@ const SFS::Result& SFSException::GetResult() const noexcept
 
 const char* SFSException::what() const noexcept
 {
-    return m_result.GetMessage().c_str();
+    return m_result.GetMsg().c_str();
 }

@@ -17,8 +17,8 @@ void SFS::details::LogFailedResult(const SFS::Result& result,
         LOG_ERROR(handler,
                   "FAILED [%s] %s%s(%s:%u)",
                   std::string(ToString(result.GetCode())).c_str(),
-                  result.GetMessage().c_str(),
-                  result.GetMessage().empty() ? "" : " ",
+                  result.GetMsg().c_str(),
+                  result.GetMsg().empty() ? "" : " ",
                   file,
                   line);
     }

@@ -37,7 +37,10 @@ class Result
     Result(Code code, std::string message) noexcept;
 
     Code GetCode() const noexcept;
-    const std::string& GetMessage() const noexcept;
+
+    /// @brief Returns the message associated with the result code.
+    /// @note "GetMsg" is used instead of "GetMessage" to avoid conflicts with Windows API.
+    const std::string& GetMsg() const noexcept;
 
     bool IsSuccess() const noexcept;
     bool IsFailure() const noexcept;
