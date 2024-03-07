@@ -82,13 +82,13 @@ void CheckProduct(const VersionEntity& entity, std::string_view ns, std::string_
     REQUIRE(entity.contentId.version == version);
 }
 
-void CheckDownloadInfo(const std::vector<File>& files, const std::string& name)
+void CheckDownloadInfo(const FileEntities& files, const std::string& name)
 {
     REQUIRE(files.size() == 2);
-    REQUIRE(files[0].GetFileId() == (name + ".json"));
-    REQUIRE(files[0].GetUrl() == ("http://localhost/1.json"));
-    REQUIRE(files[1].GetFileId() == (name + ".bin"));
-    REQUIRE(files[1].GetUrl() == ("http://localhost/2.bin"));
+    REQUIRE(files[0]->fileId == (name + ".json"));
+    REQUIRE(files[0]->url == ("http://localhost/1.json"));
+    REQUIRE(files[1]->fileId == (name + ".bin"));
+    REQUIRE(files[1]->url == ("http://localhost/2.bin"));
 }
 } // namespace
 
@@ -248,7 +248,7 @@ TEST("Testing class SFSClientImpl()")
         downloadInfoResponse[1]["DeliveryOptimization"] = downloadInfoResponse[0]["DeliveryOptimization"];
         postResponse = downloadInfoResponse.dump();
 
-        std::vector<File> files;
+        FileEntities files;
         SECTION("Getting version")
         {
             REQUIRE_NOTHROW(files = sfsClient.GetDownloadInfo(productName, expectedVersion, *connection));

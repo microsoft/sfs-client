@@ -85,31 +85,16 @@ VersionEntities ConvertLatestVersionBatchResponseToVersionEntities(const json& d
     return entities;
 }
 
-std::vector<File> ConvertDownloadInfoResponseToFileVector(const json& data, const ReportingHandler& handler)
+FileEntities ConvertDownloadInfoResponseToFileEntities(const json& data, const ReportingHandler& handler)
 {
-    // Expected format:
-    // [
-    //   {
-    //     "FileId": <fileid>,
-    //     "Url": <url>,
-    //     "SizeInBytes": <size>,
-    //     "Hashes": {
-    //       "Sha1": <sha1>,
-    //       "Sha256": <sha2>
-    //     },
-    //     "DeliveryOptimization": {} // ignored, not used by the client.
-    //     }
-    //   },
-    //   ...
-    // ]
-
+    // Expected format is an array of FileEntity
     ThrowInvalidResponseIfFalse(data.is_array(), "Response is not a JSON array", handler);
 
-    std::vector<File> tmp;
+    FileEntities tmp;
     for (const auto& fileData : data)
     {
         ThrowInvalidResponseIfFalse(fileData.is_object(), "Array element is not a JSON object", handler);
-        tmp.push_back(std::move(*FileJsonToObj(fileData, handler)));
+        tmp.push_back(std::move(ParseJsonToFileEntity(fileData, handler)));
     }
 
     return tmp;
@@ -269,9 +254,9 @@ try
 SFS_CATCH_LOG_RETHROW(m_reportingHandler)
 
 template <typename ConnectionManagerT>
-std::vector<File> SFSClientImpl<ConnectionManagerT>::GetDownloadInfo(const std::string& product,
-                                                                     const std::string& version,
-                                                                     Connection& connection) const
+FileEntities SFSClientImpl<ConnectionManagerT>::GetDownloadInfo(const std::string& product,
+                                                                const std::string& version,
+                                                                Connection& connection) const
 try
 {
     const std::string url{
@@ -288,7 +273,7 @@ try
     const json downloadInfoResponse =
         ParseServerMethodStringToJson(postResponse, "GetDownloadInfo", m_reportingHandler);
 
-    auto files = ConvertDownloadInfoResponseToFileVector(downloadInfoResponse, m_reportingHandler);
+    auto files = ConvertDownloadInfoResponseToFileEntities(downloadInfoResponse, m_reportingHandler);
 
     LOG_INFO(m_reportingHandler, "Received a response with %zu files", files.size());
 
