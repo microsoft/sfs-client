@@ -52,8 +52,10 @@ function Install-CMake {
     Write-Host -ForegroundColor Cyan "`nInstalling cmake if it's not installed"
 
     # Installing cmake from winget because it adds to PATH
-    cmake --version 2>&1 | Out-Null
-    if (!$?) {
+    try {
+        cmake --version
+    }
+    catch {
         winget install cmake
         if (!$?) {
             Write-Host "Failed to install cmake"
