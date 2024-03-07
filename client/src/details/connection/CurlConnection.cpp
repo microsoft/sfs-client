@@ -20,7 +20,7 @@
     {                                                                                                                  \
         auto __curlCode = (curlCall);                                                                                  \
         std::string __message = "Curl error: " + std::string(curl_easy_strerror(__curlCode));                          \
-        THROW_CODE_IF_LOG(error, __curlCode != CURLE_OK, m_handler, std::move(__message));                             \
+        THROW_CODE_IF_NOT_LOG(error, __curlCode == CURLE_OK, m_handler, std::move(__message));                         \
     } while ((void)0, 0)
 
 #define THROW_IF_CURL_SETUP_ERROR(curlCall) THROW_IF_CURL_ERROR(curlCall, ConnectionSetupFailed)
@@ -76,10 +76,10 @@ struct CurlErrorBuffer
 
     void SetBuffer()
     {
-        THROW_CODE_IF_LOG(ConnectionSetupFailed,
-                          curl_easy_setopt(m_handle, CURLOPT_ERRORBUFFER, m_errorBuffer) != CURLE_OK,
-                          m_reportingHandler,
-                          "Failed to set up error buffer for curl");
+        THROW_CODE_IF_NOT_LOG(ConnectionSetupFailed,
+                              curl_easy_setopt(m_handle, CURLOPT_ERRORBUFFER, m_errorBuffer) == CURLE_OK,
+                              m_reportingHandler,
+                              "Failed to set up error buffer for curl");
     }
 
     Result UnsetBuffer()
@@ -275,14 +275,14 @@ CurlConnection::CurlConnection(const ConnectionConfig& config, const ReportingHa
     : Connection(config, handler)
 {
     m_handle = curl_easy_init();
-    THROW_CODE_IF_LOG(ConnectionSetupFailed, !m_handle, m_handler, "Failed to init curl connection");
+    THROW_CODE_IF_NOT_LOG(ConnectionSetupFailed, m_handle, m_handler, "Failed to init curl connection");
 
     // Turning timeout signals off to avoid issues with threads
     // See https://curl.se/libcurl/c/threadsafe.html
-    THROW_CODE_IF_LOG(ConnectionSetupFailed,
-                      curl_easy_setopt(m_handle, CURLOPT_NOSIGNAL, 1L) != CURLE_OK,
-                      m_handler,
-                      "Failed to set up curl");
+    THROW_CODE_IF_NOT_LOG(ConnectionSetupFailed,
+                          curl_easy_setopt(m_handle, CURLOPT_NOSIGNAL, 1L) == CURLE_OK,
+                          m_handler,
+                          "Failed to set up curl");
 
     // TODO #40: Allow passing user agent in the header
     // TODO #41: Pass AAD token in the header if it is available
