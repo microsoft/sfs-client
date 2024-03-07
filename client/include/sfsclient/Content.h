@@ -89,8 +89,11 @@ class File
      */
     const std::unordered_map<HashType, std::string>& GetHashes() const noexcept;
 
-  private:
-    File() = default;
+  protected:
+    File(std::string&& fileId,
+         std::string&& url,
+         uint64_t sizeInBytes,
+         std::unordered_map<HashType, std::string>&& hashes);
 
     [[nodiscard]] Result Clone(std::unique_ptr<File>& out) const noexcept;
 
@@ -129,6 +132,8 @@ class Content
     [[nodiscard]] static Result Make(std::unique_ptr<ContentId>&& contentId,
                                      std::vector<File>&& files,
                                      std::unique_ptr<Content>& out) noexcept;
+
+    Content(Content&&) noexcept;
 
     Content(const Content&) = delete;
     Content& operator=(const Content&) = delete;

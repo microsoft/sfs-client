@@ -50,6 +50,17 @@ const std::string& ContentId::GetVersion() const noexcept
     return m_version;
 }
 
+File::File(std::string&& fileId,
+           std::string&& url,
+           uint64_t sizeInBytes,
+           std::unordered_map<HashType, std::string>&& hashes)
+    : m_fileId(std::move(fileId))
+    , m_url(std::move(url))
+    , m_sizeInBytes(sizeInBytes)
+    , m_hashes(std::move(hashes))
+{
+}
+
 Result File::Make(std::string fileId,
                   std::string url,
                   uint64_t sizeInBytes,
@@ -59,12 +70,7 @@ try
 {
     out.reset();
 
-    std::unique_ptr<File> tmp(new File());
-    tmp->m_fileId = std::move(fileId);
-    tmp->m_url = std::move(url);
-    tmp->m_sizeInBytes = sizeInBytes;
-    tmp->m_hashes = std::move(hashes);
-
+    std::unique_ptr<File> tmp(new File(std::move(fileId), std::move(url), sizeInBytes, std::move(hashes)));
     out = std::move(tmp);
 
     return Result::Success;
@@ -170,6 +176,12 @@ try
     return Result::Success;
 }
 SFS_CATCH_RETURN()
+
+Content::Content(Content&& other) noexcept
+{
+    m_contentId = std::move(other.m_contentId);
+    m_files = std::move(other.m_files);
+}
 
 const ContentId& Content::GetContentId() const noexcept
 {

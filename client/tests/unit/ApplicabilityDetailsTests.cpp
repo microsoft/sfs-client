@@ -1,23 +1,23 @@
 // Copyright (c) Microsoft Corporation.
 // Licensed under the MIT License.
 
-#include "sfsclient/ApplicabilityDetails.h"
+#include "ApplicabilityDetails.h"
+#include "ContentUtil.h"
 
 #include <catch2/catch_test_macros.hpp>
 
 #define TEST(...) TEST_CASE("[ApplicabilityDetailsTests] " __VA_ARGS__)
 
 using namespace SFS;
+using namespace SFS::details::contentutil;
 
 namespace
 {
 std::unique_ptr<ApplicabilityDetails> GetDetails(const std::vector<Architecture>& architectures,
-                                                 const std::vector<std::string>& platformApplicabilityForPackage,
-                                                 const std::string& fileMoniker)
+                                                 const std::vector<std::string>& platformApplicabilityForPackage)
 {
     std::unique_ptr<ApplicabilityDetails> details;
-    REQUIRE(ApplicabilityDetails::Make(architectures, platformApplicabilityForPackage, fileMoniker, details) ==
-            Result::Success);
+    REQUIRE(ApplicabilityDetails::Make(architectures, platformApplicabilityForPackage, details) == Result::Success);
     REQUIRE(details != nullptr);
     return details;
 };
@@ -25,41 +25,37 @@ std::unique_ptr<ApplicabilityDetails> GetDetails(const std::vector<Architecture>
 
 TEST("Testing ApplicabilityDetails::Make()")
 {
-    const std::vector<Architecture> architectures{Architecture::x86, Architecture::amd64};
+    const std::vector<Architecture> architectures{Architecture::x86, Architecture::Amd64};
     const std::vector<std::string> platformApplicabilityForPackage{"Windows.Desktop", "Windows.Server"};
     const std::string fileMoniker{"myApp"};
 
-    const std::unique_ptr<ApplicabilityDetails> details =
-        GetDetails(architectures, platformApplicabilityForPackage, fileMoniker);
+    const std::unique_ptr<ApplicabilityDetails> details = GetDetails(architectures, platformApplicabilityForPackage);
 
     CHECK(architectures == details->GetArchitectures());
     CHECK(platformApplicabilityForPackage == details->GetPlatformApplicabilityForPackage());
-    CHECK(fileMoniker == details->GetFileMoniker());
 
     SECTION("Testing ApplicabilityDetails equality operators")
     {
         SECTION("Equal")
         {
             auto CompareDetailsEqual = [&details](const std::unique_ptr<ApplicabilityDetails>& sameDetails) {
-                REQUIRE(*details == *sameDetails);
-                REQUIRE_FALSE(*details != *sameDetails);
+                REQUIRE((*details == *sameDetails));
+                REQUIRE_FALSE((*details != *sameDetails));
             };
 
-            CompareDetailsEqual(GetDetails(architectures, platformApplicabilityForPackage, fileMoniker));
+            CompareDetailsEqual(GetDetails(architectures, platformApplicabilityForPackage));
         }
 
         SECTION("Not equal")
         {
             auto CompareDetailsNotEqual = [&details](const std::unique_ptr<ApplicabilityDetails>& otherDetails) {
-                REQUIRE(*details != *otherDetails);
-                REQUIRE_FALSE(*details == *otherDetails);
+                REQUIRE((*details != *otherDetails));
+                REQUIRE_FALSE((*details == *otherDetails));
             };
 
-            CompareDetailsNotEqual(GetDetails({}, platformApplicabilityForPackage, fileMoniker));
-            CompareDetailsNotEqual(GetDetails(architectures, {}, fileMoniker));
-            CompareDetailsNotEqual(GetDetails(architectures, platformApplicabilityForPackage, ""));
-            CompareDetailsNotEqual(GetDetails({}, {}, ""));
-            CompareDetailsNotEqual(GetDetails(architectures, platformApplicabilityForPackage, "MYAPP"));
+            CompareDetailsNotEqual(GetDetails({}, platformApplicabilityForPackage));
+            CompareDetailsNotEqual(GetDetails(architectures, {}));
+            CompareDetailsNotEqual(GetDetails({}, {}));
         }
     }
 }
