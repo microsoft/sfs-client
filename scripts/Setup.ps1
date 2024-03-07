@@ -16,6 +16,8 @@ param (
     [switch] $NoBuildTools
 )
 
+$ErrorActionPreference = "Stop"
+
 $GitRoot = (Resolve-Path (&git -C $PSScriptRoot rev-parse --show-toplevel)).Path
 
 function Update-Env {
