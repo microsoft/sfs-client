@@ -50,11 +50,19 @@ class ReportingHandler
                          unsigned line,
                          const char* function,
                          const char* format,
-                         Args... args) const
+                         const Args&... args) const
     {
-        char message[MAX_LOG_MESSAGE_SIZE];
-        snprintf(message, MAX_LOG_MESSAGE_SIZE, format, args...);
-        CallLoggingCallback(severity, message, file, line, function);
+        constexpr std::size_t n = sizeof...(Args);
+        if constexpr (n == 0)
+        {
+            CallLoggingCallback(severity, format, file, line, function);
+        }
+        else
+        {
+            char message[MAX_LOG_MESSAGE_SIZE];
+            snprintf(message, MAX_LOG_MESSAGE_SIZE, format, args...);
+            CallLoggingCallback(severity, message, file, line, function);
+        }
     }
 
   private:
