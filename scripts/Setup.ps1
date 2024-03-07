@@ -80,6 +80,10 @@ function Install-CppBuildTools {
     # - Microsoft.VisualStudio.Workload.VCTools is the C++ workload in the Visual Studio Build Tools
     # --wait makes the install synchronous
     winget install Microsoft.VisualStudio.2022.BuildTools --silent --override "--wait --add Microsoft.VisualStudio.Workload.VCTools --includeRecommended --remove Microsoft.VisualStudio.Component.VC.CMake.Project"
+    if (!$?) {
+        Write-Host "Failed to install build tools"
+        exit 1
+    }
 }
 
 function Install-Vcpkg {
