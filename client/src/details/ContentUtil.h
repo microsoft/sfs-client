@@ -4,6 +4,7 @@
 #pragma once
 
 #include "Content.h"
+#include "SFSEntities.h"
 
 #include <nlohmann/json_fwd.hpp>
 
@@ -19,7 +20,9 @@ namespace contentutil
 // JSON conversion utilities
 //
 
-std::unique_ptr<ContentId> ContentIdJsonToObj(const nlohmann::json& contentId, const ReportingHandler& handler);
+std::unique_ptr<VersionEntity> ParseJsonToVersionEntity(const nlohmann::json& data, const ReportingHandler& handler);
+std::unique_ptr<ContentId> GenericVersionEntityToContentId(VersionEntity&& entity, const ReportingHandler& handler);
+
 std::unique_ptr<File> FileJsonToObj(const nlohmann::json& file, const ReportingHandler& handler);
 
 //
