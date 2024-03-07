@@ -248,7 +248,7 @@ class CoInitializeWrapper
 };
 #endif
 
-std::string DOErrorToString(std::error_code error)
+std::string ErrorCodeToHexString(std::error_code error)
 {
     std::stringstream stream;
     stream << "0x" << std::hex << error.value();
@@ -281,14 +281,14 @@ int Download(const SFS::Content& content, const std::string& baseOutDir)
         auto error = microsoft::deliveryoptimization::download::make(file.GetUrl(), outFilePath.string(), download);
         if (error)
         {
-            PrintError("Failed to create download object with error " + DOErrorToString(error));
+            PrintError("Failed to create download object with error " + ErrorCodeToHexString(error));
             return 1;
         }
 
         error = download->start_and_wait_until_completion();
         if (error)
         {
-            PrintError("Failed to download file with error " + DOErrorToString(error));
+            PrintError("Failed to download file with error " + ErrorCodeToHexString(error));
             return 1;
         }
 
