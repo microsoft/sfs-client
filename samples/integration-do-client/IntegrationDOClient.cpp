@@ -185,12 +185,14 @@ std::filesystem::path GetOutDir(const std::string& outDir)
         auto outDir = tmpDir / "SFSDownload";
         std::filesystem::create_directories(outDir);
 
-        // Set write permissions to the download dir since the download happens from a different process
-        std::filesystem::permissions(
-            outDir,
-            std::filesystem::perms::owner_all | std::filesystem::perms::group_all | std::filesystem::perms::others_all,
-            std::filesystem::perm_options::add
-        );
+        // Set write permissions to the download dir since the download happens from a different process, but only in
+        // non-Windows
+#ifndef _WIN32
+        std::filesystem::permissions(outDir,
+                                     std::filesystem::perms::owner_all | std::filesystem::perms::group_all |
+                                         std::filesystem::perms::others_all,
+                                     std::filesystem::perm_options::add);
+#endif
         return outDir.string();
     }
     return outDir;
