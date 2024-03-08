@@ -50,9 +50,6 @@ try
     out = std::move(tmp);
 
     LOG_INFO(out->m_impl->GetReportingHandler(), "SFSClient instance created successfully. Version: %s", GetVersion());
-#ifdef SFS_GIT_INFO
-    LOG_INFO(out->m_impl->GetReportingHandler(), "Git info: %s", SFS_GIT_INFO);
-#endif
 
     return Result::Success;
 }
@@ -98,5 +95,9 @@ SFS_CATCH_RETURN()
 
 const char* SFSClient::GetVersion() noexcept
 {
+#ifdef SFS_GIT_INFO
+    return SFS_VERSION " (" SFS_GIT_INFO ")";
+#else
     return SFS_VERSION;
+#endif
 }

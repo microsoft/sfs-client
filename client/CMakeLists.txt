@@ -53,7 +53,7 @@ target_link_libraries(${PROJECT_NAME} PRIVATE CURL::libcurl)
 target_link_libraries(${PROJECT_NAME} PRIVATE nlohmann_json::nlohmann_json)
 target_link_libraries(${PROJECT_NAME} PRIVATE correlation_vector)
 
-# Pick up git revision to add to logging
+# Pick up git revision during configuration to add to logging
 include(FindGit)
 if(GIT_FOUND)
     execute_process(
