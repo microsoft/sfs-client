@@ -49,7 +49,7 @@ try
     tmp->m_impl = std::make_unique<details::SFSClientImpl<CurlConnectionManager>>(std::move(config));
     out = std::move(tmp);
 
-    LOG_INFO(out->m_impl->GetReportingHandler(), "SFSClient instance created successfully. Version: %s", GetVersion());
+    LOG_INFO(out->m_impl->GetReportingHandler(), "SFSClient instance created successfully. Version: " << GetVersion());
 
     return Result::Success;
 }

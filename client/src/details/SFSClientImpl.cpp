@@ -152,9 +152,8 @@ void ValidateBatchVersionEntity(const VersionEntities& versionEntities,
                               entity->contentId.nameSpace + "] that does not match the requested namespace");
 
         LOG_INFO(handler,
-                 "Received a response for product [%s] with version %s",
-                 entity->contentId.name.c_str(),
-                 entity->contentId.version.c_str());
+                 "Received a response for product [" << entity->contentId.name << "] with version "
+                                                     << entity->contentId.version);
     }
 }
 } // namespace
@@ -186,10 +185,10 @@ try
     const auto& [product, attributes] = productRequest;
     const std::string url{SFSUrlComponents::GetLatestVersionUrl(GetBaseUrl(), m_instanceId, m_nameSpace, product)};
 
-    LOG_INFO(m_reportingHandler, "Requesting latest version of [%s] from URL [%s]", product.c_str(), url.c_str());
+    LOG_INFO(m_reportingHandler, "Requesting latest version of [" << product << "] from URL [" << url << "]");
 
     const json body = {{"TargetingAttributes", attributes}};
-    LOG_VERBOSE(m_reportingHandler, "Request body [%s]", body.dump().c_str());
+    LOG_VERBOSE(m_reportingHandler, "Request body [" << body.dump() << "]");
 
     const std::string postResponse{connection.Post(url, body.dump())};
     const json versionResponse = ParseServerMethodStringToJson(postResponse, "GetLatestVersion", m_reportingHandler);
@@ -197,7 +196,7 @@ try
     auto versionEntity = ParseJsonToVersionEntity(versionResponse, m_reportingHandler);
     ValidateVersionEntity(*versionEntity, m_nameSpace, product, m_reportingHandler);
 
-    LOG_INFO(m_reportingHandler, "Received a response with version %s", versionEntity->contentId.version.c_str());
+    LOG_INFO(m_reportingHandler, "Received a response with version " << versionEntity->contentId.version);
 
     return versionEntity;
 }
@@ -211,20 +210,20 @@ try
 {
     const std::string url{SFSUrlComponents::GetLatestVersionBatchUrl(GetBaseUrl(), m_instanceId, m_nameSpace)};
 
-    LOG_INFO(m_reportingHandler, "Requesting latest version of multiple products from URL [%s]", url.c_str());
+    LOG_INFO(m_reportingHandler, "Requesting latest version of multiple products from URL [" << url << "]");
 
     // Creating request body
     std::unordered_set<std::string> requestedProducts;
     json body = json::array();
     for (const auto& [product, attributes] : productRequests)
     {
-        LOG_INFO(m_reportingHandler, "Product #%zu: [%s]", body.size() + size_t{1}, product.c_str());
+        LOG_INFO(m_reportingHandler, "Product #" << body.size() + size_t{1} << ": [" << product << "]");
         requestedProducts.insert(product);
 
         body.push_back({{"TargetingAttributes", attributes}, {"Product", product}});
     }
 
-    LOG_VERBOSE(m_reportingHandler, "Request body [%s]", body.dump().c_str());
+    LOG_VERBOSE(m_reportingHandler, "Request body [" << body.dump() << "]");
 
     const std::string postResponse{connection.Post(url, body.dump())};
 
@@ -248,10 +247,7 @@ try
         SFSUrlComponents::GetSpecificVersionUrl(GetBaseUrl(), m_instanceId, m_nameSpace, product, version)};
 
     LOG_INFO(m_reportingHandler,
-             "Requesting version [%s] of [%s] from URL [%s]",
-             version.c_str(),
-             product.c_str(),
-             url.c_str());
+             "Requesting version [" << version << "] of [" << product << "] from URL [" << url << "]");
 
     const std::string getResponse{connection.Get(url)};
 
@@ -260,9 +256,7 @@ try
     auto versionEntity = ParseJsonToVersionEntity(versionResponse, m_reportingHandler);
     ValidateVersionEntity(*versionEntity, m_nameSpace, product, m_reportingHandler);
 
-    LOG_INFO(m_reportingHandler,
-             "Received the expected response with version %s",
-             versionEntity->contentId.version.c_str());
+    LOG_INFO(m_reportingHandler, "Received the expected response with version " << versionEntity->contentId.version);
 
     return versionEntity;
 }
@@ -278,10 +272,7 @@ try
         SFSUrlComponents::GetDownloadInfoUrl(GetBaseUrl(), m_instanceId, m_nameSpace, product, version)};
 
     LOG_INFO(m_reportingHandler,
-             "Requesting download info of version [%s] of [%s] from URL [%s]",
-             version.c_str(),
-             product.c_str(),
-             url.c_str());
+             "Requesting download info of version [" << version << "] of [" << product << "] from URL [" << url << "]");
 
     const std::string postResponse{connection.Post(url)};
 
@@ -290,7 +281,7 @@ try
 
     auto files = ConvertDownloadInfoResponseToFileVector(downloadInfoResponse, m_reportingHandler);
 
-    LOG_INFO(m_reportingHandler, "Received a response with %zu files", files.size());
+    LOG_INFO(m_reportingHandler, "Received a response with " << files.size() << " files");
 
     return files;
 }

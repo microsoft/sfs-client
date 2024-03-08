@@ -205,7 +205,7 @@ std::optional<std::string> GetResponseHeader(CURL* handle,
 
 std::chrono::milliseconds ParseRetryAfterValue(const std::string& retryAfter, const ReportingHandler& reportingHandler)
 {
-    LOG_VERBOSE(reportingHandler, "Parsing Retry-After value [%s]", retryAfter.c_str());
+    LOG_VERBOSE(reportingHandler, "Parsing Retry-After value [" << retryAfter << "]");
     std::chrono::seconds retryAfterSec{0};
     try
     {
@@ -342,7 +342,7 @@ std::string CurlConnection::CurlPerform(const std::string& url, CurlHeaderList& 
     for (unsigned i = 0; i < totalAttempts; i++)
     {
         const unsigned attempt = i + 1;
-        LOG_INFO(m_handler, "Request attempt %u out of %u", attempt, totalAttempts);
+        LOG_INFO(m_handler, "Request attempt " << attempt << " out of " << totalAttempts);
         const bool lastAttempt = attempt == totalAttempts;
 
         // Clear the buffer before each attempt
@@ -386,7 +386,7 @@ bool CurlConnection::CanRetryRequest(bool lastAttempt, long httpCode)
 
     if (!IsRetriableHttpError(httpCode))
     {
-        LOG_INFO(m_handler, "Error %ld is not retriable, stopping", httpCode);
+        LOG_INFO(m_handler, "Error " << httpCode << " is not retriable, stopping");
         return false;
     }
 
@@ -420,6 +420,6 @@ void CurlConnection::ProcessRetry(int attempt, const Result& httpResult)
     }
 
     LOG_IF_FAILED(httpResult, m_handler);
-    LOG_INFO(m_handler, "Sleeping for %lld ms", static_cast<long long>(retryDelay.count()));
+    LOG_INFO(m_handler, "Sleeping for " << static_cast<long long>(retryDelay.count()) << " ms");
     std::this_thread::sleep_for(retryDelay);
 }

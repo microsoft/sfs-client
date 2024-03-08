@@ -104,19 +104,31 @@ TEST("Testing LogFormatting")
 
     REQUIRE(message.empty());
 
-    LOG_INFO(handler, "Test %s", "Test");
+    LOG_INFO(handler,
+             "Test "
+                 << "Test");
     REQUIRE(message == "Test Test");
 
-    LOG_WARNING(handler, "Test %s %s", "Test1", "Test2");
+    LOG_WARNING(handler,
+                "Test "
+                    << "Test1"
+                    << " "
+                    << "Test2");
     REQUIRE(message == "Test Test1 Test2");
 
-    LOG_ERROR(handler, "Test %s %s %s", "Test1", "Test2", "Test3");
+    LOG_ERROR(handler,
+              "Test "
+                  << "Test1"
+                  << " "
+                  << "Test2"
+                  << " "
+                  << "Test3");
     REQUIRE(message == "Test Test1 Test2 Test3");
 
-    LOG_INFO(handler, "Test %d %d", 1, true);
+    LOG_INFO(handler, "Test " << 1 << " " << true);
     REQUIRE(message == "Test 1 1");
 
-    LOG_INFO(handler, "Test %d %s", 2, false ? "true" : "false");
+    LOG_INFO(handler, "Test " << 2 << " " << (false ? "true" : "false"));
     REQUIRE(message == "Test 2 false");
 
     handler.SetLoggingCallback(nullptr);

@@ -6,18 +6,23 @@
 #include "Logging.h"
 
 #include <mutex>
+#include <sstream>
+
 #include <stdio.h>
 
 #define MAX_LOG_MESSAGE_SIZE 1024
 
-#define LOG_INFO(handler, format, ...)                                                                                 \
-    handler.LogWithSeverity(SFS::LogSeverity::Info, __FILE__, __LINE__, __FUNCTION__, format, ##__VA_ARGS__)
-#define LOG_WARNING(handler, format, ...)                                                                              \
-    handler.LogWithSeverity(SFS::LogSeverity::Warning, __FILE__, __LINE__, __FUNCTION__, format, ##__VA_ARGS__)
-#define LOG_ERROR(handler, format, ...)                                                                                \
-    handler.LogWithSeverity(SFS::LogSeverity::Error, __FILE__, __LINE__, __FUNCTION__, format, ##__VA_ARGS__)
-#define LOG_VERBOSE(handler, format, ...)                                                                              \
-    handler.LogWithSeverity(SFS::LogSeverity::Verbose, __FILE__, __LINE__, __FUNCTION__, format, ##__VA_ARGS__)
+#define LOG_INFO_STM(handler, severity, format)                                                                        \
+    do                                                                                                                 \
+    {                                                                                                                  \
+        MessageStream stm(handler, severity, __FILE__, __LINE__, __FUNCTION__);                                        \
+        stm << format;                                                                                                 \
+    } while ((void)0, 0)
+
+#define LOG_INFO(handler, format) LOG_INFO_STM(handler, SFS::LogSeverity::Info, format)
+#define LOG_WARNING(handler, format) LOG_INFO_STM(handler, SFS::LogSeverity::Warning, format)
+#define LOG_ERROR(handler, format) LOG_INFO_STM(handler, SFS::LogSeverity::Error, format)
+#define LOG_VERBOSE(handler, format) LOG_INFO_STM(handler, SFS::LogSeverity::Verbose, format)
 
 namespace SFS::details
 {
@@ -40,6 +45,20 @@ class ReportingHandler
      * @param callback The logging callback function. To reset, pass a nullptr.
      */
     void SetLoggingCallback(LoggingCallbackFn&& callback);
+
+    /**
+     * @brief Logs a message with the given severity.
+     * @details Prefer calling it with macros LOG_INFO, LOG_WARNING, LOG_ERROR, LOG_VERBOSE so file, line and function
+     * are automatically populated and the message can be formatted.
+     */
+    void LogWithSeverity(LogSeverity severity,
+                         const char* file,
+                         unsigned line,
+                         const char* function,
+                         const char* message) const
+    {
+        CallLoggingCallback(severity, message, file, line, function);
+    }
 
     /**
      * @brief Logs a message with the given severity.
@@ -77,4 +96,47 @@ class ReportingHandler
     LoggingCallbackFn m_loggingCallbackFn;
     mutable std::mutex m_loggingCallbackFnMutex;
 };
+
+/**
+ * @brief This class implements an ostream for the LOG macros.
+ * @details Lifetime of the arguments must as long as the lifetime of this object.
+ */
+class MessageStream
+{
+  public:
+    explicit MessageStream(const ReportingHandler& handler,
+                           LogSeverity severity,
+                           const char* file,
+                           unsigned int line,
+                           const char* function)
+        : m_handler(handler)
+        , m_severity(severity)
+        , m_file(file)
+        , m_line(line)
+        , m_function(function)
+    {
+    }
+
+    ~MessageStream()
+    {
+        m_handler.LogWithSeverity(m_severity, m_file, m_line, m_function, m_stream.str().c_str());
+    }
+
+    template <typename T>
+    MessageStream& operator<<(const T& value)
+    {
+        m_stream << value;
+        return *this;
+    }
+
+  private:
+    const ReportingHandler& m_handler;
+    const LogSeverity m_severity;
+    const char* m_file;
+    unsigned int m_line;
+    const char* m_function;
+
+    std::ostringstream m_stream;
+};
+
 } // namespace SFS::details
