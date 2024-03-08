@@ -2,7 +2,6 @@
 // Licensed under the MIT License.
 
 #include "sfsclient/ApplicabilityDetails.h"
-#include "sfsclient/DeliveryOptimizationData.h"
 #include "sfsclient/SFSClient.h"
 
 #include <catch2/catch_test_macros.hpp>
@@ -253,23 +252,6 @@ TEST("Testing SFSClient::GetLatestDownloadInfo()")
         REQUIRE(result.GetCode() == Result::InvalidArg);
         REQUIRE(result.GetMsg().find("baseCV is not a valid correlation vector:") == 0);
         REQUIRE(content == nullptr);
-    }
-}
-
-TEST_SCENARIO("Testing SFSClient::GetDeliveryOptimizationData()")
-{
-    GIVEN("An SFSClient")
-    {
-        auto sfsClient = GetSFSClient();
-
-        THEN("SFSClient::GetDeliveryOptimizationData() is not implemented")
-        {
-            const TargetingAttributes attributes{{"attr1", "value"}};
-
-            std::unique_ptr<Content> content;
-            std::unique_ptr<DeliveryOptimizationData> data;
-            REQUIRE(sfsClient->GetDeliveryOptimizationData(*content, data) == Result::NotImpl);
-        }
     }
 }
 

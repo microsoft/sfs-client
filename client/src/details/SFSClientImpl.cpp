@@ -97,19 +97,13 @@ std::vector<File> ConvertDownloadInfoResponseToFileVector(const json& data, cons
     //       "Sha1": <sha1>,
     //       "Sha256": <sha2>
     //     },
-    //     "DeliveryOptimization": {
-    //       "CatalogId": <catalogid>,
-    //       "Properties": {
-    //         <pair_value_list>
-    //       }
+    //     "DeliveryOptimization": {} // ignored, not used by the client.
     //     }
     //   },
     //   ...
     // ]
 
     ThrowInvalidResponseIfFalse(data.is_array(), "Response is not a JSON array", handler);
-
-    // TODO #48: For now ignore DeliveryOptimization data. Will implement its separate parsing later
 
     std::vector<File> tmp;
     for (const auto& fileData : data)

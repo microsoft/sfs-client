@@ -42,7 +42,7 @@ If a logging callback is set in a multi-threaded environment, and the same `SFSC
 
 ## Content types
 
-A few data types are provided which abstract contents that can be sent by the SFS Service, such as `Content`, `ContentId`, `File`, `DeliveryOptimizationData`.
+A few data types are provided which abstract contents that can be sent by the SFS Service, such as `Content`, `ContentId`, `File`.
 These data types provide `noexcept` methods to interact with member data.
 
 ## Retry Behavior
