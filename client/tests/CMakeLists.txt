@@ -21,6 +21,7 @@ target_sources(
             unit/ApplicabilityDetailsTests.cpp
             unit/ContentTests.cpp
             unit/DeliveryOptimizationDataTests.cpp
+            unit/details/ContentUtilTests.cpp
             unit/details/EnvTests.cpp
             unit/details/ErrorHandlingTests.cpp
             unit/details/CurlConnectionTests.cpp
