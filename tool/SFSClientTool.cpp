@@ -97,11 +97,11 @@ void ParseArguments(const std::vector<std::string_view>& args, Settings& setting
         [&argsSize](const size_t index, const std::string& switchName, const std::string_view& argValue) -> void {
         if (argsSize <= index + 1)
         {
-            throw std::runtime_error("Missing argument of --" + switchName + ".");
+            throw std::runtime_error("Missing argument of --" + switchName);
         }
         if (!argValue.empty())
         {
-            throw std::runtime_error("--" + switchName + " can only be specified once.");
+            throw std::runtime_error("--" + switchName + " can only be specified once");
         }
     };
 
@@ -151,7 +151,7 @@ void ParseArguments(const std::vector<std::string_view>& args, Settings& setting
         }
         else
         {
-            throw std::runtime_error("Unknown option " + std::string(args[i]) + ".\n");
+            throw std::runtime_error("Unknown option " + std::string(args[i]));
         }
     }
 
@@ -177,7 +177,7 @@ void DisplayResults(const std::unique_ptr<Content>& content)
 {
     if (!content)
     {
-        PrintError("No results found.");
+        PrintError("No results found");
         return;
     }
 
@@ -271,7 +271,7 @@ int main(int argc, char* argv[])
     }
     catch (const std::runtime_error& e)
     {
-        PrintError(e.what());
+        PrintError(std::string(e.what()) + "\n");
         DisplayUsage();
         return 1;
     }
