@@ -156,6 +156,13 @@ int ParseArguments(const std::vector<std::string_view>& args, Settings& settings
             return 1;
         }
     }
+
+    if (!settings.displayHelp && (settings.product.empty() || settings.accountId.empty()))
+    {
+        PrintError("--product and --accountId are required and cannot be empty");
+        return 1;
+    }
+
     return 0;
 }
 
@@ -275,7 +282,7 @@ int main(int argc, char* argv[])
         return 0;
     }
 
-    if (settings.displayHelp || settings.product.empty())
+    if (settings.displayHelp)
     {
         DisplayHelp();
         return 0;
