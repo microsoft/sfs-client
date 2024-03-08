@@ -28,14 +28,14 @@ void DisplayUsage()
         << std::endl
         << "Options:" << std::endl
         << "  -h, --help\t\t\tDisplay this help message" << std::endl
+        << "  -v, --version\t\t\tDisplay the library version" << std::endl
         << "  --instanceId <id>\t\tA custom SFS instance ID" << std::endl
         << "  --namespace <ns>\t\tA custom SFS namespace" << std::endl
         << "  --customUrl <url>\t\tA custom URL for the SFS service. Library must have been built with SFS_ENABLE_OVERRIDES"
         << std::endl
         << std::endl
         << "Example:" << std::endl
-        << "  SFSClientTool --product msedge-stable-win-x64 --accountId msedge"
-        << std::endl;
+        << "  SFSClientTool --product msedge-stable-win-x64 --accountId msedge" << std::endl;
 }
 
 void DisplayHelp()
@@ -46,6 +46,11 @@ void DisplayHelp()
               << "Use to interact with the SFS service through the SFS Client library." << std::endl
               << std::endl;
     DisplayUsage();
+}
+
+void DisplayVersion()
+{
+    std::cout << "SFSClient Tool " << SFSClient::GetVersion() << std::endl;
 }
 
 const std::string c_boldRedStart = "\033[1;31m";
@@ -66,6 +71,7 @@ void PrintLog(std::string_view message)
 struct Settings
 {
     bool displayHelp{true};
+    bool displayVersion{false};
     std::string product;
     std::string accountId;
     std::string instanceId;
@@ -99,6 +105,10 @@ int ParseArguments(const std::vector<std::string_view>& args, Settings& settings
         if (args[i].compare("-h") == 0 || args[i].compare("--help") == 0)
         {
             settings.displayHelp = true;
+        }
+        else if (args[i].compare("-v") == 0 || args[i].compare("--version") == 0)
+        {
+            settings.displayVersion = true;
         }
         else if (args[i].compare("--product") == 0)
         {
@@ -257,6 +267,12 @@ int main(int argc, char* argv[])
     {
         DisplayUsage();
         return 1;
+    }
+
+    if (settings.displayVersion)
+    {
+        DisplayVersion();
+        return 0;
     }
 
     if (settings.displayHelp || settings.product.empty())
