@@ -20,21 +20,21 @@ namespace
 void DisplayUsage()
 {
     std::cout
-        << "Usage: SFSClientTool --product <identifier> [options]" << std::endl
+        << "Usage: SFSClientTool --product <identifier> --accountId <id> [options]" << std::endl
         << std::endl
         << "Required:" << std::endl
-        << "  --product <identifier>\t\tName or GUID of the product to be retrieved" << std::endl
+        << "  --product <identifier>\tName or GUID of the product to be retrieved" << std::endl
+        << "  --accountId <id>\t\tAccount ID of the SFS service, used to identify the caller" << std::endl
         << std::endl
         << "Options:" << std::endl
         << "  -h, --help\t\t\tDisplay this help message" << std::endl
-        << "  --accountId <id>\t\tAccount ID of the SFS service, used to identify the caller" << std::endl
         << "  --instanceId <id>\t\tA custom SFS instance ID" << std::endl
         << "  --namespace <ns>\t\tA custom SFS namespace" << std::endl
         << "  --customUrl <url>\t\tA custom URL for the SFS service. Library must have been built with SFS_ENABLE_OVERRIDES"
         << std::endl
         << std::endl
         << "Example:" << std::endl
-        << "  SFSClientTool --product \"Microsoft.WindowsStore_12011.1001.1.0_x64__8wekyb3d8bbwe\" --accountId test"
+        << "  SFSClientTool --product msedge-stable-win-x64 --accountId msedge"
         << std::endl;
 }
 
