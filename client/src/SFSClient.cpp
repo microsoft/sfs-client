@@ -51,7 +51,7 @@ try
 
     LOG_INFO(out->m_impl->GetReportingHandler(), "SFSClient instance created successfully. Version: %s", GetVersion());
 #ifdef SFS_GIT_INFO
-    LOG_VERBOSE(out->m_impl->GetReportingHandler(), "Git info: %s", SFS_GIT_INFO);
+    LOG_INFO(out->m_impl->GetReportingHandler(), "Git info: %s", SFS_GIT_INFO);
 #endif
 
     return Result::Success;
