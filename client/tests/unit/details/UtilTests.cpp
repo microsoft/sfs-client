@@ -23,3 +23,10 @@ TEST("Testing AreEqualI")
         REQUIRE(AreEqualI("abc", "aBC"));
     }
 }
+
+TEST("Testing AreNotEqualI")
+{
+    REQUIRE(AreNotEqualI("abc", "ab"));
+    REQUIRE(AreNotEqualI("ab", "abc"));
+    REQUIRE(AreNotEqualI("abc", "abd"));
+}

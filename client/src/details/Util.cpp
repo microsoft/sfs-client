@@ -3,25 +3,16 @@
 
 #include "Util.h"
 
+#include <algorithm>
 #include <string>
 
 using namespace SFS::details;
 
 bool util::AreEqualI(std::string_view a, std::string_view b)
 {
-    if (a.size() != b.size())
-    {
-        return false;
-    }
-
-    for (auto itA = a.begin(), itB = b.begin(); itA != a.end() && itB != b.end(); ++itA, ++itB)
-    {
-        if (std::tolower(*itA) != std::tolower(*itB))
-        {
-            return false;
-        }
-    }
-    return true;
+    return std::equal(a.begin(), a.end(), b.begin(), b.end(), [](char a, char b) {
+        return std::tolower(static_cast<unsigned char>(a)) == std::tolower(static_cast<unsigned char>(b));
+    });
 }
 
 bool util::AreNotEqualI(std::string_view a, std::string_view b)
