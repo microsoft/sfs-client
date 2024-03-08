@@ -205,7 +205,7 @@ std::optional<std::string> GetResponseHeader(CURL* handle,
 
 std::chrono::milliseconds ParseRetryAfterValue(const std::string& retryAfter, const ReportingHandler& reportingHandler)
 {
-    LOG_INFO(reportingHandler, "Parsing Retry-After value [%s]", retryAfter.c_str());
+    LOG_VERBOSE(reportingHandler, "Parsing Retry-After value [%s]", retryAfter.c_str());
     std::chrono::seconds retryAfterSec{0};
     try
     {

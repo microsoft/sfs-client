@@ -16,6 +16,8 @@
     handler.LogWithSeverity(SFS::LogSeverity::Warning, __FILE__, __LINE__, __FUNCTION__, format, ##__VA_ARGS__)
 #define LOG_ERROR(handler, format, ...)                                                                                \
     handler.LogWithSeverity(SFS::LogSeverity::Error, __FILE__, __LINE__, __FUNCTION__, format, ##__VA_ARGS__)
+#define LOG_VERBOSE(handler, format, ...)                                                                              \
+    handler.LogWithSeverity(SFS::LogSeverity::Verbose, __FILE__, __LINE__, __FUNCTION__, format, ##__VA_ARGS__)
 
 namespace SFS::details
 {
@@ -41,8 +43,8 @@ class ReportingHandler
 
     /**
      * @brief Logs a message with the given severity.
-     * @details Prefer calling it with macros LOG_INFO, LOG_WARNING, LOG_ERROR so file, line and function are
-     * automatically populated and the message can be formatted.
+     * @details Prefer calling it with macros LOG_INFO, LOG_WARNING, LOG_ERROR, LOG_VERBOSE so file, line and function
+     * are automatically populated and the message can be formatted.
      */
     template <typename... Args>
     void LogWithSeverity(LogSeverity severity,

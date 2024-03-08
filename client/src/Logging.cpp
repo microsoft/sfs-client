@@ -15,6 +15,8 @@ std::string_view SFS::ToString(LogSeverity severity) noexcept
         return "Warning";
     case LogSeverity::Error:
         return "Error";
+    case LogSeverity::Verbose:
+        return "Verbose";
     }
     return "";
 }
