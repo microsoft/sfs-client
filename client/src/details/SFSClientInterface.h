@@ -19,7 +19,6 @@ class ConnectionManager;
 struct ConnectionConfig;
 
 using VersionEntities = std::vector<std::unique_ptr<VersionEntity>>;
-using FileEntities = std::vector<std::unique_ptr<FileEntity>>;
 
 class SFSClientInterface
 {

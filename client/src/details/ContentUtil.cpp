@@ -219,13 +219,27 @@ std::unique_ptr<FileEntity> contentutil::ParseJsonToFileEntity(const json& file,
     return tmp;
 }
 
-std::vector<File> contentutil::GenericFileEntitiesToFileVector(std::vector<std::unique_ptr<FileEntity>>&& entities,
-                                                               const ReportingHandler& handler)
+std::vector<File> contentutil::GenericFileEntitiesToFileVector(FileEntities&& entities, const ReportingHandler& handler)
 {
     std::vector<File> tmp;
     for (auto& entity : entities)
     {
         tmp.push_back(std::move(*GenericFileEntityToFile(std::move(*entity), handler)));
+    }
+
+    return tmp;
+}
+
+FileEntities contentutil::DownloadInfoResponseToFileEntities(const json& data, const ReportingHandler& handler)
+{
+    // Expected format is an array of FileEntity
+    THROW_INVALID_RESPONSE_IF_NOT(data.is_array(), "Response is not a JSON array", handler);
+
+    FileEntities tmp;
+    for (const auto& fileData : data)
+    {
+        THROW_INVALID_RESPONSE_IF_NOT(fileData.is_object(), "Array element is not a JSON object", handler);
+        tmp.push_back(std::move(ParseJsonToFileEntity(fileData, handler)));
     }
 
     return tmp;

@@ -71,4 +71,6 @@ struct GenericFileEntity : public FileEntity
         return ContentType::Generic;
     }
 };
+
+using FileEntities = std::vector<std::unique_ptr<FileEntity>>;
 } // namespace SFS::details

@@ -85,21 +85,6 @@ VersionEntities ConvertLatestVersionBatchResponseToVersionEntities(const json& d
     return entities;
 }
 
-FileEntities DownloadInfoResponseToFileEntities(const json& data, const ReportingHandler& handler)
-{
-    // Expected format is an array of FileEntity
-    ThrowInvalidResponseIfFalse(data.is_array(), "Response is not a JSON array", handler);
-
-    FileEntities tmp;
-    for (const auto& fileData : data)
-    {
-        ThrowInvalidResponseIfFalse(fileData.is_object(), "Array element is not a JSON object", handler);
-        tmp.push_back(std::move(ParseJsonToFileEntity(fileData, handler)));
-    }
-
-    return tmp;
-}
-
 bool VerifyVersionResponseMatchesProduct(const ContentIdEntity& contentId,
                                          std::string_view nameSpace,
                                          std::string_view name)
