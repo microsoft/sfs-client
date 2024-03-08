@@ -3,6 +3,7 @@
 
 #include "sfsclient/SFSClient.h"
 
+#include <exception>
 #include <filesystem>
 #include <iomanip>
 #include <iostream>
@@ -68,6 +69,13 @@ void PrintLog(std::string_view message)
     std::cout << c_cyanStart << message << c_colorEnd << std::endl;
 }
 
+bool AreEqualI(std::string_view a, std::string_view b)
+{
+    return std::equal(a.begin(), a.end(), b.begin(), b.end(), [](char a, char b) {
+        return std::tolower(static_cast<unsigned char>(a)) == std::tolower(static_cast<unsigned char>(b));
+    });
+}
+
 struct Settings
 {
     bool displayHelp{true};
@@ -79,91 +87,78 @@ struct Settings
     std::string customUrl;
 };
 
-int ParseArguments(const std::vector<std::string_view>& args, Settings& settings)
+void ParseArguments(const std::vector<std::string_view>& args, Settings& settings)
 {
     settings = {};
     settings.displayHelp = args.size() == 1;
 
     const size_t argsSize = args.size();
     auto validateArg =
-        [&argsSize](const size_t index, const std::string& switchName, const std::string_view& argValue) -> bool {
+        [&argsSize](const size_t index, const std::string& switchName, const std::string_view& argValue) -> void {
         if (argsSize <= index + 1)
         {
-            PrintError("Missing argument of --" + switchName + ".");
-            return false;
+            throw std::runtime_error("Missing argument of --" + switchName + ".");
         }
         if (!argValue.empty())
         {
-            PrintError("--" + switchName + " can only be specified once.");
-            return false;
+            throw std::runtime_error("--" + switchName + " can only be specified once.");
         }
-        return true;
+    };
+
+    auto matchArg =
+        [](std::string_view arg, const std::string& shortSwitchName, const std::string& longSwitchName) -> bool {
+        return (!shortSwitchName.empty() && AreEqualI(arg, shortSwitchName)) || AreEqualI(arg, longSwitchName);
+    };
+
+    auto matchLongArg = [](std::string_view arg, const std::string& longSwitchName) -> bool {
+        return AreEqualI(arg, longSwitchName);
     };
 
     for (size_t i = 1; i < args.size(); ++i)
     {
-        if (args[i].compare("-h") == 0 || args[i].compare("--help") == 0)
+        if (matchArg(args[i], "-h", "--help"))
         {
             settings.displayHelp = true;
         }
-        else if (args[i].compare("-v") == 0 || args[i].compare("--version") == 0)
+        else if (matchArg(args[i], "-v", "--version"))
         {
             settings.displayVersion = true;
         }
-        else if (args[i].compare("--product") == 0)
+        else if (matchLongArg(args[i], "--product"))
         {
-            if (!validateArg(i, "product", settings.product))
-            {
-                return 1;
-            }
+            validateArg(i, "product", settings.product);
             settings.product = args[++i];
         }
-        else if (args[i].compare("--accountId") == 0)
+        else if (matchLongArg(args[i], "--accountId"))
         {
-            if (!validateArg(i, "accountId", settings.accountId))
-            {
-                return 1;
-            }
+            validateArg(i, "accountId", settings.accountId);
             settings.accountId = args[++i];
         }
-        else if (args[i].compare("--instanceId") == 0)
+        else if (matchLongArg(args[i], "--instanceId"))
         {
-            if (!validateArg(i, "instanceId", settings.instanceId))
-            {
-                return 1;
-            }
+            validateArg(i, "instanceId", settings.instanceId);
             settings.instanceId = args[++i];
         }
-        else if (args[i].compare("--namespace") == 0)
+        else if (matchLongArg(args[i], "--namespace"))
         {
-            if (!validateArg(i, "namespace", settings.nameSpace))
-            {
-                return 1;
-            }
+            validateArg(i, "namespace", settings.nameSpace);
             settings.nameSpace = args[++i];
         }
-        else if (args[i].compare("--customUrl") == 0)
+        else if (matchLongArg(args[i], "--customUrl"))
         {
-            if (!validateArg(i, "customUrl", settings.customUrl))
-            {
-                return 1;
-            }
+            validateArg(i, "customUrl", settings.customUrl);
             settings.customUrl = args[++i];
         }
         else
         {
-            PrintError("Unknown option " + std::string(args[i]) + ".\n");
-            return 1;
+            throw std::runtime_error("Unknown option " + std::string(args[i]) + ".\n");
         }
     }
 
     if (!settings.displayHelp && (settings.product.empty() || settings.accountId.empty()))
     {
-        PrintError("--product and --accountId are required and cannot be empty");
-        return 1;
+        throw std::runtime_error("--product and --accountId are required and cannot be empty");
     }
-
-    return 0;
 }
 
 constexpr std::string_view ToString(HashType type)
@@ -270,8 +265,13 @@ bool SetEnv(const std::string& varName, const std::string& value)
 int main(int argc, char* argv[])
 {
     Settings settings;
-    if (ParseArguments(std::vector<std::string_view>(argv, argv + argc), settings) != 0)
+    try
     {
+        ParseArguments(std::vector<std::string_view>(argv, argv + argc), settings);
+    }
+    catch (const std::runtime_error& e)
+    {
+        PrintError(e.what());
         DisplayUsage();
         return 1;
     }
