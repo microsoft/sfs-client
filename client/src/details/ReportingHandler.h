@@ -12,17 +12,18 @@
 
 #define MAX_LOG_MESSAGE_SIZE 1024
 
-#define LOG_INFO_STM(handler, severity, format)                                                                        \
+#define LOG_STREAM(handler, severity, line, format)                                                                    \
     do                                                                                                                 \
     {                                                                                                                  \
-        MessageStream stm(handler, severity, __FILE__, __LINE__, __FUNCTION__);                                        \
+        std::ostringstream stm;                                                                                        \
         stm << format;                                                                                                 \
+        handler.LogWithSeverity(severity, __FILE__, line, __FUNCTION__, stm.str().c_str());                            \
     } while ((void)0, 0)
 
-#define LOG_INFO(handler, format) LOG_INFO_STM(handler, SFS::LogSeverity::Info, format)
-#define LOG_WARNING(handler, format) LOG_INFO_STM(handler, SFS::LogSeverity::Warning, format)
-#define LOG_ERROR(handler, format) LOG_INFO_STM(handler, SFS::LogSeverity::Error, format)
-#define LOG_VERBOSE(handler, format) LOG_INFO_STM(handler, SFS::LogSeverity::Verbose, format)
+#define LOG_INFO(handler, format) LOG_STREAM(handler, SFS::LogSeverity::Info, __LINE__, format)
+#define LOG_WARNING(handler, format) LOG_STREAM(handler, SFS::LogSeverity::Warning, __LINE__, format)
+#define LOG_ERROR(handler, format) LOG_STREAM(handler, SFS::LogSeverity::Error, __LINE__, format)
+#define LOG_VERBOSE(handler, format) LOG_STREAM(handler, SFS::LogSeverity::Verbose, __LINE__, format)
 
 namespace SFS::details
 {
@@ -95,48 +96,6 @@ class ReportingHandler
 
     LoggingCallbackFn m_loggingCallbackFn;
     mutable std::mutex m_loggingCallbackFnMutex;
-};
-
-/**
- * @brief This class implements an ostream for the LOG macros.
- * @details Lifetime of the arguments must as long as the lifetime of this object.
- */
-class MessageStream
-{
-  public:
-    explicit MessageStream(const ReportingHandler& handler,
-                           LogSeverity severity,
-                           const char* file,
-                           unsigned int line,
-                           const char* function)
-        : m_handler(handler)
-        , m_severity(severity)
-        , m_file(file)
-        , m_line(line)
-        , m_function(function)
-    {
-    }
-
-    ~MessageStream()
-    {
-        m_handler.LogWithSeverity(m_severity, m_file, m_line, m_function, m_stream.str().c_str());
-    }
-
-    template <typename T>
-    MessageStream& operator<<(const T& value)
-    {
-        m_stream << value;
-        return *this;
-    }
-
-  private:
-    const ReportingHandler& m_handler;
-    const LogSeverity m_severity;
-    const char* m_file;
-    unsigned int m_line;
-    const char* m_function;
-
-    std::ostringstream m_stream;
 };
 
 } // namespace SFS::details
