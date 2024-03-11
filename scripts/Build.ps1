@@ -14,11 +14,11 @@ Use this to define the build type between "Debug" and "Release". The default is 
 .PARAMETER EnableTestOverrides
 Use this to enable test overrides.
 
-.PARAMETER NoBuildTests
-Use this to disable building tests.
+.PARAMETER BuildTests
+Use this to enable building tests. On by default.
 
-.PARAMETER NoBuildSamples
-Use this to disable building samples.
+.PARAMETER BuildSamples
+Use this to enable building samples. On by default.
 
 .DESCRIPTION
 This script will contain the build commands for the SFS Client. The default build folder will be "<git_root>/build".
@@ -34,8 +34,8 @@ param (
     [string] $BuildType = "Debug",
     # Make sure when adding a new switch below to check if it requires CMake regeneration
     [switch] $EnableTestOverrides = $false,
-    [switch] $NoBuildTests = $false,
-    [switch] $NoBuildSamples = $false
+    [bool] $BuildTests = $true,
+    [bool] $BuildSamples = $true
 )
 
 $GitRoot = (Resolve-Path (&git -C $PSScriptRoot rev-parse --show-toplevel)).Path
@@ -54,8 +54,8 @@ if ($Clean -and (Test-Path $BuildFolder))
 $Regenerate = $false
 $CMakeCacheFile = "$BuildFolder\CMakeCache.txt"
 $EnableTestOverridesStr = if ($EnableTestOverrides) {"ON"} else {"OFF"}
-$BuildTestsOverridesStr = if ($NoBuildTests) {"OFF"} else {"ON"}
-$BuildSamplesOverridesStr = if ($NoBuildSamples) {"OFF"} else {"ON"}
+$BuildTestsOverridesStr = if ($BuildTests) {"ON"} else {"OFF"}
+$BuildSamplesOverridesStr = if ($BuildSamples) {"ON"} else {"OFF"}
 
 function Test-CMakeCacheValueNoMatch($CMakeCacheFile, $Pattern, $ExpectedValue)
 {
