@@ -14,6 +14,9 @@ Use this to define the build type between "Debug" and "Release". The default is 
 .PARAMETER EnableTestOverrides
 Use this to enable test overrides.
 
+.PARAMETER NoBuildSamples
+Use this to disable building samples.
+
 .DESCRIPTION
 This script will contain the build commands for the SFS Client. The default build folder will be "<git_root>/build".
 Use this on Windows platforms in a PowerShell session.
