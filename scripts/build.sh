@@ -22,6 +22,7 @@ fi
 
 COLOR_RED="\033[1;31m"
 COLOR_YELLOW="\033[1;33m"
+BOLD_DEFAULT_COLOR="\033[1m"
 NO_COLOR="\033[0m"
 
 error() { echo -e "${COLOR_RED}$*${NO_COLOR}" >&2; exit 1; }
@@ -29,15 +30,17 @@ warn() { echo -e "${COLOR_YELLOW}$*${NO_COLOR}"; }
 
 clean=false
 enable_test_overrides="OFF"
+build_tests="ON"
 build_samples="ON"
 build_type="Debug"
 
-usage() { echo "Usage: $0 [-c|--clean, -b|--build-type {Debug,Release}, -t|--enable-test-overrides, --no-build-samples]" 1>&2; exit 1; }
+usage() { echo -e "Usage: $0 [-c|--clean] [-b|--build-type {Debug,Release}] [-t|--enable-test-overrides]
+                          [--build-tests {${BOLD_DEFAULT_COLOR}ON${NO_COLOR}, OFF}] [--build-samples {${BOLD_DEFAULT_COLOR}ON${NO_COLOR}, OFF}]" 1>&2; exit 1; }
 
 # Make sure when adding a new option to check if it requires CMake regeneration
 
 if ! opts=$(getopt \
-  --longoptions "clean,build-type:,enable-test-overrides,no-build-samples" \
+  --longoptions "clean,build-type:,enable-test-overrides,build-tests:,build-samples:" \
   --name "$(basename "$0")" \
   --options "cb:t" \
   -- "$@"
@@ -69,8 +72,28 @@ while [ $# -gt 0 ]; do
             enable_test_overrides="ON"
             shift 1
             ;;
-        --no-build-samples)
-            build_samples="OFF"
+        --build-tests)
+            shift 1
+            build_tests=$1
+            case "$build_tests" in
+                ON|OFF)
+                    ;;
+                *)
+                    usage
+                    ;;
+            esac
+            shift 1
+            ;;
+        --build-samples)
+            shift 1
+            build_samples=$1
+            case "$build_samples" in
+                ON|OFF)
+                    ;;
+                *)
+                    usage
+                    ;;
+            esac
             shift 1
             ;;
         *)
@@ -116,6 +139,9 @@ if [ -f "$cmake_cache_file" ]; then
     if test_cmake_cache_value_no_match "$cmake_cache_file" "^SFS_ENABLE_TEST_OVERRIDES:BOOL=(.*)$" "$enable_test_overrides"; then
         regenerate=true
     fi
+    if test_cmake_cache_value_no_match "$cmake_cache_file" "^SFS_BUILD_TESTS:BOOL=(.*)$" "$build_tests"; then
+        regenerate=true
+    fi
     if test_cmake_cache_value_no_match "$cmake_cache_file" "^SFS_BUILD_SAMPLES:BOOL=(.*)$" "$build_samples"; then
         regenerate=true
     fi
@@ -129,6 +155,7 @@ if [ ! -d "$build_folder" ] || $regenerate ; then
         -B "$build_folder" \
         -DCMAKE_BUILD_TYPE="$build_type" \
         -DSFS_ENABLE_TEST_OVERRIDES="$enable_test_overrides" \
+        -DSFS_BUILD_TESTS="$build_tests" \
         -DSFS_BUILD_SAMPLES="$build_samples"
 fi
 

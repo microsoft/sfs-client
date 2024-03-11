@@ -1,9 +1,16 @@
 {
   "$schema": "https://raw.githubusercontent.com/microsoft/vcpkg-tool/main/docs/vcpkg.schema.json",
-  "summary": "If updating this file, please also update the cgmanifest.json file. See DEVELOPMENT.md for more",
+  "$in-case-of-update": "If updating this file, please also update the cgmanifest.json file. See DEVELOPMENT.md for more",
+  "features": {
+    "tests": {
+      "description": "Build tests",
+      "dependencies": [
+        "catch2",
+        "cpp-httplib"
+      ]
+    }
+  },
   "dependencies": [
-    "catch2",
-    "cpp-httplib",
     {
       "name": "curl",
       "features": [
@@ -40,7 +47,9 @@
     }
   ],
   "vcpkg-configuration": {
-    "overlay-triplets": [ "./vcpkg-custom-triplets" ]
+    "overlay-triplets": [
+      "./vcpkg-custom-triplets"
+    ]
   },
   "builtin-baseline": "f56238700757aa05975e41fa835739c632810f3f"
 }

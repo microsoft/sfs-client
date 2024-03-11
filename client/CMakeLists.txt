@@ -85,4 +85,6 @@ endif()
 # Enables one to run tests through "ctest --test-dir .\build\client"
 enable_testing()
 
-add_subdirectory(tests)
+if(SFS_BUILD_TESTS)
+    add_subdirectory(tests)
+endif()
