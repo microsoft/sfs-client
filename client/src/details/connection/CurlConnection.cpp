@@ -327,7 +327,8 @@ std::string CurlConnection::CurlPerform(const std::string& url, CurlHeaderList& 
 {
     THROW_IF_CURL_SETUP_ERROR(curl_easy_setopt(m_handle, CURLOPT_URL, url.c_str()));
 
-    headers.Add(HttpHeader::MSCV, m_cv.IncrementAndGet());
+    const std::string cv = m_cv.IncrementAndGet();
+    headers.Add(HttpHeader::MSCV, cv);
     THROW_IF_CURL_SETUP_ERROR(curl_easy_setopt(m_handle, CURLOPT_HTTPHEADER, headers.m_slist));
 
     // Setting up error buffer where error messages get written - this gets unset in the destructor
@@ -342,7 +343,7 @@ std::string CurlConnection::CurlPerform(const std::string& url, CurlHeaderList& 
     for (unsigned i = 0; i < totalAttempts; i++)
     {
         const unsigned attempt = i + 1;
-        LOG_INFO(m_handler, "Request attempt %u out of %u", attempt, totalAttempts);
+        LOG_INFO(m_handler, "Request attempt %u out of %u (cv: %s)", attempt, totalAttempts, cv.c_str());
         const bool lastAttempt = attempt == totalAttempts;
 
         // Clear the buffer before each attempt
