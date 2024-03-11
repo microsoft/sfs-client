@@ -7,12 +7,17 @@
     {
       "name": "curl",
       "features": [
-        "c-ares"
+        "c-ares",
+        "openssl"
       ]
     },
     "nlohmann-json"
   ],
   "overrides": [
+    {
+      "name": "c-ares",
+      "version": "1.19.1"
+    },
     {
       "name": "catch2",
       "version": "3.4.0"
@@ -28,6 +33,10 @@
     {
       "name": "nlohmann-json",
       "version": "3.11.3"
+    },
+    {
+      "name": "openssl",
+      "version": "3.1.4#1"
     }
   ],
   "vcpkg-configuration": {
