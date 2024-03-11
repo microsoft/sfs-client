@@ -1,6 +1,6 @@
 {
   "$schema": "https://raw.githubusercontent.com/microsoft/vcpkg-tool/main/docs/vcpkg.schema.json",
-  "summary": "If updating this file, please also update the cgmanifest.json file. See DEVELOPMENT.md for more",
+  "$in-case-of-update": "If updating this file, please also update the cgmanifest.json file. See DEVELOPMENT.md for more",
   "dependencies": [
     "catch2",
     "cpp-httplib",
