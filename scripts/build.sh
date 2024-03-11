@@ -139,10 +139,10 @@ if [ -f "$cmake_cache_file" ]; then
     if test_cmake_cache_value_no_match "$cmake_cache_file" "^SFS_ENABLE_TEST_OVERRIDES:BOOL=(.*)$" "$enable_test_overrides"; then
         regenerate=true
     fi
-    if test_cmake_cache_value_no_match "$cmake_cache_file" "^SFS_BUILD_SAMPLES:BOOL=(.*)$" "$build_samples"; then
+    if test_cmake_cache_value_no_match "$cmake_cache_file" "^SFS_BUILD_TESTS:BOOL=(.*)$" "$build_tests"; then
         regenerate=true
     fi
-    if test_cmake_cache_value_no_match "$cmake_cache_file" "^SFS_BUILD_TESTS:BOOL=(.*)$" "$build_tests"; then
+    if test_cmake_cache_value_no_match "$cmake_cache_file" "^SFS_BUILD_SAMPLES:BOOL=(.*)$" "$build_samples"; then
         regenerate=true
     fi
 fi
