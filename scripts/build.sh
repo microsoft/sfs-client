@@ -29,15 +29,16 @@ warn() { echo -e "${COLOR_YELLOW}$*${NO_COLOR}"; }
 
 clean=false
 enable_test_overrides="OFF"
+build_tests="ON"
 build_samples="ON"
 build_type="Debug"
 
-usage() { echo "Usage: $0 [-c|--clean, -b|--build-type {Debug,Release}, -t|--enable-test-overrides, --no-build-samples]" 1>&2; exit 1; }
+usage() { echo "Usage: $0 [-c|--clean, -b|--build-type {Debug,Release}, -t|--enable-test-overrides, --no-build-tests, --no-build-samples]" 1>&2; exit 1; }
 
 # Make sure when adding a new option to check if it requires CMake regeneration
 
 if ! opts=$(getopt \
-  --longoptions "clean,build-type:,enable-test-overrides,no-build-samples" \
+  --longoptions "clean,build-type:,enable-test-overrides,no-build-tests,no-build-samples" \
   --name "$(basename "$0")" \
   --options "cb:t" \
   -- "$@"
@@ -71,6 +72,10 @@ while [ $# -gt 0 ]; do
             ;;
         --no-build-samples)
             build_samples="OFF"
+            shift 1
+            ;;
+        --no-build-tests)
+            build_tests="OFF"
             shift 1
             ;;
         *)
@@ -119,6 +124,9 @@ if [ -f "$cmake_cache_file" ]; then
     if test_cmake_cache_value_no_match "$cmake_cache_file" "^SFS_BUILD_SAMPLES:BOOL=(.*)$" "$build_samples"; then
         regenerate=true
     fi
+    if test_cmake_cache_value_no_match "$cmake_cache_file" "^SFS_BUILD_TESTS:BOOL=(.*)$" "$build_tests"; then
+        regenerate=true
+    fi
 fi
 
 # Configure cmake if build folder doesn't exist or if the build must be regenerated.
@@ -129,6 +137,7 @@ if [ ! -d "$build_folder" ] || $regenerate ; then
         -B "$build_folder" \
         -DCMAKE_BUILD_TYPE="$build_type" \
         -DSFS_ENABLE_TEST_OVERRIDES="$enable_test_overrides" \
+        -DSFS_BUILD_TESTS="$build_tests" \
         -DSFS_BUILD_SAMPLES="$build_samples"
 fi
 

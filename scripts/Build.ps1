@@ -14,6 +14,9 @@ Use this to define the build type between "Debug" and "Release". The default is 
 .PARAMETER EnableTestOverrides
 Use this to enable test overrides.
 
+.PARAMETER NoBuildTests
+Use this to disable building tests.
+
 .PARAMETER NoBuildSamples
 Use this to disable building samples.
 
@@ -31,6 +34,7 @@ param (
     [string] $BuildType = "Debug",
     # Make sure when adding a new switch below to check if it requires CMake regeneration
     [switch] $EnableTestOverrides = $false,
+    [switch] $NoBuildTests = $false,
     [switch] $NoBuildSamples = $false
 )
 
@@ -50,6 +54,7 @@ if ($Clean -and (Test-Path $BuildFolder))
 $Regenerate = $false
 $CMakeCacheFile = "$BuildFolder\CMakeCache.txt"
 $EnableTestOverridesStr = if ($EnableTestOverrides) {"ON"} else {"OFF"}
+$BuildTestsOverridesStr = if ($NoBuildTests) {"OFF"} else {"ON"}
 $BuildSamplesOverridesStr = if ($NoBuildSamples) {"OFF"} else {"ON"}
 
 function Test-CMakeCacheValueNoMatch($CMakeCacheFile, $Pattern, $ExpectedValue)
@@ -66,6 +71,7 @@ if (Test-Path $CMakeCacheFile)
 {
     # Regenerate if one of the build options is set to a different value than the one passed in
     $Regenerate = Test-CMakeCacheValueNoMatch $CMakeCacheFile "^SFS_ENABLE_TEST_OVERRIDES:BOOL=(.*)$" $EnableTestOverridesStr
+    $Regenerate = Test-CMakeCacheValueNoMatch $CMakeCacheFile "^SFS_BUILD_TESTS:BOOL=(.*)$" $BuildTestsOverridesStr
     $Regenerate = Test-CMakeCacheValueNoMatch $CMakeCacheFile "^SFS_BUILD_SAMPLES:BOOL=(.*)$" $BuildSamplesOverridesStr
 }
 
@@ -74,6 +80,7 @@ if (Test-Path $CMakeCacheFile)
 if (!(Test-Path $BuildFolder) -or $Regenerate)
 {
     $Options = "-DSFS_ENABLE_TEST_OVERRIDES=$EnableTestOverridesStr";
+    $Options += " -DSFS_BUILD_TESTS=$BuildTestsOverridesStr";
     $Options += " -DSFS_BUILD_SAMPLES=$BuildSamplesOverridesStr";
     Invoke-Expression "cmake -S $GitRoot -B $BuildFolder $Options"
 }

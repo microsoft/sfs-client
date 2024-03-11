@@ -3,6 +3,15 @@
 
 cmake_minimum_required(VERSION 3.19)
 
+# Tell CMake to look in cmake for our custom CMake module files.
+set(CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/cmake")
+
+include(SFSOptions)
+
+if(SFS_BUILD_TESTS)
+    list(APPEND VCPKG_MANIFEST_FEATURES "tests")
+endif()
+
 set(CMAKE_TOOLCHAIN_FILE "vcpkg/scripts/buildsystems/vcpkg.cmake")
 
 # By default using x64 static custom triplet for Windows. Can be overridden by
@@ -25,13 +34,6 @@ project(
 
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED True)
-
-option(SFS_BUILD_SAMPLES "Indicates if samples should be built." OFF)
-
-option(
-    SFS_ENABLE_TEST_OVERRIDES
-    "Set SFS_ENABLE_OVERRIDES to ON to enable certain test overrides through environment variables."
-    OFF)
 
 # Use this function to set warning level and warnings as errors for a given
 # target
