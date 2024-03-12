@@ -54,12 +54,12 @@ class SFSClientImpl : public SFSClientInterface
 
     /**
      * @brief Gets the files metadata for a specific version of the specified product
-     * @return vector of File objects for the specific version of the product
+     * @return Vector of File entities for the specific version of the product
      * @throws SFSException if the request fails
      */
-    std::vector<File> GetDownloadInfo(const std::string& product,
-                                      const std::string& version,
-                                      Connection& connection) const override;
+    FileEntities GetDownloadInfo(const std::string& product,
+                                 const std::string& version,
+                                 Connection& connection) const override;
 
     /**
      * @brief Returns a new Connection to be used by the SFSClient to make requests

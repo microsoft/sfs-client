@@ -36,12 +36,30 @@ HashType HashTypeFromString(const std::string& hashType, const ReportingHandler&
     }
 }
 
-void ValidateContentType(const VersionEntity& versionEntity, ContentType expectedType, const ReportingHandler& handler)
+template <typename Entity>
+void ValidateContentType(const Entity& entity, ContentType expectedType, const ReportingHandler& handler)
 {
     THROW_CODE_IF_LOG(Result::ServiceInvalidResponse,
-                      versionEntity.GetContentType() != expectedType,
+                      entity.GetContentType() != expectedType,
                       handler,
                       "Unexpected content type returned by the service");
+}
+
+std::unique_ptr<File> GenericFileEntityToFile(FileEntity&& entity, const ReportingHandler& handler)
+{
+    ValidateContentType(entity, ContentType::Generic, handler);
+
+    std::unordered_map<HashType, std::string> hashes;
+    for (auto& [hashType, hashValue] : entity.hashes)
+    {
+        hashes[HashTypeFromString(hashType, handler)] = std::move(hashValue);
+    }
+
+    std::unique_ptr<File> tmp;
+    THROW_IF_FAILED_LOG(
+        File::Make(std::move(entity.fileId), std::move(entity.url), entity.sizeInBytes, std::move(hashes), tmp),
+        handler);
+    return tmp;
 }
 } // namespace
 
@@ -155,23 +173,39 @@ std::unique_ptr<ContentId> contentutil::GenericVersionEntityToContentId(VersionE
     return tmp;
 }
 
-std::unique_ptr<File> contentutil::FileJsonToObj(const json& file, const ReportingHandler& handler)
+std::unique_ptr<FileEntity> contentutil::ParseJsonToFileEntity(const json& file, const ReportingHandler& handler)
 {
+    // Expected format for a generic file entity:
+    // {
+    //   "FileId": <fileid>,
+    //   "Url": <url>,
+    //   "SizeInBytes": <size>,
+    //   "Hashes": {
+    //     "Sha1": <sha1>,
+    //     "Sha256": <sha2>
+    //   },
+    //   "DeliveryOptimization": {} // ignored, not used by the client.
+    // }
+
+    // TODO #50: Use a different entity once the service supports app content.
+
+    std::unique_ptr<FileEntity> tmp = std::make_unique<GenericFileEntity>();
+
     THROW_INVALID_RESPONSE_IF_NOT(file.is_object(), "File is not a JSON object", handler);
 
     THROW_INVALID_RESPONSE_IF_NOT(file.contains("FileId"), "Missing File.FileId in response", handler);
     THROW_INVALID_RESPONSE_IF_NOT(file["FileId"].is_string(), "File.FileId is not a string", handler);
-    std::string fileId = file["FileId"];
+    tmp->fileId = file["FileId"];
 
     THROW_INVALID_RESPONSE_IF_NOT(file.contains("Url"), "Missing File.Url in response", handler);
     THROW_INVALID_RESPONSE_IF_NOT(file["Url"].is_string(), "File.Url is not a string", handler);
-    std::string url = file["Url"];
+    tmp->url = file["Url"];
 
     THROW_INVALID_RESPONSE_IF_NOT(file.contains("SizeInBytes"), "Missing File.SizeInBytes in response", handler);
     THROW_INVALID_RESPONSE_IF_NOT(file["SizeInBytes"].is_number_unsigned(),
                                   "File.SizeInBytes is not an unsigned number",
                                   handler);
-    uint64_t sizeInBytes = file["SizeInBytes"];
+    tmp->sizeInBytes = file["SizeInBytes"];
 
     THROW_INVALID_RESPONSE_IF_NOT(file.contains("Hashes"), "Missing File.Hashes in response", handler);
     THROW_INVALID_RESPONSE_IF_NOT(file["Hashes"].is_object(), "File.Hashes is not an object", handler);
@@ -179,11 +213,34 @@ std::unique_ptr<File> contentutil::FileJsonToObj(const json& file, const Reporti
     for (const auto& [hashType, hashValue] : file["Hashes"].items())
     {
         THROW_INVALID_RESPONSE_IF_NOT(hashValue.is_string(), "File.Hashes object value is not a string", handler);
-        hashes[HashTypeFromString(hashType, handler)] = hashValue;
+        tmp->hashes[hashType] = hashValue;
     }
 
-    std::unique_ptr<File> tmp;
-    THROW_IF_FAILED_LOG(File::Make(std::move(fileId), std::move(url), sizeInBytes, std::move(hashes), tmp), handler);
+    return tmp;
+}
+
+std::vector<File> contentutil::GenericFileEntitiesToFileVector(FileEntities&& entities, const ReportingHandler& handler)
+{
+    std::vector<File> tmp;
+    for (auto& entity : entities)
+    {
+        tmp.push_back(std::move(*GenericFileEntityToFile(std::move(*entity), handler)));
+    }
+
+    return tmp;
+}
+
+FileEntities contentutil::DownloadInfoResponseToFileEntities(const json& data, const ReportingHandler& handler)
+{
+    // Expected format is an array of FileEntity
+    THROW_INVALID_RESPONSE_IF_NOT(data.is_array(), "Response is not a JSON array", handler);
+
+    FileEntities tmp;
+    for (const auto& fileData : data)
+    {
+        THROW_INVALID_RESPONSE_IF_NOT(fileData.is_object(), "Array element is not a JSON object", handler);
+        tmp.push_back(std::move(ParseJsonToFileEntity(fileData, handler)));
+    }
 
     return tmp;
 }

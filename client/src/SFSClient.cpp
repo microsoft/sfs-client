@@ -72,7 +72,8 @@ try
     auto contentId = GenericVersionEntityToContentId(std::move(*versionEntity), m_impl->GetReportingHandler());
 
     const auto& product = requestParams.productRequests[0].product;
-    auto files = m_impl->GetDownloadInfo(product, contentId->GetVersion(), *connection);
+    auto fileEntities = m_impl->GetDownloadInfo(product, contentId->GetVersion(), *connection);
+    auto files = GenericFileEntitiesToFileVector(std::move(fileEntities), m_impl->GetReportingHandler());
 
     std::unique_ptr<Content> tmp;
     RETURN_IF_FAILED_LOG(Content::Make(std::move(contentId), std::move(files), tmp), m_impl->GetReportingHandler());

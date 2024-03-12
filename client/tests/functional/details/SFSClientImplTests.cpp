@@ -47,13 +47,13 @@ void CheckProducts(const VersionEntities& entities,
     }
 }
 
-void CheckDownloadInfo(const std::vector<File>& files, const std::string& name)
+void CheckDownloadInfo(const FileEntities& files, const std::string& name)
 {
     REQUIRE(files.size() == 2);
-    REQUIRE(files[0].GetFileId() == (name + ".json"));
-    REQUIRE(files[0].GetUrl() == ("http://localhost/1.json"));
-    REQUIRE(files[1].GetFileId() == (name + ".bin"));
-    REQUIRE(files[1].GetUrl() == ("http://localhost/2.bin"));
+    REQUIRE(files[0]->fileId == (name + ".json"));
+    REQUIRE(files[0]->url == ("http://localhost/1.json"));
+    REQUIRE(files[1]->fileId == (name + ".bin"));
+    REQUIRE(files[1]->url == ("http://localhost/2.bin"));
 }
 } // namespace
 
@@ -223,7 +223,7 @@ TEST("Testing class SFSClientImpl()")
     SECTION("Testing SFSClientImpl::GetDownloadInfo()")
     {
         server.RegisterExpectedRequestHeader(HttpHeader::ContentType, "application/json");
-        std::vector<File> files;
+        FileEntities files;
 
         SECTION("Getting 0.0.0.1")
         {
