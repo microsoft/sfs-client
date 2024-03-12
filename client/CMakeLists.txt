@@ -26,6 +26,7 @@ target_sources(
     PRIVATE src/AppContent.cpp
             src/ApplicabilityDetails.cpp
             src/Content.cpp
+            src/ContentId.cpp
             src/details/connection/Connection.cpp
             src/details/connection/ConnectionManager.cpp
             src/details/connection/CurlConnection.cpp
@@ -33,10 +34,10 @@ target_sources(
             src/details/connection/HttpHeader.cpp
             src/details/connection/mock/MockConnection.cpp
             src/details/connection/mock/MockConnectionManager.cpp
-            src/details/entity/FileEntity.cpp
-            src/details/entity/VersionEntity.cpp
             src/details/ContentUtil.cpp
             src/details/CorrelationVector.cpp
+            src/details/entity/FileEntity.cpp
+            src/details/entity/VersionEntity.cpp
             src/details/Env.cpp
             src/details/ErrorHandling.cpp
             src/details/ReportingHandler.cpp
@@ -45,6 +46,7 @@ target_sources(
             src/details/SFSUrlComponents.cpp
             src/details/TestOverride.cpp
             src/details/Util.cpp
+            src/File.cpp
             src/Logging.cpp
             src/Result.cpp
             src/SFSClient.cpp)

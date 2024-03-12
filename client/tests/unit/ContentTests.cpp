@@ -15,16 +15,6 @@ using namespace SFS::details::contentutil;
 
 namespace
 {
-std::unique_ptr<ContentId> GetContentId(const std::string& nameSpace,
-                                        const std::string& name,
-                                        const std::string& version)
-{
-    std::unique_ptr<ContentId> contentId;
-    REQUIRE(ContentId::Make(nameSpace, name, version, contentId) == Result::Success);
-    REQUIRE(contentId != nullptr);
-    return contentId;
-};
-
 std::unique_ptr<File> GetFile(const std::string& fileId,
                               const std::string& url,
                               uint64_t sizeInBytes,
@@ -47,92 +37,6 @@ std::unique_ptr<Content> GetContent(const std::string& contentNameSpace,
     return content;
 };
 } // namespace
-
-TEST("Testing ContentId::Make()")
-{
-    const std::string nameSpace{"myNameSpace"};
-    const std::string name{"myName"};
-    const std::string version{"myVersion"};
-
-    const std::unique_ptr<ContentId> contentId = GetContentId(nameSpace, name, version);
-
-    CHECK(nameSpace == contentId->GetNameSpace());
-    CHECK(name == contentId->GetName());
-    CHECK(version == contentId->GetVersion());
-
-    SECTION("Testing ContentId equality operators")
-    {
-        SECTION("Equal")
-        {
-            auto CompareContentIdEqual = [&contentId](const std::unique_ptr<ContentId>& sameContentId) {
-                REQUIRE((*contentId == *sameContentId));
-                REQUIRE_FALSE((*contentId != *sameContentId));
-            };
-
-            CompareContentIdEqual(GetContentId(nameSpace, name, version));
-        }
-
-        SECTION("Not equal")
-        {
-            auto CompareContentIdNotEqual = [&contentId](const std::unique_ptr<ContentId>& otherContentId) {
-                REQUIRE((*contentId != *otherContentId));
-                REQUIRE_FALSE((*contentId == *otherContentId));
-            };
-
-            CompareContentIdNotEqual(GetContentId("", name, version));
-            CompareContentIdNotEqual(GetContentId(nameSpace, "", version));
-            CompareContentIdNotEqual(GetContentId(nameSpace, name, ""));
-            CompareContentIdNotEqual(GetContentId("", "", ""));
-            CompareContentIdNotEqual(GetContentId("MYNAMESPACE", name, version));
-            CompareContentIdNotEqual(GetContentId(nameSpace, "MYNAME", version));
-            CompareContentIdNotEqual(GetContentId(nameSpace, name, "MYVERSION"));
-        }
-    }
-}
-
-TEST("Testing File::Make()")
-{
-    const std::string fileId{"myFileId"};
-    const std::string url{"myUrl"};
-    const uint64_t sizeInBytes{1234};
-    const std::unordered_map<HashType, std::string> hashes{{HashType::Sha1, "mySha1"}, {HashType::Sha256, "mySha256"}};
-
-    const std::unique_ptr<File> file = GetFile(fileId, url, sizeInBytes, hashes);
-
-    CHECK(fileId == file->GetFileId());
-    CHECK(url == file->GetUrl());
-    CHECK(sizeInBytes == file->GetSizeInBytes());
-    CHECK(hashes == file->GetHashes());
-
-    SECTION("Testing File equality operators")
-    {
-        SECTION("Equal")
-        {
-            auto CompareFileEqual = [&file](const std::unique_ptr<File>& sameFile) {
-                REQUIRE((*file == *sameFile));
-                REQUIRE_FALSE((*file != *sameFile));
-            };
-
-            CompareFileEqual(GetFile(fileId, url, sizeInBytes, hashes));
-        }
-
-        SECTION("Not equal")
-        {
-            auto CompareFileNotEqual = [&file](const std::unique_ptr<File>& otherFile) {
-                REQUIRE((*file != *otherFile));
-                REQUIRE_FALSE((*file == *otherFile));
-            };
-
-            CompareFileNotEqual(GetFile("", url, sizeInBytes, hashes));
-            CompareFileNotEqual(GetFile(fileId, "", sizeInBytes, hashes));
-            CompareFileNotEqual(GetFile(fileId, url, 0, hashes));
-            CompareFileNotEqual(GetFile(fileId, url, sizeInBytes, {}));
-            CompareFileNotEqual(GetFile("", "", 0, {}));
-            CompareFileNotEqual(GetFile("MYFILEID", url, sizeInBytes, hashes));
-            CompareFileNotEqual(GetFile(fileId, "MYURL", sizeInBytes, hashes));
-        }
-    }
-}
 
 TEST_SCENARIO("Testing Content::Make()")
 {

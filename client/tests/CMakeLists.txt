@@ -19,18 +19,20 @@ target_sources(
             mock/MockWebServer.cpp
             unit/AppContentTests.cpp
             unit/ApplicabilityDetailsTests.cpp
+            unit/ContentIdTests.cpp
             unit/ContentTests.cpp
+            unit/details/ContentUtilTests.cpp
+            unit/details/CurlConnectionManagerTests.cpp
+            unit/details/CurlConnectionTests.cpp
             unit/details/entity/FileEntityTests.cpp
             unit/details/entity/VersionEntityTests.cpp
-            unit/details/ContentUtilTests.cpp
             unit/details/EnvTests.cpp
             unit/details/ErrorHandlingTests.cpp
-            unit/details/CurlConnectionTests.cpp
-            unit/details/CurlConnectionManagerTests.cpp
             unit/details/ReportingHandlerTests.cpp
             unit/details/SFSClientImplTests.cpp
             unit/details/TestOverrideTests.cpp
             unit/details/UtilTests.cpp
+            unit/FileTests.cpp
             unit/ResultTests.cpp
             unit/SFSClientTests.cpp
             util/SFSExceptionMatcher.cpp
