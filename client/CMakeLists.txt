@@ -51,7 +51,7 @@ target_include_directories(${PROJECT_NAME} PUBLIC include/sfsclient)
 
 target_link_libraries(${PROJECT_NAME} PRIVATE CURL::libcurl)
 target_link_libraries(${PROJECT_NAME} PRIVATE nlohmann_json::nlohmann_json)
-target_link_libraries(${PROJECT_NAME} PRIVATE microsoft::correlation_vector)
+target_link_libraries(${PROJECT_NAME} PRIVATE unofficial::microsoft::correlation_vector)
 
 # Pick up git revision during configuration to add to logging
 include(FindGit)
