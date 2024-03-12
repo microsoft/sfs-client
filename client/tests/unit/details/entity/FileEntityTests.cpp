@@ -143,4 +143,182 @@ TEST("Testing FileEntity::FromJson()")
             }
         }
     }
+
+    SECTION("App File Entity")
+    {
+        const std::string fileMoniker = "fileMoniker";
+        std::unique_ptr<FileEntity> entity;
+        const std::string arch = "amd64";
+        const std::string applicability = "app";
+        const json applicabilityDetails = {{"Architectures", json::array({arch})},
+                                           {"PlatformApplicabilityForPackage", json::array({applicability})}};
+
+        SECTION("Correct")
+        {
+            const json fileEntity = {{"FileId", fileId},
+                                     {"Url", url},
+                                     {"SizeInBytes", size},
+                                     {"Hashes", {{"Sha1", sha1}, {"Sha256", sha256}}},
+                                     {"FileMoniker", fileMoniker},
+                                     {"ApplicabilityDetails", applicabilityDetails}};
+
+            REQUIRE_NOTHROW(entity = FileEntity::FromJson(fileEntity, handler));
+            REQUIRE(entity != nullptr);
+            REQUIRE(entity->GetContentType() == ContentType::App);
+            REQUIRE(entity->fileId == fileId);
+            REQUIRE(entity->url == url);
+            REQUIRE(entity->sizeInBytes == size);
+            REQUIRE(entity->hashes.size() == 2);
+            REQUIRE(entity->hashes.at("Sha1") == sha1);
+            REQUIRE(entity->hashes.at("Sha256") == sha256);
+
+            AppFileEntity* appEntity = dynamic_cast<AppFileEntity*>(entity.get());
+            REQUIRE(appEntity->fileMoniker == fileMoniker);
+            REQUIRE(appEntity->applicabilityDetails.architectures.size() == 1);
+            REQUIRE(appEntity->applicabilityDetails.architectures[0] == arch);
+            REQUIRE(appEntity->applicabilityDetails.platformApplicabilityForPackage.size() == 1);
+            REQUIRE(appEntity->applicabilityDetails.platformApplicabilityForPackage[0] == applicability);
+        }
+
+        SECTION("Missing fields")
+        {
+            SECTION("Missing ApplicabilityDetails")
+            {
+                const json fileEntity = {{"FileId", fileId},
+                                         {"Url", url},
+                                         {"SizeInBytes", size},
+                                         {"Hashes", {{"Sha1", sha1}, {"Sha256", sha256}}},
+                                         {"FileMoniker", fileMoniker}};
+                REQUIRE_THROWS_CODE_MSG(FileEntity::FromJson(fileEntity, handler),
+                                        ServiceInvalidResponse,
+                                        "Missing File.ApplicabilityDetails in response");
+            }
+
+            SECTION("Missing ApplicabilityDetails.Architectures")
+            {
+                const json wrongApplicabilityDetails = {
+                    {"PlatformApplicabilityForPackage", json::array({applicability})}};
+                const json fileEntity = {{"FileId", fileId},
+                                         {"Url", url},
+                                         {"SizeInBytes", size},
+                                         {"Hashes", {{"Sha1", sha1}, {"Sha256", sha256}}},
+                                         {"FileMoniker", fileMoniker},
+                                         {"ApplicabilityDetails", wrongApplicabilityDetails}};
+                REQUIRE_THROWS_CODE_MSG(FileEntity::FromJson(fileEntity, handler),
+                                        ServiceInvalidResponse,
+                                        "Missing File.ApplicabilityDetails.Architectures in response");
+            }
+
+            SECTION("Missing ApplicabilityDetails.PlatformApplicabilityForPackage")
+            {
+                const json wrongApplicabilityDetails = {{"Architectures", json::array({arch})}};
+                const json fileEntity = {{"FileId", fileId},
+                                         {"Url", url},
+                                         {"SizeInBytes", size},
+                                         {"Hashes", {{"Sha1", sha1}, {"Sha256", sha256}}},
+                                         {"FileMoniker", fileMoniker},
+                                         {"ApplicabilityDetails", wrongApplicabilityDetails}};
+                REQUIRE_THROWS_CODE_MSG(
+                    FileEntity::FromJson(fileEntity, handler),
+                    ServiceInvalidResponse,
+                    "Missing File.ApplicabilityDetails.PlatformApplicabilityForPackage in response");
+            }
+        }
+
+        SECTION("Wrong types")
+        {
+            SECTION("FileMoniker")
+            {
+                const json fileEntity = {{"FileId", fileId},
+                                         {"Url", url},
+                                         {"SizeInBytes", size},
+                                         {"Hashes", {{"Sha1", sha1}, {"Sha256", sha256}}},
+                                         {"FileMoniker", 1},
+                                         {"ApplicabilityDetails", applicabilityDetails}};
+                REQUIRE_THROWS_CODE_MSG(FileEntity::FromJson(fileEntity, handler),
+                                        ServiceInvalidResponse,
+                                        "File.FileMoniker is not a string");
+            }
+
+            SECTION("ApplicabilityDetails")
+            {
+                SECTION("Not an object")
+                {
+                    const json fileEntity = {{"FileId", fileId},
+                                             {"Url", url},
+                                             {"SizeInBytes", size},
+                                             {"Hashes", {{"Sha1", sha1}, {"Sha256", sha256}}},
+                                             {"FileMoniker", fileMoniker},
+                                             {"ApplicabilityDetails", fileId}};
+                    REQUIRE_THROWS_CODE_MSG(FileEntity::FromJson(fileEntity, handler),
+                                            ServiceInvalidResponse,
+                                            "File.ApplicabilityDetails is not an object");
+                }
+
+                SECTION("Architectures is not an array")
+                {
+                    const json wrongApplicabilityDetails = {
+                        {"Architectures", fileId},
+                        {"PlatformApplicabilityForPackage", json::array({applicability})}};
+                    const json fileEntity = {{"FileId", fileId},
+                                             {"Url", url},
+                                             {"SizeInBytes", size},
+                                             {"Hashes", {{"Sha1", sha1}, {"Sha256", sha256}}},
+                                             {"FileMoniker", fileMoniker},
+                                             {"ApplicabilityDetails", wrongApplicabilityDetails}};
+                    REQUIRE_THROWS_CODE_MSG(FileEntity::FromJson(fileEntity, handler),
+                                            ServiceInvalidResponse,
+                                            "File.ApplicabilityDetails.Architectures is not an array");
+                }
+
+                SECTION("Architectures array value is not a string")
+                {
+                    const json wrongApplicabilityDetails = {
+                        {"Architectures", json::array({1})},
+                        {"PlatformApplicabilityForPackage", json::array({applicability})}};
+                    const json fileEntity = {{"FileId", fileId},
+                                             {"Url", url},
+                                             {"SizeInBytes", size},
+                                             {"Hashes", {{"Sha1", sha1}, {"Sha256", sha256}}},
+                                             {"FileMoniker", fileMoniker},
+                                             {"ApplicabilityDetails", wrongApplicabilityDetails}};
+                    REQUIRE_THROWS_CODE_MSG(FileEntity::FromJson(fileEntity, handler),
+                                            ServiceInvalidResponse,
+                                            "File.ApplicabilityDetails.Architectures array value is not a string");
+                }
+
+                SECTION("PlatformApplicabilityForPackage is not an array")
+                {
+                    const json wrongApplicabilityDetails = {{"Architectures", json::array({arch})},
+                                                            {"PlatformApplicabilityForPackage", fileId}};
+                    const json fileEntity = {{"FileId", fileId},
+                                             {"Url", url},
+                                             {"SizeInBytes", size},
+                                             {"Hashes", {{"Sha1", sha1}, {"Sha256", sha256}}},
+                                             {"FileMoniker", fileMoniker},
+                                             {"ApplicabilityDetails", wrongApplicabilityDetails}};
+                    REQUIRE_THROWS_CODE_MSG(
+                        FileEntity::FromJson(fileEntity, handler),
+                        ServiceInvalidResponse,
+                        "File.ApplicabilityDetails.PlatformApplicabilityForPackage is not an array");
+                }
+
+                SECTION("PlatformApplicabilityForPackage array value is not a string")
+                {
+                    const json wrongApplicabilityDetails = {{"Architectures", json::array({arch})},
+                                                            {"PlatformApplicabilityForPackage", json::array({1})}};
+                    const json fileEntity = {{"FileId", fileId},
+                                             {"Url", url},
+                                             {"SizeInBytes", size},
+                                             {"Hashes", {{"Sha1", sha1}, {"Sha256", sha256}}},
+                                             {"FileMoniker", fileMoniker},
+                                             {"ApplicabilityDetails", wrongApplicabilityDetails}};
+                    REQUIRE_THROWS_CODE_MSG(
+                        FileEntity::FromJson(fileEntity, handler),
+                        ServiceInvalidResponse,
+                        "File.ApplicabilityDetails.PlatformApplicabilityForPackage array value is not a string");
+                }
+            }
+        }
+    }
 }

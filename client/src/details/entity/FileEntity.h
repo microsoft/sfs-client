@@ -37,5 +37,19 @@ struct GenericFileEntity : public FileEntity
     ContentType GetContentType() const override;
 };
 
+struct ApplicabilityDetailsEntity
+{
+    std::vector<std::string> architectures;
+    std::vector<std::string> platformApplicabilityForPackage;
+};
+
+struct AppFileEntity : public FileEntity
+{
+    ContentType GetContentType() const override;
+
+    std::string fileMoniker;
+    ApplicabilityDetailsEntity applicabilityDetails;
+};
+
 using FileEntities = std::vector<std::unique_ptr<FileEntity>>;
 } // namespace SFS::details
