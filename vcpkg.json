@@ -11,6 +11,7 @@
     }
   },
   "dependencies": [
+    "correlation-vector-cpp",
     {
       "name": "curl",
       "features": [
@@ -34,6 +35,10 @@
       "version": "0.15.3"
     },
     {
+      "name": "correlation-vector-cpp",
+      "version": "1.0"
+    },
+    {
       "name": "curl",
       "version": "8.4.0"
     },
@@ -47,6 +52,9 @@
     }
   ],
   "vcpkg-configuration": {
+    "overlay-ports": [
+      "./vcpkg-custom-ports"
+    ],
     "overlay-triplets": [
       "./vcpkg-custom-triplets"
     ]
