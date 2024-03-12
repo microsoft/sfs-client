@@ -18,6 +18,7 @@ target_sources(
             functional/SFSClientTests.cpp
             mock/MockWebServer.cpp
             unit/AppContentTests.cpp
+            unit/AppFileTests.cpp
             unit/ApplicabilityDetailsTests.cpp
             unit/ContentIdTests.cpp
             unit/ContentTests.cpp
