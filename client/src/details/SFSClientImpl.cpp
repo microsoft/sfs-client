@@ -79,7 +79,7 @@ VersionEntities ConvertLatestVersionBatchResponseToVersionEntities(const json& d
     VersionEntities entities;
     for (const auto& obj : data)
     {
-        entities.push_back(std::move(ParseJsonToVersionEntity(obj, handler)));
+        entities.push_back(std::move(VersionEntity::FromJson(obj, handler)));
     }
 
     return entities;
@@ -164,7 +164,7 @@ try
     const std::string postResponse{connection.Post(url, body.dump())};
     const json versionResponse = ParseServerMethodStringToJson(postResponse, "GetLatestVersion", m_reportingHandler);
 
-    auto versionEntity = ParseJsonToVersionEntity(versionResponse, m_reportingHandler);
+    auto versionEntity = VersionEntity::FromJson(versionResponse, m_reportingHandler);
     ValidateVersionEntity(*versionEntity, m_nameSpace, product, m_reportingHandler);
 
     LOG_INFO(m_reportingHandler, "Received a response with version %s", versionEntity->contentId.version.c_str());
@@ -227,7 +227,7 @@ try
 
     const json versionResponse = ParseServerMethodStringToJson(getResponse, "GetSpecificVersion", m_reportingHandler);
 
-    auto versionEntity = ParseJsonToVersionEntity(versionResponse, m_reportingHandler);
+    auto versionEntity = VersionEntity::FromJson(versionResponse, m_reportingHandler);
     ValidateVersionEntity(*versionEntity, m_nameSpace, product, m_reportingHandler);
 
     LOG_INFO(m_reportingHandler,

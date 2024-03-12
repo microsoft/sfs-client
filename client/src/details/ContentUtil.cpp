@@ -14,9 +14,6 @@ using namespace SFS::details;
 using namespace SFS::details::util;
 using json = nlohmann::json;
 
-#define THROW_INVALID_RESPONSE_IF_NOT(condition, message, handler)                                                     \
-    THROW_CODE_IF_NOT_LOG(ServiceInvalidResponse, condition, handler, message)
-
 namespace
 {
 HashType HashTypeFromString(const std::string& hashType, const ReportingHandler& handler)
@@ -63,102 +60,6 @@ std::unique_ptr<File> GenericFileEntityToFile(FileEntity&& entity, const Reporti
 }
 } // namespace
 
-std::unique_ptr<VersionEntity> contentutil::ParseJsonToVersionEntity(const nlohmann::json& data,
-                                                                     const ReportingHandler& handler)
-{
-    // Expected format for a generic version entity:
-    // {
-    //   "ContentId": {
-    //     "Namespace": <ns>,
-    //     "Name": <name>,
-    //     "Version": <version>
-    //   }
-    // }
-    //
-    // Expected extra elements for an app version entity:
-    // {
-    //   ...
-    //   "UpdateId": "<id>",
-    //   "Prerequisites": [
-    //     {
-    //       "Namespace": "<ns>",
-    //       "Name": "<name>",
-    //       "Version": "<version>"
-    //     }
-    //   ]
-    // }
-
-    THROW_INVALID_RESPONSE_IF_NOT(data.is_object(), "Response is not a JSON object", handler);
-
-    std::unique_ptr<VersionEntity> tmp;
-    const bool isAppEntity = data.contains("UpdateId");
-    if (isAppEntity)
-    {
-        tmp = std::make_unique<AppVersionEntity>();
-    }
-    else
-    {
-        tmp = std::make_unique<GenericVersionEntity>();
-    }
-
-    THROW_INVALID_RESPONSE_IF_NOT(data.contains("ContentId"), "Missing ContentId in response", handler);
-
-    const auto& contentId = data["ContentId"];
-    THROW_INVALID_RESPONSE_IF_NOT(contentId.is_object(), "ContentId is not a JSON object", handler);
-
-    THROW_INVALID_RESPONSE_IF_NOT(contentId.contains("Namespace"), "Missing ContentId.Namespace in response", handler);
-    THROW_INVALID_RESPONSE_IF_NOT(contentId["Namespace"].is_string(), "ContentId.Namespace is not a string", handler);
-    tmp->contentId.nameSpace = contentId["Namespace"];
-
-    THROW_INVALID_RESPONSE_IF_NOT(contentId.contains("Name"), "Missing ContentId.Name in response", handler);
-    THROW_INVALID_RESPONSE_IF_NOT(contentId["Name"].is_string(), "ContentId.Name is not a string", handler);
-    tmp->contentId.name = contentId["Name"];
-
-    THROW_INVALID_RESPONSE_IF_NOT(contentId.contains("Version"), "Missing ContentId.Version in response", handler);
-    THROW_INVALID_RESPONSE_IF_NOT(contentId["Version"].is_string(), "ContentId.Version is not a string", handler);
-    tmp->contentId.version = contentId["Version"];
-
-    if (isAppEntity)
-    {
-        auto appEntity = dynamic_cast<AppVersionEntity*>(tmp.get());
-
-        THROW_INVALID_RESPONSE_IF_NOT(data["UpdateId"].is_string(), "UpdateId is not a string", handler);
-        appEntity->updateId = data["UpdateId"];
-
-        THROW_INVALID_RESPONSE_IF_NOT(data.contains("Prerequisites"), "Missing Prerequisites in response", handler);
-        THROW_INVALID_RESPONSE_IF_NOT(data["Prerequisites"].is_array(), "Prerequisites is not an array", handler);
-
-        for (const auto& prereq : data["Prerequisites"])
-        {
-            THROW_INVALID_RESPONSE_IF_NOT(prereq.is_object(), "Prerequisite element is not a JSON object", handler);
-
-            GenericVersionEntity prereqEntity;
-            THROW_INVALID_RESPONSE_IF_NOT(prereq.contains("Namespace"),
-                                          "Missing Prerequisite.Namespace in response",
-                                          handler);
-            THROW_INVALID_RESPONSE_IF_NOT(prereq["Namespace"].is_string(),
-                                          "Prerequisite.Namespace is not a string",
-                                          handler);
-            prereqEntity.contentId.nameSpace = prereq["Namespace"];
-
-            THROW_INVALID_RESPONSE_IF_NOT(prereq.contains("Name"), "Missing Prerequisite.Name in response", handler);
-            THROW_INVALID_RESPONSE_IF_NOT(prereq["Name"].is_string(), "Prerequisite.Name is not a string", handler);
-            prereqEntity.contentId.name = prereq["Name"];
-
-            THROW_INVALID_RESPONSE_IF_NOT(prereq.contains("Version"),
-                                          "Missing Prerequisite.Version in response",
-                                          handler);
-            THROW_INVALID_RESPONSE_IF_NOT(prereq["Version"].is_string(),
-                                          "Prerequisite.Version is not a string",
-                                          handler);
-            prereqEntity.contentId.version = prereq["Version"];
-
-            appEntity->prerequisites.push_back(std::move(prereqEntity));
-        }
-    }
-    return tmp;
-}
-
 std::unique_ptr<ContentId> contentutil::GenericVersionEntityToContentId(VersionEntity&& entity,
                                                                         const ReportingHandler& handler)
 {
@@ -170,52 +71,6 @@ std::unique_ptr<ContentId> contentutil::GenericVersionEntityToContentId(VersionE
                                         std::move(entity.contentId.version),
                                         tmp),
                         handler);
-    return tmp;
-}
-
-std::unique_ptr<FileEntity> contentutil::ParseJsonToFileEntity(const json& file, const ReportingHandler& handler)
-{
-    // Expected format for a generic file entity:
-    // {
-    //   "FileId": <fileid>,
-    //   "Url": <url>,
-    //   "SizeInBytes": <size>,
-    //   "Hashes": {
-    //     "Sha1": <sha1>,
-    //     "Sha256": <sha2>
-    //   },
-    //   "DeliveryOptimization": {} // ignored, not used by the client.
-    // }
-
-    // TODO #50: Use a different entity once the service supports app content.
-
-    std::unique_ptr<FileEntity> tmp = std::make_unique<GenericFileEntity>();
-
-    THROW_INVALID_RESPONSE_IF_NOT(file.is_object(), "File is not a JSON object", handler);
-
-    THROW_INVALID_RESPONSE_IF_NOT(file.contains("FileId"), "Missing File.FileId in response", handler);
-    THROW_INVALID_RESPONSE_IF_NOT(file["FileId"].is_string(), "File.FileId is not a string", handler);
-    tmp->fileId = file["FileId"];
-
-    THROW_INVALID_RESPONSE_IF_NOT(file.contains("Url"), "Missing File.Url in response", handler);
-    THROW_INVALID_RESPONSE_IF_NOT(file["Url"].is_string(), "File.Url is not a string", handler);
-    tmp->url = file["Url"];
-
-    THROW_INVALID_RESPONSE_IF_NOT(file.contains("SizeInBytes"), "Missing File.SizeInBytes in response", handler);
-    THROW_INVALID_RESPONSE_IF_NOT(file["SizeInBytes"].is_number_unsigned(),
-                                  "File.SizeInBytes is not an unsigned number",
-                                  handler);
-    tmp->sizeInBytes = file["SizeInBytes"];
-
-    THROW_INVALID_RESPONSE_IF_NOT(file.contains("Hashes"), "Missing File.Hashes in response", handler);
-    THROW_INVALID_RESPONSE_IF_NOT(file["Hashes"].is_object(), "File.Hashes is not an object", handler);
-    std::unordered_map<HashType, std::string> hashes;
-    for (const auto& [hashType, hashValue] : file["Hashes"].items())
-    {
-        THROW_INVALID_RESPONSE_IF_NOT(hashValue.is_string(), "File.Hashes object value is not a string", handler);
-        tmp->hashes[hashType] = hashValue;
-    }
-
     return tmp;
 }
 
@@ -233,13 +88,16 @@ std::vector<File> contentutil::GenericFileEntitiesToFileVector(FileEntities&& en
 FileEntities contentutil::DownloadInfoResponseToFileEntities(const json& data, const ReportingHandler& handler)
 {
     // Expected format is an array of FileEntity
-    THROW_INVALID_RESPONSE_IF_NOT(data.is_array(), "Response is not a JSON array", handler);
+    THROW_CODE_IF_NOT_LOG(ServiceInvalidResponse, data.is_array(), handler, "Response is not a JSON array");
 
     FileEntities tmp;
     for (const auto& fileData : data)
     {
-        THROW_INVALID_RESPONSE_IF_NOT(fileData.is_object(), "Array element is not a JSON object", handler);
-        tmp.push_back(std::move(ParseJsonToFileEntity(fileData, handler)));
+        THROW_CODE_IF_NOT_LOG(ServiceInvalidResponse,
+                              fileData.is_object(),
+                              handler,
+                              "Array element is not a JSON object");
+        tmp.push_back(std::move(FileEntity::FromJson(fileData, handler)));
     }
 
     return tmp;

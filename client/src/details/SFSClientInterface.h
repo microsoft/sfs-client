@@ -7,7 +7,8 @@
 #include "Logging.h"
 #include "ReportingHandler.h"
 #include "RequestParams.h"
-#include "SFSEntities.h"
+#include "entity/FileEntity.h"
+#include "entity/VersionEntity.h"
 
 #include <memory>
 #include <string>
@@ -17,8 +18,6 @@ namespace SFS::details
 class Connection;
 class ConnectionManager;
 struct ConnectionConfig;
-
-using VersionEntities = std::vector<std::unique_ptr<VersionEntity>>;
 
 class SFSClientInterface
 {

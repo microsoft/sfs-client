@@ -5,7 +5,8 @@
 
 #include "AppContent.h"
 #include "Content.h"
-#include "SFSEntities.h"
+#include "entity/FileEntity.h"
+#include "entity/VersionEntity.h"
 
 #include <nlohmann/json_fwd.hpp>
 
@@ -18,13 +19,9 @@ class ReportingHandler;
 namespace contentutil
 {
 //
-// JSON conversion utilities
+// Entity conversion utilities
 //
-
-std::unique_ptr<VersionEntity> ParseJsonToVersionEntity(const nlohmann::json& data, const ReportingHandler& handler);
 std::unique_ptr<ContentId> GenericVersionEntityToContentId(VersionEntity&& entity, const ReportingHandler& handler);
-
-std::unique_ptr<FileEntity> ParseJsonToFileEntity(const nlohmann::json& file, const ReportingHandler& handler);
 std::vector<File> GenericFileEntitiesToFileVector(FileEntities&& entities, const ReportingHandler& handler);
 
 //
