@@ -33,6 +33,8 @@ target_sources(
             src/details/connection/HttpHeader.cpp
             src/details/connection/mock/MockConnection.cpp
             src/details/connection/mock/MockConnectionManager.cpp
+            src/details/entity/FileEntity.cpp
+            src/details/entity/VersionEntity.cpp
             src/details/ContentUtil.cpp
             src/details/CorrelationVector.cpp
             src/details/Env.cpp
