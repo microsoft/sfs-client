@@ -68,6 +68,20 @@ class StatusCodeException : public std::exception
     httplib::StatusCode m_status;
 };
 
+struct App
+{
+    std::string version;
+    std::vector<MockPrerequisite> prerequisites;
+};
+
+struct AppCmp
+{
+    bool operator()(App a, App b) const
+    {
+        return a.version < b.version;
+    }
+};
+
 json GenerateContentIdJsonObject(const std::string& name, const std::string& latestVersion, const std::string& ns)
 {
     // {
@@ -79,6 +93,34 @@ json GenerateContentIdJsonObject(const std::string& name, const std::string& lat
     // }
 
     return {{"ContentId", {{"Namespace", ns}, {"Name", name}, {"Version", latestVersion}}}};
+}
+
+json GenerateGetAppVersionJsonObject(const std::string& name, const App& app, const std::string& ns)
+{
+    // {
+    //   "ContentId": {
+    //     "Namespace": <ns>,
+    //     "Name": <name>,
+    //     "Version": <version>
+    //   },
+    //   "UpdateId": "<id>",
+    //   "Prerequisites": [
+    //     {
+    //       "Namespace": "<ns>",
+    //       "Name": "<name>",
+    //       "Version": "<version>"
+    //     }
+    //   ]
+    // }
+
+    json prereqs = json::array();
+    for (const auto& prereq : app.prerequisites)
+    {
+        prereqs.push_back({{"Namespace", ns}, {"Name", prereq.name}, {"Version", prereq.version}});
+    }
+    return {{"ContentId", {{"Namespace", ns}, {"Name", name}, {"Version", app.version}}},
+            {"UpdateId", "123"},
+            {"Prerequisites", prereqs}};
 }
 
 json GeneratePostDownloadInfo(const std::string& name)
@@ -127,6 +169,67 @@ json GeneratePostDownloadInfo(const std::string& name)
     return response;
 }
 
+json GeneratePostAppDownloadInfo(const std::string& name)
+{
+    // [
+    //   {
+    //     "Url": <url>,
+    //     "FileId": <fileid>,
+    //     "SizeInBytes": <size>,
+    //     "Hashes": {
+    //       "Sha1": <sha1>,
+    //       "Sha256": <sha2>
+    //     },
+    //     "DeliveryOptimization": {
+    //       "CatalogId": <catalogid>,
+    //       "Properties": {
+    //         "IntegrityCheckInfo": {
+    //           "PiecesHashFileUrl": <url>,
+    //           "HashOfHashes": <hash>
+    //         }
+    //       }
+    //     },
+    //     "ApplicabilityDetails": {
+    //       "Architectures": [
+    //         "<arch>"
+    //       ],
+    //       "PlatformApplicabilityForPackage": [
+    //         "<app>"
+    //       ]
+    //     },
+    //     "FileMoniker": "<moniker>"
+    //   }
+    // ]
+
+    // Generating DeliveryOptimizationData to simulate the server response, but it's not being parsed by the Client
+
+    json response;
+    response = json::array();
+    response.push_back({{"Url", "http://localhost/1.json"},
+                        {"FileId", name + ".json"},
+                        {"SizeInBytes", 100},
+                        {"Hashes", {{"Sha1", "123"}, {"Sha256", "456"}}}});
+    response[0]["DeliveryOptimization"] = {{"CatalogId", "789"}};
+    response[0]["DeliveryOptimization"]["Properties"] = {
+        {"IntegrityCheckInfo", {{"PiecesHashFileUrl", "http://localhost/1.json"}, {"HashOfHashes", "abc"}}}};
+    response[0]["ApplicabilityDetails"] = {{"Architectures", {"x86"}},
+                                           {"PlatformApplicabilityForPackage", {"Windows"}}};
+    response[0]["FileMoniker"] = "1.json";
+
+    response.push_back({{"Url", "http://localhost/2.bin"},
+                        {"FileId", name + ".bin"},
+                        {"SizeInBytes", 200},
+                        {"Hashes", {{"Sha1", "421"}, {"Sha256", "132"}}}});
+    response[1]["DeliveryOptimization"] = {{"CatalogId", "14"}};
+    response[1]["DeliveryOptimization"]["Properties"] = {
+        {"IntegrityCheckInfo", {{"PiecesHashFileUrl", "http://localhost/2.bin"}, {"HashOfHashes", "abcd"}}}};
+    response[1]["ApplicabilityDetails"] = {{"Architectures", {"amd64"}},
+                                           {"PlatformApplicabilityForPackage", {"Linux"}}};
+    response[1]["FileMoniker"] = "2.bin";
+
+    return response;
+}
+
 struct BufferedLogData
 {
     std::string message;
@@ -167,6 +270,7 @@ class MockWebServerImpl
     std::string GetUrl() const;
 
     void RegisterProduct(std::string&& name, std::string&& version);
+    void RegisterAppProduct(std::string&& name, std::string&& version, std::vector<MockPrerequisite>&& prerequisites);
     void RegisterExpectedRequestHeader(std::string&& header, std::string&& value);
     void SetForcedHttpErrors(std::queue<HttpCode> forcedErrors);
     void SetResponseHeaders(std::unordered_map<HttpCode, HeaderMap> headersByCode);
@@ -199,6 +303,9 @@ class MockWebServerImpl
 
     using VersionList = std::set<std::string>;
     std::unordered_map<std::string, VersionList> m_products;
+
+    using AppList = std::set<App, AppCmp>;
+    std::unordered_map<std::string, AppList> m_appProducts;
 
     std::unordered_map<std::string, std::string> m_expectedRequestHeaders;
     std::queue<HttpCode> m_forcedHttpErrors;
@@ -237,6 +344,13 @@ std::string MockWebServer::GetBaseUrl() const
 void MockWebServer::RegisterProduct(std::string name, std::string version)
 {
     m_impl->RegisterProduct(std::move(name), std::move(version));
+}
+
+void MockWebServer::RegisterAppProduct(std::string name,
+                                       std::string version,
+                                       std::vector<MockPrerequisite> prerequisites)
+{
+    m_impl->RegisterAppProduct(std::move(name), std::move(version), std::move(prerequisites));
 }
 
 void MockWebServer::RegisterExpectedRequestHeader(HttpHeader header, std::string value)
@@ -346,23 +460,36 @@ void MockWebServerImpl::ConfigurePostLatestVersion()
                 }
             }
 
+            const std::string ns = req.path_params.at("ns");
+
+            json response;
             const std::string& name = req.path_params.at("name");
-            auto it = m_products.find(name);
-            if (it == m_products.end())
+            if (auto it = m_products.find(name); it != m_products.end())
+            {
+                const auto& versions = it->second;
+                if (versions.empty())
+                {
+                    throw StatusCodeException(httplib::StatusCode::InternalServerError_500);
+                }
+
+                const auto& latestVersion = *versions.rbegin();
+                response = GenerateContentIdJsonObject(name, latestVersion, ns);
+            }
+            else if (auto appIt = m_appProducts.find(name); appIt != m_appProducts.end())
+            {
+                const auto& appList = appIt->second;
+                if (appList.empty())
+                {
+                    throw StatusCodeException(httplib::StatusCode::InternalServerError_500);
+                }
+
+                const auto& latestApp = *appList.rbegin();
+                response = GenerateGetAppVersionJsonObject(name, latestApp, ns);
+            }
+            else
             {
                 throw StatusCodeException(httplib::StatusCode::NotFound_404);
             }
-
-            const VersionList& versions = it->second;
-            if (versions.empty())
-            {
-                throw StatusCodeException(httplib::StatusCode::InternalServerError_500);
-            }
-
-            const std::string ns = req.path_params.at("ns");
-            const auto& latestVersion = *versions.rbegin();
-
-            const json response = GenerateContentIdJsonObject(name, latestVersion, ns);
 
             res.set_content(response.dump(), "application/json");
         });
@@ -482,6 +609,8 @@ void MockWebServerImpl::ConfigureGetSpecificVersion()
                 throw StatusCodeException(httplib::StatusCode::InternalServerError_500);
             }
 
+            // TODO: Are apps suppported?
+
             const std::string& version = req.path_params.at("version");
             if (version.empty() || !versions.count(version))
             {
@@ -511,27 +640,55 @@ void MockWebServerImpl::ConfigurePostDownloadInfo()
                 throw StatusCodeException(httplib::StatusCode::NotFound_404);
             }
 
-            const std::string& name = req.path_params.at("name");
-            auto it = m_products.find(name);
-            if (it == m_products.end())
-            {
-                throw StatusCodeException(httplib::StatusCode::NotFound_404);
-            }
-
-            const VersionList& versions = it->second;
-            if (versions.empty())
-            {
-                throw StatusCodeException(httplib::StatusCode::InternalServerError_500);
-            }
-
             const std::string& version = req.path_params.at("version");
-            if (version.empty() || !versions.count(version))
+            if (version.empty())
             {
                 throw StatusCodeException(httplib::StatusCode::NotFound_404);
             }
 
-            // Response is a dummy, doesn't use the version above
-            res.set_content(GeneratePostDownloadInfo(name).dump(), "application/json");
+            json response;
+            const std::string& name = req.path_params.at("name");
+            if (auto it = m_products.find(name); it != m_products.end())
+            {
+                const auto& versions = it->second;
+                if (versions.empty())
+                {
+                    throw StatusCodeException(httplib::StatusCode::InternalServerError_500);
+                }
+
+                if (!versions.count(version))
+                {
+                    throw StatusCodeException(httplib::StatusCode::NotFound_404);
+                }
+
+                // Response is a dummy, doesn't use the version above
+                response = GeneratePostDownloadInfo(name);
+            }
+            else if (auto appIt = m_appProducts.find(name); appIt != m_appProducts.end())
+            {
+                const auto& appList = appIt->second;
+                if (appList.empty())
+                {
+                    throw StatusCodeException(httplib::StatusCode::InternalServerError_500);
+                }
+
+                auto app = std::find_if(appList.begin(), appList.end(), [&](const App& app) {
+                    return app.version == version;
+                });
+                if (app == appList.end())
+                {
+                    throw StatusCodeException(httplib::StatusCode::NotFound_404);
+                }
+
+                // Response is a dummy, doesn't use the version above
+                response = GeneratePostAppDownloadInfo(name);
+            }
+            else
+            {
+                throw StatusCodeException(httplib::StatusCode::NotFound_404);
+            }
+
+            res.set_content(response.dump(), "application/json");
         });
     });
 }
@@ -641,6 +798,17 @@ std::string MockWebServerImpl::GetUrl() const
 void MockWebServerImpl::RegisterProduct(std::string&& name, std::string&& version)
 {
     m_products[std::move(name)].emplace(std::move(version));
+}
+
+void MockWebServerImpl::RegisterAppProduct(std::string&& name,
+                                           std::string&& version,
+                                           std::vector<MockPrerequisite>&& prerequisites)
+{
+    for (const auto& prereq : prerequisites)
+    {
+        m_appProducts[prereq.name].emplace(App{prereq.version, {}});
+    }
+    m_appProducts[std::move(name)].emplace(App{std::move(version), std::move(prerequisites)});
 }
 
 void MockWebServerImpl::RegisterExpectedRequestHeader(std::string&& header, std::string&& value)

@@ -25,6 +25,12 @@ class MockWebServerImpl;
 using HttpCode = int;
 using HeaderMap = std::unordered_map<std::string, std::string>;
 
+struct MockPrerequisite
+{
+    std::string name;
+    std::string version;
+};
+
 class MockWebServer
 {
   public:
@@ -40,6 +46,9 @@ class MockWebServer
 
     /// @brief Registers a product with the server. Will fill the other data with gibberish for testing purposes
     void RegisterProduct(std::string name, std::string version);
+
+    /// @brief Registers an app with the server. Will fill the other data with gibberish for testing purposes
+    void RegisterAppProduct(std::string name, std::string version, std::vector<MockPrerequisite> prerequisites);
 
     /// @brief Registers the expectation of a given header to the present in the request
     void RegisterExpectedRequestHeader(SFS::details::HttpHeader header, std::string value);
