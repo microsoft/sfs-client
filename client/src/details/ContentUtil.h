@@ -5,12 +5,6 @@
 
 #include "AppContent.h"
 #include "Content.h"
-#include "entity/FileEntity.h"
-#include "entity/VersionEntity.h"
-
-#include <nlohmann/json_fwd.hpp>
-
-#include <memory>
 
 namespace SFS::details
 {
@@ -18,18 +12,6 @@ class ReportingHandler;
 
 namespace contentutil
 {
-//
-// Entity conversion utilities
-//
-std::unique_ptr<ContentId> GenericVersionEntityToContentId(VersionEntity&& entity, const ReportingHandler& handler);
-std::vector<File> GenericFileEntitiesToFileVector(FileEntities&& entities, const ReportingHandler& handler);
-
-//
-// SFS API conversion utilities
-//
-
-FileEntities DownloadInfoResponseToFileEntities(const nlohmann::json& data, const ReportingHandler& handler);
-
 //
 // Comparison operators
 //

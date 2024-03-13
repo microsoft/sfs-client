@@ -11,7 +11,11 @@
 
 #include <nlohmann/json_fwd.hpp>
 
-namespace SFS::details
+namespace SFS
+{
+class ContentId;
+
+namespace details
 {
 class ReportingHandler;
 
@@ -33,6 +37,7 @@ struct VersionEntity
     ContentIdEntity contentId;
 
     static std::unique_ptr<VersionEntity> FromJson(const nlohmann::json& data, const ReportingHandler& handler);
+    static std::unique_ptr<ContentId> ToContentId(VersionEntity&& entity, const ReportingHandler& handler);
 };
 
 struct GenericVersionEntity : public VersionEntity
@@ -46,7 +51,11 @@ struct AppVersionEntity : public VersionEntity
 
     std::string updateId;
     std::vector<GenericVersionEntity> prerequisites;
+
+    static AppVersionEntity* GetAppVersionEntityPtr(std::unique_ptr<VersionEntity>& versionEntity,
+                                                    const ReportingHandler& handler);
 };
 
 using VersionEntities = std::vector<std::unique_ptr<VersionEntity>>;
-} // namespace SFS::details
+} // namespace details
+} // namespace SFS

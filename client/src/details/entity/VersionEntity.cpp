@@ -5,12 +5,14 @@
 
 #include "../ErrorHandling.h"
 #include "../ReportingHandler.h"
+#include "ContentId.h"
 
 #include <nlohmann/json.hpp>
 
 #define THROW_INVALID_RESPONSE_IF_NOT(condition, message, handler)                                                     \
     THROW_CODE_IF_NOT_LOG(ServiceInvalidResponse, condition, handler, message)
 
+using namespace SFS;
 using namespace SFS::details;
 using json = nlohmann::json;
 
@@ -109,6 +111,17 @@ std::unique_ptr<VersionEntity> VersionEntity::FromJson(const nlohmann::json& dat
     return tmp;
 }
 
+std::unique_ptr<ContentId> VersionEntity::ToContentId(VersionEntity&& entity, const ReportingHandler& handler)
+{
+    std::unique_ptr<ContentId> tmp;
+    THROW_IF_FAILED_LOG(ContentId::Make(std::move(entity.contentId.nameSpace),
+                                        std::move(entity.contentId.name),
+                                        std::move(entity.contentId.version),
+                                        tmp),
+                        handler);
+    return tmp;
+}
+
 ContentType GenericVersionEntity::GetContentType() const
 {
     return ContentType::Generic;
@@ -117,4 +130,11 @@ ContentType GenericVersionEntity::GetContentType() const
 ContentType AppVersionEntity::GetContentType() const
 {
     return ContentType::App;
+}
+
+AppVersionEntity* AppVersionEntity::GetAppVersionEntityPtr(std::unique_ptr<VersionEntity>& versionEntity,
+                                                           const ReportingHandler& handler)
+{
+    ValidateContentType(versionEntity->GetContentType(), ContentType::App, handler);
+    return dynamic_cast<AppVersionEntity*>(versionEntity.get());
 }

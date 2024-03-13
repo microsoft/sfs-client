@@ -30,7 +30,8 @@ class Result
         NotSet = 0x8000000B,
         OutOfMemory = 0x8000000C,
         ServiceInvalidResponse = 0x8000000D,
-        Unexpected = 0x8000000E,
+        ServiceUnexpectedContentType = 0x8000000E,
+        Unexpected = 0x8000000F,
     };
 
     Result(Code code) noexcept;

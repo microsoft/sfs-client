@@ -22,7 +22,6 @@ target_sources(
             unit/ApplicabilityDetailsTests.cpp
             unit/ContentIdTests.cpp
             unit/ContentTests.cpp
-            unit/details/ContentUtilTests.cpp
             unit/details/CurlConnectionManagerTests.cpp
             unit/details/CurlConnectionTests.cpp
             unit/details/entity/FileEntityTests.cpp
