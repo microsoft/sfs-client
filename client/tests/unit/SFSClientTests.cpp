@@ -6,6 +6,8 @@
 
 #include <catch2/catch_test_macros.hpp>
 
+#include <optional>
+
 #define TEST(...) TEST_CASE("[SFSClientTests] " __VA_ARGS__)
 #define TEST_SCENARIO(...) TEST_CASE("[SFSClientTests] Scenario: " __VA_ARGS__)
 
@@ -13,11 +15,15 @@ using namespace SFS;
 
 namespace
 {
-std::unique_ptr<SFSClient> GetSFSClient()
+std::unique_ptr<SFSClient> GetSFSClient(std::optional<std::string> instanceId = std::nullopt)
 {
     std::unique_ptr<SFSClient> sfsClient;
     ClientConfig options;
     options.accountId = "testAccountId";
+    if (instanceId)
+    {
+        options.instanceId = *instanceId;
+    }
     REQUIRE(SFSClient::Make(options, sfsClient) == Result::Success);
     REQUIRE(sfsClient != nullptr);
     return sfsClient;
@@ -251,6 +257,77 @@ TEST("Testing SFSClient::GetLatestDownloadInfo()")
         result = sfsClient->GetLatestDownloadInfo(params, content);
         REQUIRE(result.GetCode() == Result::InvalidArg);
         REQUIRE(result.GetMsg().find("baseCV is not a valid correlation vector:") == 0);
+        REQUIRE(content == nullptr);
+    }
+}
+
+TEST("Testing SFSClient::GetAppLatestDownloadInfo()")
+{
+    SECTION("With storeapps instance")
+    {
+        auto sfsClient = GetSFSClient("storeapps");
+        std::unique_ptr<AppContent> content;
+        RequestParams params;
+
+        SECTION("Does not allow an empty product")
+        {
+            params.productRequests = {{"", {}}};
+            auto result = sfsClient->GetLatestAppDownloadInfo(params, content);
+            REQUIRE(result.GetCode() == Result::InvalidArg);
+            REQUIRE(result.GetMsg() == "product cannot be empty");
+            REQUIRE(content == nullptr);
+
+            const TargetingAttributes attributes{{"attr1", "value"}};
+            params.productRequests = {{"", attributes}};
+            result = sfsClient->GetLatestAppDownloadInfo(params, content);
+            REQUIRE(result.GetCode() == Result::InvalidArg);
+            REQUIRE(result.GetMsg() == "product cannot be empty");
+            REQUIRE(content == nullptr);
+        }
+
+        SECTION("Does not allow an empty request")
+        {
+            auto result = sfsClient->GetLatestAppDownloadInfo(params, content);
+            REQUIRE(result.GetCode() == Result::InvalidArg);
+            REQUIRE(result.GetMsg() == "productRequests cannot be empty");
+            REQUIRE(content == nullptr);
+        }
+
+        SECTION("Accepting multiple products is not implemented yet")
+        {
+            params.productRequests = {{"p1", {}}, {"p2", {}}};
+            auto result = sfsClient->GetLatestAppDownloadInfo(params, content);
+            REQUIRE(result.GetCode() == Result::NotImpl);
+            REQUIRE(result.GetMsg() == "There cannot be more than 1 productRequest at the moment");
+            REQUIRE(content == nullptr);
+        }
+
+        SECTION("Fails if base cv is not correct")
+        {
+            params.productRequests = {{"p1", {}}};
+            params.baseCV = "";
+            auto result = sfsClient->GetLatestAppDownloadInfo(params, content);
+            REQUIRE(result.GetCode() == Result::InvalidArg);
+            REQUIRE(result.GetMsg() == "cv must not be empty");
+            REQUIRE(content == nullptr);
+
+            params.baseCV = "cv";
+            result = sfsClient->GetLatestAppDownloadInfo(params, content);
+            REQUIRE(result.GetCode() == Result::InvalidArg);
+            REQUIRE(result.GetMsg().find("baseCV is not a valid correlation vector:") == 0);
+            REQUIRE(content == nullptr);
+        }
+    }
+
+    SECTION("Fails if not storeapps instanceId")
+    {
+        auto sfsClient = GetSFSClient("testInstanceId");
+        std::unique_ptr<AppContent> content;
+        RequestParams params;
+        params.productRequests = {{"a", {}}};
+        auto result = sfsClient->GetLatestAppDownloadInfo(params, content);
+        REQUIRE(result.GetCode() == Result::Unexpected);
+        REQUIRE(result.GetMsg() == "At this moment only the \"storeapps\" instanceId can send app requests");
         REQUIRE(content == nullptr);
     }
 }

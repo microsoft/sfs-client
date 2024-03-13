@@ -24,10 +24,10 @@ const std::string c_nextVersion = "0.0.2";
 
 namespace
 {
-void CheckContentId(const ContentId& contentId, const std::string& version)
+void CheckContentId(const ContentId& contentId, const std::string& name, const std::string& version)
 {
     REQUIRE(contentId.GetNameSpace() == c_namespace);
-    REQUIRE(contentId.GetName() == c_productName);
+    REQUIRE(contentId.GetName() == name);
     REQUIRE(contentId.GetVersion() == version);
 }
 
@@ -40,10 +40,44 @@ void CheckFiles(const std::vector<File>& files)
     REQUIRE(files[1].GetUrl() == ("http://localhost/2.bin"));
 }
 
+void CheckAppFiles(const std::vector<AppFile>& files, const std::string& name)
+{
+    REQUIRE(files.size() == 2);
+    REQUIRE(files[0].GetFileId() == (name + ".json"));
+    REQUIRE(files[0].GetUrl() == ("http://localhost/1.json"));
+    REQUIRE_FALSE(files[0].GetFileMoniker().empty());
+    REQUIRE_FALSE(files[0].GetApplicabilityDetails().GetArchitectures().empty());
+    REQUIRE_FALSE(files[0].GetApplicabilityDetails().GetPlatformApplicabilityForPackage().empty());
+    REQUIRE(files[1].GetFileId() == (name + ".bin"));
+    REQUIRE(files[1].GetUrl() == ("http://localhost/2.bin"));
+    REQUIRE_FALSE(files[1].GetFileMoniker().empty());
+    REQUIRE_FALSE(files[1].GetApplicabilityDetails().GetArchitectures().empty());
+    REQUIRE_FALSE(files[1].GetApplicabilityDetails().GetPlatformApplicabilityForPackage().empty());
+}
+
 void CheckMockContent(const Content& content, const std::string& version)
 {
-    CheckContentId(content.GetContentId(), version);
+    CheckContentId(content.GetContentId(), c_productName, version);
     CheckFiles(content.GetFiles());
+}
+
+void CheckMockAppContent(const AppContent& content,
+                         const std::string& version,
+                         const std::vector<MockPrerequisite> mockPrereqs)
+{
+    CheckContentId(content.GetContentId(), c_productName, version);
+    REQUIRE_FALSE(content.GetUpdateId().empty());
+    CheckAppFiles(content.GetFiles(), c_productName);
+
+    REQUIRE(content.GetPrerequisites().size() == mockPrereqs.size());
+    for (size_t i = 0; i < mockPrereqs.size(); ++i)
+    {
+        const auto& prereq = content.GetPrerequisites()[i];
+        const auto& mockPrereq = mockPrereqs[i];
+        CheckContentId(prereq.GetContentId(), mockPrereq.name, mockPrereq.version);
+
+        CheckAppFiles(prereq.GetFiles(), mockPrereq.name);
+    }
 }
 } // namespace
 
@@ -108,6 +142,107 @@ TEST("Testing SFSClient::GetLatestDownloadInfo()")
             REQUIRE(content);
             CheckMockContent(*content, c_nextVersion);
         }
+    }
+}
+
+TEST("Testing SFSClient::GetLatestAppDownloadInfo()")
+{
+    if (!AreTestOverridesAllowed())
+    {
+        return;
+    }
+
+    test::MockWebServer server;
+    ScopedTestOverride override(TestOverride::BaseUrl, server.GetBaseUrl());
+
+    const std::string prereq1 = "prereq1";
+    const std::string prereq1Version = "1.0";
+    const std::string prereq2 = "prereq2";
+    const std::string prereq2Version = "2.0";
+
+    std::unique_ptr<SFSClient> sfsClient;
+    REQUIRE(SFSClient::Make({"testAccountId", "storeapps", c_namespace, LogCallbackToTest}, sfsClient) ==
+            Result::Success);
+    REQUIRE(sfsClient != nullptr);
+
+    SECTION("App products")
+    {
+        auto CheckApp = [&](const std::vector<MockPrerequisite>& mockPrereqs) {
+            server.RegisterAppProduct(c_productName, c_version, mockPrereqs);
+
+            std::unique_ptr<AppContent> content;
+
+            RequestParams params;
+            params.baseCV = "aaaaaaaaaaaaaaaa.1";
+            SECTION("No attributes")
+            {
+                params.productRequests = {{c_productName, {}}};
+                REQUIRE(sfsClient->GetLatestAppDownloadInfo(params, content) == Result::Success);
+                REQUIRE(content);
+                CheckMockAppContent(*content, c_version, mockPrereqs);
+            }
+
+            SECTION("With attributes")
+            {
+                const TargetingAttributes attributes{{"attr1", "value"}};
+                params.productRequests = {{c_productName, attributes}};
+                REQUIRE(sfsClient->GetLatestAppDownloadInfo(params, content) == Result::Success);
+                REQUIRE(content);
+                CheckMockAppContent(*content, c_version, mockPrereqs);
+            }
+
+            SECTION("Wrong product name")
+            {
+                params.productRequests = {{"badName", {}}};
+                REQUIRE(sfsClient->GetLatestAppDownloadInfo(params, content) == Result::HttpNotFound);
+                REQUIRE(!content);
+
+                const TargetingAttributes attributes{{"attr1", "value"}};
+                params.productRequests = {{"badName", attributes}};
+                REQUIRE(sfsClient->GetLatestAppDownloadInfo(params, content) == Result::HttpNotFound);
+                REQUIRE(!content);
+            }
+
+            SECTION("Adding new version")
+            {
+                server.RegisterAppProduct(c_productName, c_nextVersion, mockPrereqs);
+
+                params.productRequests = {{c_productName, {}}};
+                REQUIRE(sfsClient->GetLatestAppDownloadInfo(params, content) == Result::Success);
+                REQUIRE(content);
+                CheckMockAppContent(*content, c_nextVersion, mockPrereqs);
+            }
+        };
+
+        SECTION("No prerequisites")
+        {
+            CheckApp({});
+        }
+
+        SECTION("1 prereq")
+        {
+            CheckApp({{prereq1, prereq1Version}});
+        }
+
+        SECTION("2 prereqs")
+        {
+            CheckApp({{prereq1, prereq1Version}, {prereq2, prereq2Version}});
+        }
+    }
+
+    SECTION("Non-app products")
+    {
+        server.RegisterProduct(c_productName, c_version);
+
+        std::unique_ptr<AppContent> content;
+
+        RequestParams params;
+        params.productRequests = {{c_productName, {}}};
+        auto result = sfsClient->GetLatestAppDownloadInfo(params, content);
+        REQUIRE(result.GetCode() == Result::ServiceUnexpectedContentType);
+        REQUIRE(result.GetMsg() ==
+                "Unexpected content type [Generic] returned by the service does not match the expected [App]");
+        REQUIRE(!content);
     }
 }
 
