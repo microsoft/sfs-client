@@ -84,16 +84,6 @@ try
 }
 SFS_CATCH_RETURN()
 
-Result SFSClient::GetApplicabilityDetails(
-    [[maybe_unused]] const Content& content,
-    [[maybe_unused]] std::unique_ptr<ApplicabilityDetails>& details) const noexcept
-try
-{
-    // return m_impl->GetApplicabilityDetails(...);
-    return Result::NotImpl;
-}
-SFS_CATCH_RETURN()
-
 const char* SFSClient::GetVersion() noexcept
 {
 #ifdef SFS_GIT_INFO
