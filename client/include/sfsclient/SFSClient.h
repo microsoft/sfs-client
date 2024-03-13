@@ -16,8 +16,6 @@
 
 namespace SFS
 {
-class ApplicabilityDetails;
-
 namespace details
 {
 class SFSClientInterface;
@@ -55,20 +53,6 @@ class SFSClient
      */
     [[nodiscard]] Result GetLatestDownloadInfo(const RequestParams& requestParams,
                                                std::unique_ptr<Content>& content) const noexcept;
-
-    //
-    // API to retrieve optional extra download information from the SFS Service
-    //
-
-    /**
-     * @brief Retrieve Applicability details for a given piece of content, if existing
-     * @details If the Applicability details are not available, the result code will be set to Result::NotSet
-     * and the param details will not be modified
-     * @param content A content object that was returned from a previous call to GetDownloadInfo
-     * @param data A ApplicabilityDetails object that is populated with the result
-     */
-    [[nodiscard]] Result GetApplicabilityDetails(const Content& content,
-                                                 std::unique_ptr<ApplicabilityDetails>& details) const noexcept;
 
     /**
      * @return The version of the SFSClient library

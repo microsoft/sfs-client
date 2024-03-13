@@ -254,20 +254,3 @@ TEST("Testing SFSClient::GetLatestDownloadInfo()")
         REQUIRE(content == nullptr);
     }
 }
-
-TEST_SCENARIO("Testing SFSClient::GetApplicabilityDetails()")
-{
-    GIVEN("An SFSClient")
-    {
-        auto sfsClient = GetSFSClient();
-
-        THEN("SFSClient::GetApplicabilityDetails() is not implemented")
-        {
-            const TargetingAttributes attributes{{"attr1", "value"}};
-
-            std::unique_ptr<Content> content;
-            std::unique_ptr<ApplicabilityDetails> details;
-            REQUIRE(sfsClient->GetApplicabilityDetails(*content, details) == Result::NotImpl);
-        }
-    }
-}
