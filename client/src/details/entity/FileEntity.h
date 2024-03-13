@@ -12,7 +12,12 @@
 
 #include <nlohmann/json_fwd.hpp>
 
-namespace SFS::details
+namespace SFS
+{
+class File;
+class AppFile;
+
+namespace details
 {
 class ReportingHandler;
 
@@ -32,9 +37,14 @@ struct FileEntity
     static std::unique_ptr<FileEntity> FromJson(const nlohmann::json& file, const ReportingHandler& handler);
 };
 
+using FileEntities = std::vector<std::unique_ptr<FileEntity>>;
+
 struct GenericFileEntity : public FileEntity
 {
     ContentType GetContentType() const override;
+
+    static std::unique_ptr<File> ToFile(FileEntity&& entity, const ReportingHandler& handler);
+    static std::vector<File> FileEntitiesToFileVector(FileEntities&& entities, const ReportingHandler& handler);
 };
 
 struct ApplicabilityDetailsEntity
@@ -49,7 +59,10 @@ struct AppFileEntity : public FileEntity
 
     std::string fileMoniker;
     ApplicabilityDetailsEntity applicabilityDetails;
+
+    static std::unique_ptr<AppFile> ToAppFile(FileEntity&& entity, const ReportingHandler& handler);
+    static std::vector<AppFile> FileEntitiesToAppFileVector(FileEntities&& entities, const ReportingHandler& handler);
 };
 
-using FileEntities = std::vector<std::unique_ptr<FileEntity>>;
-} // namespace SFS::details
+} // namespace details
+} // namespace SFS

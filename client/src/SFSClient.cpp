@@ -69,11 +69,11 @@ try
     const auto connection = m_impl->MakeConnection(connectionConfig);
 
     auto versionEntity = m_impl->GetLatestVersion(requestParams.productRequests[0], *connection);
-    auto contentId = GenericVersionEntityToContentId(std::move(*versionEntity), m_impl->GetReportingHandler());
+    auto contentId = VersionEntity::ToContentId(std::move(*versionEntity), m_impl->GetReportingHandler());
 
     const auto& product = requestParams.productRequests[0].product;
     auto fileEntities = m_impl->GetDownloadInfo(product, contentId->GetVersion(), *connection);
-    auto files = GenericFileEntitiesToFileVector(std::move(fileEntities), m_impl->GetReportingHandler());
+    auto files = GenericFileEntity::FileEntitiesToFileVector(std::move(fileEntities), m_impl->GetReportingHandler());
 
     std::unique_ptr<Content> tmp;
     RETURN_IF_FAILED_LOG(Content::Make(std::move(contentId), std::move(files), tmp), m_impl->GetReportingHandler());

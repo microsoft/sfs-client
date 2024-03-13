@@ -29,6 +29,7 @@ target_sources(
             src/details/connection/mock/MockConnectionManager.cpp
             src/details/ContentUtil.cpp
             src/details/CorrelationVector.cpp
+            src/details/entity/ContentType.cpp
             src/details/entity/FileEntity.cpp
             src/details/entity/VersionEntity.cpp
             src/details/Env.cpp

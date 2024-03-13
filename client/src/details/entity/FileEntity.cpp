@@ -5,14 +5,68 @@
 
 #include "../ErrorHandling.h"
 #include "../ReportingHandler.h"
+#include "../Util.h"
+#include "AppFile.h"
+#include "File.h"
 
 #include <nlohmann/json.hpp>
 
 #define THROW_INVALID_RESPONSE_IF_NOT(condition, message, handler)                                                     \
     THROW_CODE_IF_NOT_LOG(ServiceInvalidResponse, condition, handler, message)
 
+using namespace SFS;
 using namespace SFS::details;
+using namespace SFS::details::util;
 using json = nlohmann::json;
+
+namespace
+{
+HashType HashTypeFromString(const std::string& hashType, const ReportingHandler& handler)
+{
+    if (AreEqualI(hashType, "Sha1"))
+    {
+        return HashType::Sha1;
+    }
+    else if (AreEqualI(hashType, "Sha256"))
+    {
+        return HashType::Sha256;
+    }
+    else
+    {
+        THROW_LOG(Result(Result::Unexpected, "Unknown hash type: " + hashType), handler);
+        return HashType::Sha1; // Unreachable code, but the compiler doesn't know that.
+    }
+}
+
+Architecture ArchitectureFromString(const std::string& arch, const ReportingHandler& handler)
+{
+    if (AreEqualI(arch, "None"))
+    {
+        return Architecture::None;
+    }
+    else if (AreEqualI(arch, "x86"))
+    {
+        return Architecture::x86;
+    }
+    else if (AreEqualI(arch, "amd64"))
+    {
+        return Architecture::Amd64;
+    }
+    else if (AreEqualI(arch, "arm"))
+    {
+        return Architecture::Arm;
+    }
+    else if (AreEqualI(arch, "arm64"))
+    {
+        return Architecture::Arm64;
+    }
+    else
+    {
+        THROW_LOG(Result(Result::Unexpected, "Unknown architecture: " + arch), handler);
+        return Architecture::None; // Unreachable code, but the compiler doesn't know that.
+    }
+}
+} // namespace
 
 std::unique_ptr<FileEntity> FileEntity::FromJson(const nlohmann::json& file, const ReportingHandler& handler)
 {
@@ -130,7 +184,78 @@ ContentType GenericFileEntity::GetContentType() const
     return ContentType::Generic;
 }
 
+std::unique_ptr<File> GenericFileEntity::ToFile(FileEntity&& entity, const ReportingHandler& handler)
+{
+    ValidateContentType(entity.GetContentType(), ContentType::Generic, handler);
+
+    std::unordered_map<HashType, std::string> hashes;
+    for (auto& [hashType, hashValue] : entity.hashes)
+    {
+        hashes[HashTypeFromString(hashType, handler)] = std::move(hashValue);
+    }
+
+    std::unique_ptr<File> tmp;
+    THROW_IF_FAILED_LOG(
+        File::Make(std::move(entity.fileId), std::move(entity.url), entity.sizeInBytes, std::move(hashes), tmp),
+        handler);
+    return tmp;
+}
+
+std::vector<File> GenericFileEntity::FileEntitiesToFileVector(FileEntities&& entities, const ReportingHandler& handler)
+{
+    std::vector<File> tmp;
+    for (auto& entity : entities)
+    {
+        tmp.push_back(std::move(*GenericFileEntity::ToFile(std::move(*entity), handler)));
+    }
+
+    return tmp;
+}
+
 ContentType AppFileEntity::GetContentType() const
 {
     return ContentType::App;
+}
+
+std::unique_ptr<AppFile> AppFileEntity::ToAppFile(FileEntity&& entity, const ReportingHandler& handler)
+{
+    ValidateContentType(entity.GetContentType(), ContentType::App, handler);
+
+    auto appEntity = dynamic_cast<AppFileEntity&&>(entity);
+
+    std::unordered_map<HashType, std::string> hashes;
+    for (auto& [hashType, hashValue] : appEntity.hashes)
+    {
+        hashes[HashTypeFromString(hashType, handler)] = std::move(hashValue);
+    }
+
+    std::vector<Architecture> architectures;
+    for (auto& arch : appEntity.applicabilityDetails.architectures)
+    {
+        architectures.push_back(ArchitectureFromString(arch, handler));
+    }
+
+    std::unique_ptr<AppFile> tmp;
+    THROW_IF_FAILED_LOG(AppFile::Make(std::move(appEntity.fileId),
+                                      std::move(appEntity.url),
+                                      appEntity.sizeInBytes,
+                                      std::move(hashes),
+                                      std::move(architectures),
+                                      std::move(appEntity.applicabilityDetails.platformApplicabilityForPackage),
+                                      std::move(appEntity.fileMoniker),
+                                      tmp),
+                        handler);
+    return tmp;
+}
+
+std::vector<AppFile> AppFileEntity::FileEntitiesToAppFileVector(std::vector<std::unique_ptr<FileEntity>>&& entities,
+                                                                const ReportingHandler& handler)
+{
+    std::vector<AppFile> tmp;
+    for (auto& entity : entities)
+    {
+        tmp.push_back(std::move(*AppFileEntity::ToAppFile(std::move(*entity), handler)));
+    }
+
+    return tmp;
 }

@@ -5,9 +5,13 @@
 
 namespace SFS::details
 {
+class ReportingHandler;
+
 enum class ContentType
 {
     Generic,
     App,
 };
+
+void ValidateContentType(ContentType currentType, ContentType expectedType, const ReportingHandler& handler);
 } // namespace SFS::details

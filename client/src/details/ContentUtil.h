@@ -19,12 +19,6 @@ class ReportingHandler;
 namespace contentutil
 {
 //
-// Entity conversion utilities
-//
-std::unique_ptr<ContentId> GenericVersionEntityToContentId(VersionEntity&& entity, const ReportingHandler& handler);
-std::vector<File> GenericFileEntitiesToFileVector(FileEntities&& entities, const ReportingHandler& handler);
-
-//
 // SFS API conversion utilities
 //
 
