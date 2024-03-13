@@ -78,6 +78,8 @@ Available build options:
 | -BuildTests <bool>   | --build-tests {ON, OFF}   | Use this to build tests alongside the library. On by default.                            |
 | -BuildSamples <bool> | --build-samples {ON, OFF} | Use this to build samples alongside the library. On by default.                          |
 
+See [below](#building-with-cmake-vscode-extension) for building within VSCode.
+
 ## VSCode
 
 [Visual Studio Code](https://code.visualstudio.com) is the recommended editor to work with this project.
@@ -121,6 +123,18 @@ Adding the following to your workspace settings.json will make CMake Tools autom
   }
 }
 ```
+
+### Building with CMake VSCode extension
+
+If you're using the CMake Tools extension on VSCode, you can set the build options through the VSCode settings. Add something like below to either your user or workspace JSON settings to get a default value for an option. You can also later use the command "Edit CMake Cache (UI)" for visual editing.
+
+```json
+"cmake.configureArgs": [
+    "-DSFS_CLIENT_TEST_OVERRIDES=ON"
+]
+```
+
+See [SFSOptions.cmake](cmake/SFSOptions.cmake) for the CMake options available for the library.
 
 ## Testing
 
