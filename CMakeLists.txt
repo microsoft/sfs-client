@@ -28,7 +28,7 @@ endif()
 set(SFS_LIBRARY_VERSION "0.1.0")
 
 project(
-    SFSClient
+    sfsclient
     VERSION ${SFS_LIBRARY_VERSION}
     LANGUAGES CXX)
 
