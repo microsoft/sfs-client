@@ -290,10 +290,7 @@ try
 
     // TODO #50: Adapt retrieval to storeapps flow with pre-requisites once that is implemented server-side
 
-    ConnectionConfig connectionConfig;
-    connectionConfig.maxRetries = requestParams.retryOnError ? c_maxRetries : 0;
-    connectionConfig.baseCV = requestParams.baseCV;
-    const auto connection = MakeConnection(connectionConfig);
+    const auto connection = MakeConnection(ConnectionConfig(requestParams));
 
     auto versionEntity = GetLatestVersion(requestParams.productRequests[0], *connection);
     auto contentId = VersionEntity::ToContentId(std::move(*versionEntity), m_reportingHandler);

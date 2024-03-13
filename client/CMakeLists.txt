@@ -21,6 +21,7 @@ target_sources(
             src/Content.cpp
             src/ContentId.cpp
             src/details/connection/Connection.cpp
+            src/details/connection/ConnectionConfig.cpp
             src/details/connection/ConnectionManager.cpp
             src/details/connection/CurlConnection.cpp
             src/details/connection/CurlConnectionManager.cpp
