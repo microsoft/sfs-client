@@ -24,6 +24,17 @@ class SFSClientImpl : public SFSClientInterface
     ~SFSClientImpl() override = default;
 
     //
+    // Combined API calls for retrieval of metadata & download URLs
+    //
+
+    /**
+     * @brief Retrieve combined metadata & download URLs from the latest version of specified products
+     * @note At the moment only a single product request is supported
+     * @param requestParams Parameters that define this request
+     */
+    std::unique_ptr<Content> GetLatestDownloadInfo(const RequestParams& requestParams) const override;
+
+    //
     // Individual APIs 1:1 with service endpoints (SFSClientInterface)
     //
 
@@ -65,7 +76,7 @@ class SFSClientImpl : public SFSClientInterface
      * @brief Returns a new Connection to be used by the SFSClient to make requests
      * @param config Configurations for the connection object
      */
-    std::unique_ptr<Connection> MakeConnection(const ConnectionConfig& config) override;
+    std::unique_ptr<Connection> MakeConnection(const ConnectionConfig& config) const override;
 
     //
     // Configuration methods

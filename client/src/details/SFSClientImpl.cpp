@@ -3,6 +3,7 @@
 
 #include "SFSClientImpl.h"
 
+#include "Content.h"
 #include "ErrorHandling.h"
 #include "Logging.h"
 #include "SFSUrlComponents.h"
@@ -123,6 +124,22 @@ void ValidateBatchVersionEntity(const VersionEntities& versionEntities,
                  "Received a response for product [%s] with version %s",
                  entity->contentId.name.c_str(),
                  entity->contentId.version.c_str());
+    }
+}
+
+void ValidateRequestParams(const RequestParams& requestParams, const ReportingHandler& handler)
+{
+    THROW_CODE_IF_LOG(InvalidArg, requestParams.productRequests.empty(), handler, "productRequests cannot be empty");
+
+    // TODO #78: Add support for multiple product requests
+    THROW_CODE_IF_LOG(NotImpl,
+                      requestParams.productRequests.size() > 1,
+                      handler,
+                      "There cannot be more than 1 productRequest at the moment");
+
+    for (const auto& [product, _] : requestParams.productRequests)
+    {
+        THROW_CODE_IF_LOG(InvalidArg, product.empty(), handler, "product cannot be empty");
     }
 }
 } // namespace
@@ -265,7 +282,35 @@ try
 SFS_CATCH_LOG_RETHROW(m_reportingHandler)
 
 template <typename ConnectionManagerT>
-std::unique_ptr<Connection> SFSClientImpl<ConnectionManagerT>::MakeConnection(const ConnectionConfig& config)
+std::unique_ptr<Content> SFSClientImpl<ConnectionManagerT>::GetLatestDownloadInfo(
+    const RequestParams& requestParams) const
+try
+{
+    ValidateRequestParams(requestParams, m_reportingHandler);
+
+    // TODO #50: Adapt retrieval to storeapps flow with pre-requisites once that is implemented server-side
+
+    ConnectionConfig connectionConfig;
+    connectionConfig.maxRetries = requestParams.retryOnError ? c_maxRetries : 0;
+    connectionConfig.baseCV = requestParams.baseCV;
+    const auto connection = MakeConnection(connectionConfig);
+
+    auto versionEntity = GetLatestVersion(requestParams.productRequests[0], *connection);
+    auto contentId = VersionEntity::ToContentId(std::move(*versionEntity), m_reportingHandler);
+
+    const auto& product = requestParams.productRequests[0].product;
+    auto fileEntities = GetDownloadInfo(product, contentId->GetVersion(), *connection);
+    auto files = GenericFileEntity::FileEntitiesToFileVector(std::move(fileEntities), m_reportingHandler);
+
+    std::unique_ptr<Content> content;
+    THROW_IF_FAILED_LOG(Content::Make(std::move(contentId), std::move(files), content), m_reportingHandler);
+
+    return content;
+}
+SFS_CATCH_LOG_RETHROW(m_reportingHandler)
+
+template <typename ConnectionManagerT>
+std::unique_ptr<Connection> SFSClientImpl<ConnectionManagerT>::MakeConnection(const ConnectionConfig& config) const
 {
     return m_connectionManager->MakeConnection(config);
 }
