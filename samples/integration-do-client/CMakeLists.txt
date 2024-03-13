@@ -14,31 +14,37 @@ if(NOT DEFINED CMAKE_BUILD_TYPE)
     set(CMAKE_BUILD_TYPE debug)
 endif()
 
-if (MSVC)
+if(MSVC)
     set(DO_PATCH_COMMAND "")
 else()
     # Populate LSB_RELEASE_ID_SHORT with the linux distro if available
     find_program(LSB_RELEASE_EXEC lsb_release)
-    execute_process(COMMAND ${LSB_RELEASE_EXEC} -is
+    execute_process(
+        COMMAND ${LSB_RELEASE_EXEC} -is
         OUTPUT_VARIABLE LSB_RELEASE_ID_SHORT
-        OUTPUT_STRIP_TRAILING_WHITESPACE
-    )
+        OUTPUT_STRIP_TRAILING_WHITESPACE)
 
-    if (LSB_RELEASE_ID_SHORT STREQUAL "Ubuntu")
+    if(LSB_RELEASE_ID_SHORT STREQUAL "Ubuntu")
         # 1. Run bootstrap script to install Linux dependencies
         # 2. Build & install DO Agent, which acts as a service for the REST API
-        set(DO_PATCH_COMMAND cd <SOURCE_DIR> && sudo ./build/scripts/bootstrap.sh --install build && python3 ./build/build.py --project agent --package-for deb && cd /tmp/build-deliveryoptimization-agent/linux-debug && sudo dpkg -i deliveryoptimization-agent_1.1.0_amd64.deb)
+        set(DO_PATCH_COMMAND
+            cd <SOURCE_DIR> && sudo ./build/scripts/bootstrap.sh --install
+            build && python3 ./build/build.py --project agent --package-for deb
+            && cd /tmp/build-deliveryoptimization-agent/linux-debug && sudo
+            dpkg -i deliveryoptimization-agent_1.1.0_amd64.deb)
     else()
         message(FATAL_ERROR "Unsupported platform ${LSB_RELEASE_ID_SHORT}")
     endif()
 endif()
 
+# Include the capability of fetching external content
+include(FetchContent)
+
 FetchContent_Declare(
     do-client
     GIT_REPOSITORY https://github.com/microsoft/do-client.git
     GIT_TAG d71ade6f692dd8bc319ec3228c956517e9b29292 # v1.1.0
-    PATCH_COMMAND "${DO_PATCH_COMMAND}"
-)
+    PATCH_COMMAND "${DO_PATCH_COMMAND}")
 FetchContent_MakeAvailable(do-client)
 
 add_executable(${PROJECT_NAME})

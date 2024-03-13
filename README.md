@@ -70,11 +70,15 @@ To build, use the `build` command. It simplifies the CMake build commands and re
 
 Available build options:
 
-| Switch (PowerShell)  | Switch (Bash)           | Description                                                                              |
-|----------------------|-------------------------|------------------------------------------------------------------------------------------|
-| -Clean               | --clean                 | Use this to clean the build folder before building.                                      |
-| -BuildType           | --build-type            | Use this to define the build type between "Debug" and "Release". The default is "Debug". |
-| -EnableTestOverrides | --enable-test-overrides | Use this to enable test overrides. See [TEST](TEST.md) for more.                         |
+| Switch (PowerShell)  | Switch (Bash)             | Description                                                                              |
+|----------------------|---------------------------|------------------------------------------------------------------------------------------|
+| -Clean               | --clean                   | Use this to clean the build folder before building.                                      |
+| -BuildType           | --build-type              | Use this to define the build type between "Debug" and "Release". The default is "Debug". |
+| -EnableTestOverrides | --enable-test-overrides   | Use this to enable test overrides. See [TEST](TEST.md) for more.                         |
+| -BuildTests <bool>   | --build-tests {ON, OFF}   | Use this to build tests alongside the library. On by default.                            |
+| -BuildSamples <bool> | --build-samples {ON, OFF} | Use this to build samples alongside the library. On by default.                          |
+
+See [below](#building-with-cmake-vscode-extension) for building within VSCode.
 
 ## VSCode
 
@@ -120,9 +124,21 @@ Adding the following to your workspace settings.json will make CMake Tools autom
 }
 ```
 
+### Building with CMake VSCode extension
+
+If you're using the CMake Tools extension on VSCode, you can set the build options through the VSCode settings. Add something like below to either your user or workspace JSON settings to get a default value for an option. You can also later use the command "Edit CMake Cache (UI)" for visual editing.
+
+```json
+"cmake.configureArgs": [
+    "-DSFS_CLIENT_TEST_OVERRIDES=ON"
+]
+```
+
+See [SFSOptions.cmake](cmake/SFSOptions.cmake) for the CMake options available for the library.
+
 ## Testing
 
-Tests are compiled alongside the library, and live in the client/tests subdirectory.
+Tests are compiled alongside the library by default, and live in the client/tests subdirectory.
 To run the tests, you can use the `test` command. It will run all tests directly and output the result to the console.
 
 If you want to customize the test run, you can make use of the `ctest` tool.

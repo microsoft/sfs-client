@@ -7,9 +7,6 @@ find_package(CURL REQUIRED)
 # JSON library
 find_package(nlohmann_json CONFIG REQUIRED)
 
-# Include the capability of fetching external content
-include(FetchContent)
-
 # CorrelationVector Library from Microsoft
 find_package(correlation_vector CONFIG REQUIRED)
 
@@ -51,7 +48,8 @@ target_include_directories(${PROJECT_NAME} PUBLIC include/sfsclient)
 
 target_link_libraries(${PROJECT_NAME} PRIVATE CURL::libcurl)
 target_link_libraries(${PROJECT_NAME} PRIVATE nlohmann_json::nlohmann_json)
-target_link_libraries(${PROJECT_NAME} PRIVATE unofficial::microsoft::correlation_vector)
+target_link_libraries(${PROJECT_NAME}
+                      PRIVATE unofficial::microsoft::correlation_vector)
 
 # Pick up git revision during configuration to add to logging
 include(FindGit)
@@ -82,9 +80,9 @@ if(SFS_ENABLE_TEST_OVERRIDES)
                                PRIVATE SFS_ENABLE_TEST_OVERRIDES=1)
 endif()
 
-# Enables one to run tests through "ctest --test-dir .\build\client"
-enable_testing()
-
 if(SFS_BUILD_TESTS)
+    # Enables one to run tests through "ctest --test-dir .\build\client"
+    enable_testing()
+
     add_subdirectory(tests)
 endif()
