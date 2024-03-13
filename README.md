@@ -130,7 +130,7 @@ If you're using the CMake Tools extension on VSCode, you can set the build optio
 
 ```json
 "cmake.configureArgs": [
-    "-DSFS_CLIENT_TEST_OVERRIDES=ON"
+    "-DSFS_ENABLE_TEST_OVERRIDES=ON"
 ]
 ```
 
