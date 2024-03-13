@@ -7,9 +7,6 @@ find_package(CURL REQUIRED)
 # JSON library
 find_package(nlohmann_json CONFIG REQUIRED)
 
-# Include the capability of fetching external content
-include(FetchContent)
-
 # CorrelationVector Library from Microsoft
 find_package(correlation_vector CONFIG REQUIRED)
 

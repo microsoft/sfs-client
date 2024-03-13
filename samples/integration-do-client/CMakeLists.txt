@@ -37,6 +37,9 @@ else()
     endif()
 endif()
 
+# Include the capability of fetching external content
+include(FetchContent)
+
 FetchContent_Declare(
     do-client
     GIT_REPOSITORY https://github.com/microsoft/do-client.git
