@@ -179,6 +179,24 @@ std::unique_ptr<FileEntity> FileEntity::FromJson(const nlohmann::json& file, con
     return tmp;
 }
 
+FileEntities FileEntity::DownloadInfoResponseToFileEntities(const nlohmann::json& data, const ReportingHandler& handler)
+{
+    // Expected format is an array of FileEntity
+    THROW_CODE_IF_NOT_LOG(ServiceInvalidResponse, data.is_array(), handler, "Response is not a JSON array");
+
+    FileEntities tmp;
+    for (const auto& fileData : data)
+    {
+        THROW_CODE_IF_NOT_LOG(ServiceInvalidResponse,
+                              fileData.is_object(),
+                              handler,
+                              "Array element is not a JSON object");
+        tmp.push_back(std::move(FileEntity::FromJson(fileData, handler)));
+    }
+
+    return tmp;
+}
+
 ContentType GenericFileEntity::GetContentType() const
 {
     return ContentType::Generic;

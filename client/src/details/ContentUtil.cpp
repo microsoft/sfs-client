@@ -3,34 +3,10 @@
 
 #include "ContentUtil.h"
 
-#include "ErrorHandling.h"
-#include "ReportingHandler.h"
-#include "Util.h"
-
-#include <nlohmann/json.hpp>
+#include <algorithm>
 
 using namespace SFS;
 using namespace SFS::details;
-using namespace SFS::details::util;
-using json = nlohmann::json;
-
-FileEntities contentutil::DownloadInfoResponseToFileEntities(const json& data, const ReportingHandler& handler)
-{
-    // Expected format is an array of FileEntity
-    THROW_CODE_IF_NOT_LOG(ServiceInvalidResponse, data.is_array(), handler, "Response is not a JSON array");
-
-    FileEntities tmp;
-    for (const auto& fileData : data)
-    {
-        THROW_CODE_IF_NOT_LOG(ServiceInvalidResponse,
-                              fileData.is_object(),
-                              handler,
-                              "Array element is not a JSON object");
-        tmp.push_back(std::move(FileEntity::FromJson(fileData, handler)));
-    }
-
-    return tmp;
-}
 
 bool contentutil::operator==(const ContentId& lhs, const ContentId& rhs)
 {

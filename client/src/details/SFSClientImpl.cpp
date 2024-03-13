@@ -3,7 +3,6 @@
 
 #include "SFSClientImpl.h"
 
-#include "ContentUtil.h"
 #include "ErrorHandling.h"
 #include "Logging.h"
 #include "SFSUrlComponents.h"
@@ -20,7 +19,6 @@
 
 using namespace SFS;
 using namespace SFS::details;
-using namespace SFS::details::contentutil;
 using namespace SFS::details::util;
 using json = nlohmann::json;
 
@@ -258,7 +256,7 @@ try
     const json downloadInfoResponse =
         ParseServerMethodStringToJson(postResponse, "GetDownloadInfo", m_reportingHandler);
 
-    auto files = DownloadInfoResponseToFileEntities(downloadInfoResponse, m_reportingHandler);
+    auto files = FileEntity::DownloadInfoResponseToFileEntities(downloadInfoResponse, m_reportingHandler);
 
     LOG_INFO(m_reportingHandler, "Received a response with %zu files", files.size());
 

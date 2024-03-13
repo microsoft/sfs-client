@@ -21,6 +21,10 @@ namespace details
 {
 class ReportingHandler;
 
+struct FileEntity;
+
+using FileEntities = std::vector<std::unique_ptr<FileEntity>>;
+
 struct FileEntity
 {
     virtual ~FileEntity()
@@ -35,9 +39,8 @@ struct FileEntity
     std::unordered_map<std::string, std::string> hashes;
 
     static std::unique_ptr<FileEntity> FromJson(const nlohmann::json& file, const ReportingHandler& handler);
+    static FileEntities DownloadInfoResponseToFileEntities(const nlohmann::json& data, const ReportingHandler& handler);
 };
-
-using FileEntities = std::vector<std::unique_ptr<FileEntity>>;
 
 struct GenericFileEntity : public FileEntity
 {
