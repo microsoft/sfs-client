@@ -3,7 +3,6 @@
 
 #pragma once
 
-#include "Content.h"
 #include "Logging.h"
 #include "ReportingHandler.h"
 #include "RequestParams.h"
@@ -13,7 +12,11 @@
 #include <memory>
 #include <string>
 
-namespace SFS::details
+namespace SFS
+{
+class Content;
+
+namespace details
 {
 class Connection;
 class ConnectionManager;
@@ -25,6 +28,17 @@ class SFSClientInterface
     virtual ~SFSClientInterface()
     {
     }
+
+    //
+    // Combined API calls for retrieval of metadata & download URLs
+    //
+
+    /**
+     * @brief Retrieve combined metadata & download URLs from the latest version of specified products
+     * @note At the moment only a single product request is supported
+     * @param requestParams Parameters that define this request
+     */
+    virtual std::unique_ptr<Content> GetLatestDownloadInfo(const RequestParams& requestParams) const = 0;
 
     //
     // Individual APIs 1:1 with service endpoints
@@ -68,7 +82,7 @@ class SFSClientInterface
      * @brief Returns a new Connection to be used by the SFSClient to make requests
      * @param config Configurations for the connection object
      */
-    virtual std::unique_ptr<Connection> MakeConnection(const ConnectionConfig& config) = 0;
+    virtual std::unique_ptr<Connection> MakeConnection(const ConnectionConfig& config) const = 0;
 
     const ReportingHandler& GetReportingHandler() const
     {
@@ -78,4 +92,5 @@ class SFSClientInterface
   protected:
     ReportingHandler m_reportingHandler;
 };
-} // namespace SFS::details
+} // namespace details
+} // namespace SFS
