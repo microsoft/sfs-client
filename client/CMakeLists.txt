@@ -46,7 +46,13 @@ target_sources(
             src/Result.cpp
             src/SFSClient.cpp)
 
-target_include_directories(${PROJECT_NAME} PUBLIC include/sfsclient)
+# Include dir for the library depends on whether the library is being built or
+# if it was installed
+target_include_directories(
+    ${PROJECT_NAME}
+    PUBLIC $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include/sfsclient>
+           $<INSTALL_INTERFACE:include/sfsclient> # <prefix>/include/sfsclient
+)
 
 target_link_libraries(${PROJECT_NAME} PRIVATE CURL::libcurl)
 target_link_libraries(${PROJECT_NAME} PRIVATE nlohmann_json::nlohmann_json)
@@ -88,3 +94,53 @@ if(SFS_BUILD_TESTS)
 
     add_subdirectory(tests)
 endif()
+
+#
+# Install section
+#
+
+set(_INSTALL_DESTINATION "${CMAKE_INSTALL_LIBDIR}/cmake/sfsclient")
+set(_TARGET_CONFIG_CMAKE_FILEPATH
+    "${CMAKE_CURRENT_BINARY_DIR}/sfsclient-config.cmake")
+
+# Install headers
+install(
+    FILES include/sfsclient/AppContent.h
+          include/sfsclient/AppFile.h
+          include/sfsclient/ApplicabilityDetails.h
+          include/sfsclient/ClientConfig.h
+          include/sfsclient/Content.h
+          include/sfsclient/ContentId.h
+          include/sfsclient/File.h
+          include/sfsclient/Logging.h
+          include/sfsclient/RequestParams.h
+          include/sfsclient/Result.h
+          include/sfsclient/SFSClient.h
+    DESTINATION include/sfsclient)
+
+# Export targets for this library to a local file
+install(
+    TARGETS ${PROJECT_NAME}
+    EXPORT sfsclient-targets
+    RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR}
+    LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}
+    ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR})
+
+# And then install the exported targets file to the destination
+install(
+    EXPORT sfsclient-targets
+    FILE sfsclient-targets.cmake
+    NAMESPACE microsoft::
+    DESTINATION ${_INSTALL_DESTINATION})
+
+# Add configure_package_config_file for below
+include(CMakePackageConfigHelpers)
+
+# Create the sfsclient-config.cmake file, which will be used by find_package()
+configure_package_config_file(
+    ../cmake/sfsclient-config.cmake.in ${_TARGET_CONFIG_CMAKE_FILEPATH}
+    INSTALL_DESTINATION ${_INSTALL_DESTINATION})
+
+# Then install the generated file to the destination
+install(FILES ${_TARGET_CONFIG_CMAKE_FILEPATH}
+        DESTINATION ${_INSTALL_DESTINATION})
