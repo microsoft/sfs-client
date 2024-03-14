@@ -16,6 +16,16 @@
       "component": {
         "type": "git",
         "git": {
+          "repositoryUrl": "https://github.com/microsoft/CorrelationVector-Cpp",
+          "commitHash": "cf38d2b44baaf352509ad9980786bc49554c32e4"
+        }
+      },
+      "developmentDependency": false
+    },
+    {
+      "component": {
+        "type": "git",
+        "git": {
           "repositoryUrl": "https://github.com/yhirose/cpp-httplib",
           "commitHash": "5c00bbf36ba8ff47b4fb97712fc38cb2884e5b98"
         }
