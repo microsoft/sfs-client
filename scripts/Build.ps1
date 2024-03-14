@@ -82,6 +82,7 @@ if (!(Test-Path $BuildFolder) -or $Regenerate)
     $Options = "-DSFS_ENABLE_TEST_OVERRIDES=$EnableTestOverridesStr";
     $Options += " -DSFS_BUILD_TESTS=$BuildTestsOverridesStr";
     $Options += " -DSFS_BUILD_SAMPLES=$BuildSamplesOverridesStr";
+    $Options += " -DSFS_WINDOWS_STATIC_ONLY=ON";
     Invoke-Expression "cmake -S $GitRoot -B $BuildFolder $Options"
 }
 
