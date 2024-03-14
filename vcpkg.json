@@ -16,7 +16,11 @@
       "name": "curl",
       "features": [
         "c-ares",
-        "openssl"
+        {
+          "name": "openssl",
+          "platform": "!windows",
+          "$comment": "TODO #42: OpenSSL is not needed on Windows yet while we don't have cert pinning. Default is schannel, which uses Windows store"
+        }
       ]
     },
     "nlohmann-json"
