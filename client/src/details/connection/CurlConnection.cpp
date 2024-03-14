@@ -144,7 +144,7 @@ Result HttpCodeToResult(long httpCode)
     }
     case 405:
     {
-        return Result(Result::HttpBadRequest, "405 Method Not Allowed");
+        return Result(Result::HttpMethodNotAllowed, "405 Method Not Allowed");
     }
     case 429:
     {

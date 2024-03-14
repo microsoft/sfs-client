@@ -62,26 +62,14 @@ std::string_view SFS::ToString(Result::Code code) noexcept
 {
     switch (code)
     {
-    // Represents a successful operation
     case Result::Success:
         return "Success";
-    // Represents a failed operation
-    case Result::ConnectionSetupFailed:
-        return "ConnectionSetupFailed";
-    case Result::ConnectionUnexpectedError:
-        return "ConnectionUnexpectedError";
-    case Result::HttpBadRequest:
-        return "HttpBadRequest";
-    case Result::HttpNotFound:
-        return "HttpNotFound";
-    case Result::HttpServiceNotAvailable:
-        return "HttpServiceNotAvailable";
-    case Result::HttpTimeout:
-        return "HttpTimeout";
-    case Result::HttpTooManyRequests:
-        return "HttpTooManyRequests";
-    case Result::HttpUnexpected:
-        return "HttpUnexpected";
+
+    //
+    // Failure codes
+    //
+
+    // Generic errors
     case Result::InvalidArg:
         return "InvalidArg";
     case Result::NotImpl:
@@ -90,12 +78,36 @@ std::string_view SFS::ToString(Result::Code code) noexcept
         return "NotSet";
     case Result::OutOfMemory:
         return "OutOfMemory";
+    case Result::Unexpected:
+        return "Unexpected";
+
+    // Connection errors
+    case Result::ConnectionSetupFailed:
+        return "ConnectionSetupFailed";
+    case Result::ConnectionUnexpectedError:
+        return "ConnectionUnexpectedError";
+
+    // Http Errors
+    case Result::HttpTimeout:
+        return "HttpTimeout";
+    case Result::HttpUnexpected:
+        return "HttpUnexpected";
+    case Result::HttpBadRequest:
+        return "HttpBadRequest";
+    case Result::HttpNotFound:
+        return "HttpNotFound";
+    case Result::HttpMethodNotAllowed:
+        return "HttpMethodNotAllowed";
+    case Result::HttpTooManyRequests:
+        return "HttpTooManyRequests";
+    case Result::HttpServiceNotAvailable:
+        return "HttpServiceNotAvailable";
+
+    // Service errors
     case Result::ServiceInvalidResponse:
         return "ServiceInvalidResponse";
     case Result::ServiceUnexpectedContentType:
         return "ServiceUnexpectedContentType";
-    case Result::Unexpected:
-        return "Unexpected";
     }
     return "";
 }
