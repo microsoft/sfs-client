@@ -197,9 +197,9 @@ constexpr std::string_view ToString(Architecture type)
     return "";
 }
 
-void DisplayResults(const std::unique_ptr<Content>& content)
+void DisplayResults(const std::vector<Content>& contents)
 {
-    if (!content)
+    if (contents.empty())
     {
         PrintError("No results found");
         return;
@@ -207,28 +207,33 @@ void DisplayResults(const std::unique_ptr<Content>& content)
 
     PrintLog("Content found:");
 
-    json j = json::object();
-    j["ContentId"]["Namespace"] = content->GetContentId().GetNameSpace();
-    j["ContentId"]["Name"] = content->GetContentId().GetName();
-    j["ContentId"]["Version"] = content->GetContentId().GetVersion();
-
-    j["Files"] = json::array();
-    for (const auto& file : content->GetFiles())
+    json out = json::array();
+    for (const auto& content : contents)
     {
-        json fileJson = json::object();
-        fileJson["FileId"] = file.GetFileId();
-        fileJson["Url"] = file.GetUrl();
-        fileJson["SizeInBytes"] = file.GetSizeInBytes();
-        json hashes = json::object();
-        for (const auto& hash : file.GetHashes())
+        json j = json::object();
+        j["ContentId"]["Namespace"] = content.GetContentId().GetNameSpace();
+        j["ContentId"]["Name"] = content.GetContentId().GetName();
+        j["ContentId"]["Version"] = content.GetContentId().GetVersion();
+
+        j["Files"] = json::array();
+        for (const auto& file : content.GetFiles())
         {
-            hashes[ToString(hash.first)] = hash.second;
+            json fileJson = json::object();
+            fileJson["FileId"] = file.GetFileId();
+            fileJson["Url"] = file.GetUrl();
+            fileJson["SizeInBytes"] = file.GetSizeInBytes();
+            json hashes = json::object();
+            for (const auto& hash : file.GetHashes())
+            {
+                hashes[ToString(hash.first)] = hash.second;
+            }
+            fileJson["Hashes"] = hashes;
+            j["Files"].push_back(fileJson);
         }
-        fileJson["Hashes"] = hashes;
-        j["Files"].push_back(fileJson);
+        out.push_back(j);
     }
 
-    PrintLog(j.dump(2 /*indent*/));
+    PrintLog(out.dump(2 /*indent*/));
 }
 
 json AppFileToJson(const AppFile& file)
@@ -260,9 +265,9 @@ json AppFileToJson(const AppFile& file)
     return fileJson;
 }
 
-void DisplayResults(const std::unique_ptr<AppContent>& content)
+void DisplayResults(const std::vector<AppContent>& contents)
 {
-    if (!content)
+    if (contents.empty())
     {
         std::cout << "No results found." << std::endl;
         return;
@@ -270,36 +275,41 @@ void DisplayResults(const std::unique_ptr<AppContent>& content)
 
     PrintLog("Content found:");
 
-    json j = json::object();
-    j["ContentId"]["Namespace"] = content->GetContentId().GetNameSpace();
-    j["ContentId"]["Name"] = content->GetContentId().GetName();
-    j["ContentId"]["Version"] = content->GetContentId().GetVersion();
-    j["UpdateId"] = content->GetUpdateId();
-
-    j["Files"] = json::array();
-    for (const auto& file : content->GetFiles())
+    json out = json::array();
+    for (const auto& content : contents)
     {
-        j["Files"].push_back(AppFileToJson(file));
-    }
+        json j = json::object();
+        j["ContentId"]["Namespace"] = content.GetContentId().GetNameSpace();
+        j["ContentId"]["Name"] = content.GetContentId().GetName();
+        j["ContentId"]["Version"] = content.GetContentId().GetVersion();
+        j["UpdateId"] = content.GetUpdateId();
 
-    j["Prerequisites"] = json::array();
-    for (const auto& prereq : content->GetPrerequisites())
-    {
-        json prereqJson = json::object();
-        prereqJson["ContentId"]["Namespace"] = prereq.GetContentId().GetNameSpace();
-        prereqJson["ContentId"]["Name"] = prereq.GetContentId().GetName();
-        prereqJson["ContentId"]["Version"] = prereq.GetContentId().GetVersion();
-
-        prereqJson["Files"] = json::array();
-        for (const auto& file : prereq.GetFiles())
+        j["Files"] = json::array();
+        for (const auto& file : content.GetFiles())
         {
-            prereqJson["Files"].push_back(AppFileToJson(file));
+            j["Files"].push_back(AppFileToJson(file));
         }
 
-        j["Prerequisites"].push_back(prereqJson);
+        j["Prerequisites"] = json::array();
+        for (const auto& prereq : content.GetPrerequisites())
+        {
+            json prereqJson = json::object();
+            prereqJson["ContentId"]["Namespace"] = prereq.GetContentId().GetNameSpace();
+            prereqJson["ContentId"]["Name"] = prereq.GetContentId().GetName();
+            prereqJson["ContentId"]["Version"] = prereq.GetContentId().GetVersion();
+
+            prereqJson["Files"] = json::array();
+            for (const auto& file : prereq.GetFiles())
+            {
+                prereqJson["Files"].push_back(AppFileToJson(file));
+            }
+
+            j["Prerequisites"].push_back(prereqJson);
+        }
+        out.push_back(j);
     }
 
-    PrintLog(j.dump(2 /*indent*/));
+    PrintLog(out.dump(2 /*indent*/));
 }
 
 void LogResult(const SFS::Result& result)
@@ -363,8 +373,8 @@ Result GetLatestDownloadInfo(const SFSClient& sfsClient, const Settings& setting
     params.productRequests = {{settings.product, {}}};
     if (settings.isApp)
     {
-        std::unique_ptr<AppContent> appContent;
-        auto result = sfsClient.GetLatestAppDownloadInfo(params, appContent);
+        std::vector<AppContent> appContents;
+        auto result = sfsClient.GetLatestAppDownloadInfo(params, appContents);
         if (!result)
         {
             PrintError("Failed to get latest download info for app.");
@@ -373,12 +383,12 @@ Result GetLatestDownloadInfo(const SFSClient& sfsClient, const Settings& setting
         }
 
         // Display results
-        DisplayResults(appContent);
+        DisplayResults(appContents);
     }
     else
     {
-        std::unique_ptr<Content> content;
-        auto result = sfsClient.GetLatestDownloadInfo(params, content);
+        std::vector<Content> contents;
+        auto result = sfsClient.GetLatestDownloadInfo(params, contents);
 
         if (!result)
         {
@@ -388,7 +398,7 @@ Result GetLatestDownloadInfo(const SFSClient& sfsClient, const Settings& setting
         }
 
         // Display results
-        DisplayResults(content);
+        DisplayResults(contents);
     }
 
     return Result::Success;

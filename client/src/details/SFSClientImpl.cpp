@@ -283,8 +283,7 @@ try
 SFS_CATCH_LOG_RETHROW(m_reportingHandler)
 
 template <typename ConnectionManagerT>
-std::unique_ptr<Content> SFSClientImpl<ConnectionManagerT>::GetLatestDownloadInfo(
-    const RequestParams& requestParams) const
+std::vector<Content> SFSClientImpl<ConnectionManagerT>::GetLatestDownloadInfo(const RequestParams& requestParams) const
 try
 {
     ValidateRequestParams(requestParams, m_reportingHandler);
@@ -301,12 +300,15 @@ try
     std::unique_ptr<Content> content;
     THROW_IF_FAILED_LOG(Content::Make(std::move(contentId), std::move(files), content), m_reportingHandler);
 
-    return content;
+    std::vector<Content> contents;
+    contents.push_back(std::move(*content));
+
+    return contents;
 }
 SFS_CATCH_LOG_RETHROW(m_reportingHandler)
 
 template <typename ConnectionManagerT>
-std::unique_ptr<AppContent> SFSClientImpl<ConnectionManagerT>::GetLatestAppDownloadInfo(
+std::vector<AppContent> SFSClientImpl<ConnectionManagerT>::GetLatestAppDownloadInfo(
     const RequestParams& requestParams) const
 try
 {
@@ -358,7 +360,10 @@ try
                                          content),
                         m_reportingHandler);
 
-    return content;
+    std::vector<AppContent> contents;
+    contents.push_back(std::move(*content));
+
+    return contents;
 }
 SFS_CATCH_LOG_RETHROW(m_reportingHandler)
 

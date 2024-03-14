@@ -208,56 +208,56 @@ TEST("Testing SFSClient::Make()")
 TEST("Testing SFSClient::GetLatestDownloadInfo()")
 {
     auto sfsClient = GetSFSClient();
-    std::unique_ptr<Content> content;
+    std::vector<Content> contents;
     RequestParams params;
 
     SECTION("Does not allow an empty product")
     {
         params.productRequests = {{"", {}}};
-        auto result = sfsClient->GetLatestDownloadInfo(params, content);
+        auto result = sfsClient->GetLatestDownloadInfo(params, contents);
         REQUIRE(result.GetCode() == Result::InvalidArg);
         REQUIRE(result.GetMsg() == "product cannot be empty");
-        REQUIRE(content == nullptr);
+        REQUIRE(contents.empty());
 
         const TargetingAttributes attributes{{"attr1", "value"}};
         params.productRequests = {{"", attributes}};
-        result = sfsClient->GetLatestDownloadInfo(params, content);
+        result = sfsClient->GetLatestDownloadInfo(params, contents);
         REQUIRE(result.GetCode() == Result::InvalidArg);
         REQUIRE(result.GetMsg() == "product cannot be empty");
-        REQUIRE(content == nullptr);
+        REQUIRE(contents.empty());
     }
 
     SECTION("Does not allow an empty request")
     {
-        auto result = sfsClient->GetLatestDownloadInfo(params, content);
+        auto result = sfsClient->GetLatestDownloadInfo(params, contents);
         REQUIRE(result.GetCode() == Result::InvalidArg);
         REQUIRE(result.GetMsg() == "productRequests cannot be empty");
-        REQUIRE(content == nullptr);
+        REQUIRE(contents.empty());
     }
 
     SECTION("Accepting multiple products is not implemented yet")
     {
         params.productRequests = {{"p1", {}}, {"p2", {}}};
-        auto result = sfsClient->GetLatestDownloadInfo(params, content);
+        auto result = sfsClient->GetLatestDownloadInfo(params, contents);
         REQUIRE(result.GetCode() == Result::NotImpl);
         REQUIRE(result.GetMsg() == "There cannot be more than 1 productRequest at the moment");
-        REQUIRE(content == nullptr);
+        REQUIRE(contents.empty());
     }
 
     SECTION("Fails if base cv is not correct")
     {
         params.productRequests = {{"p1", {}}};
         params.baseCV = "";
-        auto result = sfsClient->GetLatestDownloadInfo(params, content);
+        auto result = sfsClient->GetLatestDownloadInfo(params, contents);
         REQUIRE(result.GetCode() == Result::InvalidArg);
         REQUIRE(result.GetMsg() == "cv must not be empty");
-        REQUIRE(content == nullptr);
+        REQUIRE(contents.empty());
 
         params.baseCV = "cv";
-        result = sfsClient->GetLatestDownloadInfo(params, content);
+        result = sfsClient->GetLatestDownloadInfo(params, contents);
         REQUIRE(result.GetCode() == Result::InvalidArg);
         REQUIRE(result.GetMsg().find("baseCV is not a valid correlation vector:") == 0);
-        REQUIRE(content == nullptr);
+        REQUIRE(contents.empty());
     }
 }
 
@@ -266,68 +266,68 @@ TEST("Testing SFSClient::GetAppLatestDownloadInfo()")
     SECTION("With storeapps instance")
     {
         auto sfsClient = GetSFSClient("storeapps");
-        std::unique_ptr<AppContent> content;
+        std::vector<AppContent> contents;
         RequestParams params;
 
         SECTION("Does not allow an empty product")
         {
             params.productRequests = {{"", {}}};
-            auto result = sfsClient->GetLatestAppDownloadInfo(params, content);
+            auto result = sfsClient->GetLatestAppDownloadInfo(params, contents);
             REQUIRE(result.GetCode() == Result::InvalidArg);
             REQUIRE(result.GetMsg() == "product cannot be empty");
-            REQUIRE(content == nullptr);
+            REQUIRE(contents.empty());
 
             const TargetingAttributes attributes{{"attr1", "value"}};
             params.productRequests = {{"", attributes}};
-            result = sfsClient->GetLatestAppDownloadInfo(params, content);
+            result = sfsClient->GetLatestAppDownloadInfo(params, contents);
             REQUIRE(result.GetCode() == Result::InvalidArg);
             REQUIRE(result.GetMsg() == "product cannot be empty");
-            REQUIRE(content == nullptr);
+            REQUIRE(contents.empty());
         }
 
         SECTION("Does not allow an empty request")
         {
-            auto result = sfsClient->GetLatestAppDownloadInfo(params, content);
+            auto result = sfsClient->GetLatestAppDownloadInfo(params, contents);
             REQUIRE(result.GetCode() == Result::InvalidArg);
             REQUIRE(result.GetMsg() == "productRequests cannot be empty");
-            REQUIRE(content == nullptr);
+            REQUIRE(contents.empty());
         }
 
         SECTION("Accepting multiple products is not implemented yet")
         {
             params.productRequests = {{"p1", {}}, {"p2", {}}};
-            auto result = sfsClient->GetLatestAppDownloadInfo(params, content);
+            auto result = sfsClient->GetLatestAppDownloadInfo(params, contents);
             REQUIRE(result.GetCode() == Result::NotImpl);
             REQUIRE(result.GetMsg() == "There cannot be more than 1 productRequest at the moment");
-            REQUIRE(content == nullptr);
+            REQUIRE(contents.empty());
         }
 
         SECTION("Fails if base cv is not correct")
         {
             params.productRequests = {{"p1", {}}};
             params.baseCV = "";
-            auto result = sfsClient->GetLatestAppDownloadInfo(params, content);
+            auto result = sfsClient->GetLatestAppDownloadInfo(params, contents);
             REQUIRE(result.GetCode() == Result::InvalidArg);
             REQUIRE(result.GetMsg() == "cv must not be empty");
-            REQUIRE(content == nullptr);
+            REQUIRE(contents.empty());
 
             params.baseCV = "cv";
-            result = sfsClient->GetLatestAppDownloadInfo(params, content);
+            result = sfsClient->GetLatestAppDownloadInfo(params, contents);
             REQUIRE(result.GetCode() == Result::InvalidArg);
             REQUIRE(result.GetMsg().find("baseCV is not a valid correlation vector:") == 0);
-            REQUIRE(content == nullptr);
+            REQUIRE(contents.empty());
         }
     }
 
     SECTION("Fails if not storeapps instanceId")
     {
         auto sfsClient = GetSFSClient("testInstanceId");
-        std::unique_ptr<AppContent> content;
+        std::vector<AppContent> contents;
         RequestParams params;
         params.productRequests = {{"a", {}}};
-        auto result = sfsClient->GetLatestAppDownloadInfo(params, content);
+        auto result = sfsClient->GetLatestAppDownloadInfo(params, contents);
         REQUIRE(result.GetCode() == Result::Unexpected);
         REQUIRE(result.GetMsg() == "At this moment only the \"storeapps\" instanceId can send app requests");
-        REQUIRE(content == nullptr);
+        REQUIRE(contents.empty());
     }
 }

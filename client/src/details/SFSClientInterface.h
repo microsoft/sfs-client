@@ -39,14 +39,14 @@ class SFSClientInterface
      * @note At the moment only a single product request is supported
      * @param requestParams Parameters that define this request
      */
-    virtual std::unique_ptr<Content> GetLatestDownloadInfo(const RequestParams& requestParams) const = 0;
+    virtual std::vector<Content> GetLatestDownloadInfo(const RequestParams& requestParams) const = 0;
 
     /**
      * @brief Retrieve combined metadata & download URLs from the latest version of specified apps
      * @note At the moment only a single product request is supported
      * @param requestParams Parameters that define this request
      */
-    virtual std::unique_ptr<AppContent> GetLatestAppDownloadInfo(const RequestParams& requestParams) const = 0;
+    virtual std::vector<AppContent> GetLatestAppDownloadInfo(const RequestParams& requestParams) const = 0;
 
     //
     // Individual APIs 1:1 with service endpoints

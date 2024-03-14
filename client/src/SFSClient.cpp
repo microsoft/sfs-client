@@ -35,19 +35,19 @@ try
 SFS_CATCH_RETURN()
 
 Result SFSClient::GetLatestDownloadInfo(const RequestParams& requestParams,
-                                        std::unique_ptr<Content>& content) const noexcept
+                                        std::vector<Content>& contents) const noexcept
 try
 {
-    content = m_impl->GetLatestDownloadInfo(requestParams);
+    contents = m_impl->GetLatestDownloadInfo(requestParams);
     return Result::Success;
 }
 SFS_CATCH_RETURN()
 
 Result SFSClient::GetLatestAppDownloadInfo(const RequestParams& requestParams,
-                                           std::unique_ptr<AppContent>& content) const noexcept
+                                           std::vector<AppContent>& contents) const noexcept
 try
 {
-    content = m_impl->GetLatestAppDownloadInfo(requestParams);
+    contents = m_impl->GetLatestAppDownloadInfo(requestParams);
     return Result::Success;
 }
 SFS_CATCH_RETURN()

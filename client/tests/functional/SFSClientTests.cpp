@@ -98,7 +98,7 @@ TEST("Testing SFSClient::GetLatestDownloadInfo()")
 
     server.RegisterProduct(c_productName, c_version);
 
-    std::unique_ptr<Content> content;
+    std::vector<Content> contents;
 
     SECTION("Single product request")
     {
@@ -107,30 +107,30 @@ TEST("Testing SFSClient::GetLatestDownloadInfo()")
         SECTION("No attributes")
         {
             params.productRequests = {{c_productName, {}}};
-            REQUIRE(sfsClient->GetLatestDownloadInfo(params, content) == Result::Success);
-            REQUIRE(content);
-            CheckMockContent(*content, c_version);
+            REQUIRE(sfsClient->GetLatestDownloadInfo(params, contents) == Result::Success);
+            REQUIRE(contents.size() == 1);
+            CheckMockContent(contents[0], c_version);
         }
 
         SECTION("With attributes")
         {
             const TargetingAttributes attributes{{"attr1", "value"}};
             params.productRequests = {{c_productName, attributes}};
-            REQUIRE(sfsClient->GetLatestDownloadInfo(params, content) == Result::Success);
-            REQUIRE(content);
-            CheckMockContent(*content, c_version);
+            REQUIRE(sfsClient->GetLatestDownloadInfo(params, contents) == Result::Success);
+            REQUIRE(contents.size() == 1);
+            CheckMockContent(contents[0], c_version);
         }
 
         SECTION("Wrong product name")
         {
             params.productRequests = {{"badName", {}}};
-            REQUIRE(sfsClient->GetLatestDownloadInfo(params, content) == Result::HttpNotFound);
-            REQUIRE(!content);
+            REQUIRE(sfsClient->GetLatestDownloadInfo(params, contents) == Result::HttpNotFound);
+            REQUIRE(contents.empty());
 
             const TargetingAttributes attributes{{"attr1", "value"}};
             params.productRequests = {{"badName", attributes}};
-            REQUIRE(sfsClient->GetLatestDownloadInfo(params, content) == Result::HttpNotFound);
-            REQUIRE(!content);
+            REQUIRE(sfsClient->GetLatestDownloadInfo(params, contents) == Result::HttpNotFound);
+            REQUIRE(contents.empty());
         }
 
         SECTION("Adding new version")
@@ -138,9 +138,9 @@ TEST("Testing SFSClient::GetLatestDownloadInfo()")
             server.RegisterProduct(c_productName, c_nextVersion);
 
             params.productRequests = {{c_productName, {}}};
-            REQUIRE(sfsClient->GetLatestDownloadInfo(params, content) == Result::Success);
-            REQUIRE(content);
-            CheckMockContent(*content, c_nextVersion);
+            REQUIRE(sfsClient->GetLatestDownloadInfo(params, contents) == Result::Success);
+            REQUIRE(contents.size() == 1);
+            CheckMockContent(contents[0], c_nextVersion);
         }
     }
 }
@@ -170,37 +170,37 @@ TEST("Testing SFSClient::GetLatestAppDownloadInfo()")
         auto CheckApp = [&](const std::vector<MockPrerequisite>& mockPrereqs) {
             server.RegisterAppProduct(c_productName, c_version, mockPrereqs);
 
-            std::unique_ptr<AppContent> content;
+            std::vector<AppContent> contents;
 
             RequestParams params;
             params.baseCV = "aaaaaaaaaaaaaaaa.1";
             SECTION("No attributes")
             {
                 params.productRequests = {{c_productName, {}}};
-                REQUIRE(sfsClient->GetLatestAppDownloadInfo(params, content) == Result::Success);
-                REQUIRE(content);
-                CheckMockAppContent(*content, c_version, mockPrereqs);
+                REQUIRE(sfsClient->GetLatestAppDownloadInfo(params, contents) == Result::Success);
+                REQUIRE(contents.size() == 1);
+                CheckMockAppContent(contents[0], c_version, mockPrereqs);
             }
 
             SECTION("With attributes")
             {
                 const TargetingAttributes attributes{{"attr1", "value"}};
                 params.productRequests = {{c_productName, attributes}};
-                REQUIRE(sfsClient->GetLatestAppDownloadInfo(params, content) == Result::Success);
-                REQUIRE(content);
-                CheckMockAppContent(*content, c_version, mockPrereqs);
+                REQUIRE(sfsClient->GetLatestAppDownloadInfo(params, contents) == Result::Success);
+                REQUIRE(contents.size() == 1);
+                CheckMockAppContent(contents[0], c_version, mockPrereqs);
             }
 
             SECTION("Wrong product name")
             {
                 params.productRequests = {{"badName", {}}};
-                REQUIRE(sfsClient->GetLatestAppDownloadInfo(params, content) == Result::HttpNotFound);
-                REQUIRE(!content);
+                REQUIRE(sfsClient->GetLatestAppDownloadInfo(params, contents) == Result::HttpNotFound);
+                REQUIRE(contents.empty());
 
                 const TargetingAttributes attributes{{"attr1", "value"}};
                 params.productRequests = {{"badName", attributes}};
-                REQUIRE(sfsClient->GetLatestAppDownloadInfo(params, content) == Result::HttpNotFound);
-                REQUIRE(!content);
+                REQUIRE(sfsClient->GetLatestAppDownloadInfo(params, contents) == Result::HttpNotFound);
+                REQUIRE(contents.empty());
             }
 
             SECTION("Adding new version")
@@ -208,9 +208,9 @@ TEST("Testing SFSClient::GetLatestAppDownloadInfo()")
                 server.RegisterAppProduct(c_productName, c_nextVersion, mockPrereqs);
 
                 params.productRequests = {{c_productName, {}}};
-                REQUIRE(sfsClient->GetLatestAppDownloadInfo(params, content) == Result::Success);
-                REQUIRE(content);
-                CheckMockAppContent(*content, c_nextVersion, mockPrereqs);
+                REQUIRE(sfsClient->GetLatestAppDownloadInfo(params, contents) == Result::Success);
+                REQUIRE(contents.size() == 1);
+                CheckMockAppContent(contents[0], c_nextVersion, mockPrereqs);
             }
         };
 
@@ -234,15 +234,15 @@ TEST("Testing SFSClient::GetLatestAppDownloadInfo()")
     {
         server.RegisterProduct(c_productName, c_version);
 
-        std::unique_ptr<AppContent> content;
+        std::vector<AppContent> contents;
 
         RequestParams params;
         params.productRequests = {{c_productName, {}}};
-        auto result = sfsClient->GetLatestAppDownloadInfo(params, content);
+        auto result = sfsClient->GetLatestAppDownloadInfo(params, contents);
         REQUIRE(result.GetCode() == Result::ServiceUnexpectedContentType);
         REQUIRE(result.GetMsg() ==
                 "Unexpected content type [Generic] returned by the service does not match the expected [App]");
-        REQUIRE(!content);
+        REQUIRE(contents.empty());
     }
 }
 
@@ -260,7 +260,7 @@ TEST("Testing SFSClient retry behavior")
     server.RegisterProduct(c_productName, c_version);
     RequestParams params;
     params.productRequests = {{c_productName, {}}};
-    std::unique_ptr<Content> content;
+    std::vector<Content> contents;
 
     std::unique_ptr<SFSClient> sfsClient;
     ClientConfig clientConfig{"testAccountId", c_instanceId, c_namespace, LogCallbackToTest};
@@ -279,13 +279,13 @@ TEST("Testing SFSClient retry behavior")
             auto begin = steady_clock::now();
             if (success)
             {
-                REQUIRE(sfsClient->GetLatestDownloadInfo(params, content));
-                REQUIRE(content);
+                REQUIRE(sfsClient->GetLatestDownloadInfo(params, contents));
+                REQUIRE(contents.size() == 1);
             }
             else
             {
-                REQUIRE(sfsClient->GetLatestDownloadInfo(params, content) == Result::HttpServiceNotAvailable);
-                REQUIRE_FALSE(content);
+                REQUIRE(sfsClient->GetLatestDownloadInfo(params, contents) == Result::HttpServiceNotAvailable);
+                REQUIRE(contents.empty());
             }
             auto end = steady_clock::now();
             return duration_cast<milliseconds>(end - begin).count();
@@ -342,8 +342,8 @@ TEST("Testing SFSClient retry behavior")
 
         auto RunTimedGet = [&]() -> long long {
             auto begin = steady_clock::now();
-            REQUIRE(sfsClient->GetLatestDownloadInfo(params, content));
-            REQUIRE(content);
+            REQUIRE(sfsClient->GetLatestDownloadInfo(params, contents));
+            REQUIRE(contents.size() == 1);
             auto end = steady_clock::now();
             return duration_cast<milliseconds>(end - begin).count();
         };
@@ -388,14 +388,14 @@ TEST("Testing SFSClient retry behavior")
             SECTION("Should pass with 3 errors")
             {
                 server.SetForcedHttpErrors(std::queue<HttpCode>({retriableError, retriableError, retriableError}));
-                REQUIRE(sfsClient->GetLatestDownloadInfo(params, content));
+                REQUIRE(sfsClient->GetLatestDownloadInfo(params, contents));
             }
 
             SECTION("Should fail with 4 errors")
             {
                 server.SetForcedHttpErrors(
                     std::queue<HttpCode>({retriableError, retriableError, retriableError, retriableError}));
-                REQUIRE(sfsClient->GetLatestDownloadInfo(params, content) == Result::HttpServiceNotAvailable);
+                REQUIRE(sfsClient->GetLatestDownloadInfo(params, contents) == Result::HttpServiceNotAvailable);
             }
         }
 
@@ -408,14 +408,14 @@ TEST("Testing SFSClient retry behavior")
             SECTION("Should pass with 3 errors")
             {
                 server.SetForcedHttpErrors(std::queue<HttpCode>({retriableError, retriableError, retriableError}));
-                REQUIRE(sfsClient->GetLatestDownloadInfo(params, content));
+                REQUIRE(sfsClient->GetLatestDownloadInfo(params, contents));
             }
 
             SECTION("Should fail with 4 errors")
             {
                 server.SetForcedHttpErrors(
                     std::queue<HttpCode>({retriableError, retriableError, retriableError, retriableError}));
-                REQUIRE(sfsClient->GetLatestDownloadInfo(params, content) == Result::HttpServiceNotAvailable);
+                REQUIRE(sfsClient->GetLatestDownloadInfo(params, contents) == Result::HttpServiceNotAvailable);
             }
         }
 
@@ -427,13 +427,13 @@ TEST("Testing SFSClient retry behavior")
 
             SECTION("Should pass with no errors")
             {
-                REQUIRE(sfsClient->GetLatestDownloadInfo(params, content));
+                REQUIRE(sfsClient->GetLatestDownloadInfo(params, contents));
             }
 
             SECTION("Should fail with 1 error")
             {
                 server.SetForcedHttpErrors(std::queue<HttpCode>({retriableError}));
-                REQUIRE(sfsClient->GetLatestDownloadInfo(params, content) == Result::HttpServiceNotAvailable);
+                REQUIRE(sfsClient->GetLatestDownloadInfo(params, contents) == Result::HttpServiceNotAvailable);
             }
         }
     }
