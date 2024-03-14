@@ -1,7 +1,7 @@
 // Copyright (c) Microsoft Corporation.
 // Licensed under the MIT License.
 
-#include "sfsclient/SFSClient.h"
+#include <sfsclient/SFSClient.h>
 
 #include <exception>
 #include <filesystem>
