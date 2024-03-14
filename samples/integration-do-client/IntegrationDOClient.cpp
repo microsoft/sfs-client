@@ -197,7 +197,7 @@ std::filesystem::path GetOutDir(const std::string& outDir)
     return outDir;
 }
 
-std::unique_ptr<SFS::Content> GetLatestDownloadInfo(const Settings& settings)
+std::vector<SFS::Content> GetLatestDownloadInfo(const Settings& settings)
 {
     // Initialize SFSClient
     PrintLog("Initializing SFSClient with accountId: " + settings.accountId);
@@ -212,23 +212,23 @@ std::unique_ptr<SFS::Content> GetLatestDownloadInfo(const Settings& settings)
     {
         PrintError("Failed to initialize SFSClient.");
         LogResult(result);
-        return nullptr;
+        return {};
     }
 
     // Perform operations using SFSClient
     PrintLog("Getting latest download info for product: " + settings.product);
-    std::unique_ptr<SFS::Content> content;
+    std::vector<SFS::Content> contents;
     SFS::RequestParams params;
     params.productRequests = {{settings.product, {}}};
-    result = sfsClient->GetLatestDownloadInfo(params, content);
+    result = sfsClient->GetLatestDownloadInfo(params, contents);
     if (!result)
     {
         PrintError("Failed to get latest download info.");
         LogResult(result);
-        return nullptr;
+        return {};
     }
 
-    return content;
+    return contents;
 }
 
 #ifdef _WIN32
@@ -313,8 +313,8 @@ int main(int argc, char* argv[])
         return 0;
     }
 
-    auto content = GetLatestDownloadInfo(settings);
-    if (!content)
+    auto contents = GetLatestDownloadInfo(settings);
+    if (contents.size() != 1)
     {
         return 1;
     }
@@ -324,7 +324,7 @@ int main(int argc, char* argv[])
     CoInitializeWrapper coInitWrapper;
 #endif
 
-    if (Download(*content, settings.outDir) != 0)
+    if (Download(contents[0], settings.outDir) != 0)
     {
         return 1;
     }
