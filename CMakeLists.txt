@@ -71,7 +71,6 @@ if(MSVC)
 endif()
 
 add_subdirectory(client)
-add_subdirectory(tool)
 
 if(SFS_BUILD_SAMPLES)
     add_subdirectory(samples)
