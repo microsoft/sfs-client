@@ -33,6 +33,18 @@ source ./scripts/setup.sh
 The script can be run multiple times as it does not replace what has been installed, and updates dependencies.
 It also sets up useful command-line aliases that can be used while developing.
 
+## Consuming the library
+
+This library is distributed as Source Code and meant for consumption in this format. Below we outline how to easily consume us through the vcpkg tool, but feel free to use other methods to incorporate the source.
+
+### vcpkg
+
+The [vcpkg](https://vcpkg.io/) tool is a Microsoft dependency manager for C/C++. It works "for all platforms, buildsystems, and workflows".
+In general the dependencies are registered in the central vcpkg registry, where the "portfile" recipes are hosted. These files indicate the way the dependencies should be acquired and built.
+
+One of the features it provides is also a way to find dependencies listed in the local filesystem. See the [overlay-ports](https://learn.microsoft.com/en-us/vcpkg/concepts/overlay-ports) feature to see that.
+We are not hosted in the central vcpkg registry, but we provide a template overlay-port for easy consumption of the library. See the [sfs-client-vcpkg-port](./sfs-client-vcpkg-port) folder for the files you need to have in your local repository in order to consume us. A few placeholders have to be filled in on those files.
+
 ## Formatting
 
 This project is currently using the clang-format tool to format its source code according to predefined rules.
