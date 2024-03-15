@@ -29,6 +29,9 @@ struct CurlEscapedString
         curl_free(m_escapedString);
     }
 
+    CurlEscapedString(const CurlEscapedString&) = delete;
+    CurlEscapedString& operator=(const CurlEscapedString&) = delete;
+
     char* Get()
     {
         return m_escapedString;
