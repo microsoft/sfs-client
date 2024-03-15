@@ -268,189 +268,64 @@ TEST("Testing class SFSClientImpl()")
 
 TEST("Testing ClientConfig validation")
 {
-    SECTION("Validating accountId pattern")
+    SECTION("accountId must not be empty")
     {
-        SECTION("Valid patterns")
+        const std::string expectedErrorMsg = "ClientConfig::accountId must not be empty";
+        for (size_t i = 0; i <= 10; ++i)
         {
-            auto checkValidPattern = [&](const std::string& pattern) {
-                INFO("Checking pattern " << pattern);
-                ClientConfig config;
-                config.accountId = pattern;
+            ClientConfig config;
+            config.accountId = std::string(i, 'a');
+            if (i >= 1)
+            {
                 REQUIRE_NOTHROW(SFSClientImpl<CurlConnectionManager>(std::move(config)));
-            };
-
-            checkValidPattern("a");   // Lowercase
-            checkValidPattern("A");   // Uppercase
-            checkValidPattern("1");   // Numbers
-            checkValidPattern("aAa"); // Mixed letters
-            checkValidPattern("a2a"); // Mixed letters and numbers
-            checkValidPattern("a1-"); // Mixed with dash
-            checkValidPattern("-aa"); // Starting dash
-        }
-
-        SECTION("Invalid patterns")
-        {
-            const std::string expectedErrorMsg = "ClientConfig::accountId must match the pattern " + c_accountIdPattern;
-            auto checkInvalidPattern = [&](const std::string& pattern) {
-                INFO("Checking pattern " << pattern);
-                ClientConfig config;
-                config.accountId = pattern;
+            }
+            else
+            {
                 REQUIRE_THROWS_CODE_MSG(SFSClientImpl<CurlConnectionManager>(std::move(config)),
                                         InvalidArg,
                                         expectedErrorMsg);
-            };
-
-            checkInvalidPattern("");       // Empty
-            checkInvalidPattern(".aa");    // Starting dot
-            checkInvalidPattern("aa.");    // Dots anywhere
-            checkInvalidPattern("aa$");    // Disallowed char
-            checkInvalidPattern("a b");    // Spaces
-            checkInvalidPattern("a_b");    // Underscore
-            checkInvalidPattern("¹¹¹¹");   // Non-ASCII
-            checkInvalidPattern(R"(a
-                bcasd)");                  // Line break
-            checkInvalidPattern("a\tbcd"); // Tab
-        }
-    }
-
-    SECTION("instanceId validation")
-    {
-        SECTION("instanceId must be between 3 and 36 chars")
-        {
-            const std::string expectedErrorMsg =
-                "ClientConfig::instanceId must match the pattern " + c_instanceIdPattern;
-
-            for (size_t i = 0; i <= 40; ++i)
-            {
-                ClientConfig config;
-                config.accountId = "testAccountId";
-                config.instanceId = std::string(i, 'a');
-                if (i >= 3 && i <= 36)
-                {
-                    REQUIRE_NOTHROW(SFSClientImpl<CurlConnectionManager>(std::move(config)));
-                }
-                else
-                {
-                    REQUIRE_THROWS_CODE_MSG(SFSClientImpl<CurlConnectionManager>(std::move(config)),
-                                            InvalidArg,
-                                            expectedErrorMsg);
-                }
-            }
-        }
-
-        SECTION("Validating instanceId pattern")
-        {
-            SECTION("Valid patterns")
-            {
-                auto checkValidPattern = [&](const std::string& pattern) {
-                    INFO("Checking pattern " << pattern);
-                    ClientConfig config;
-                    config.accountId = "testAccountId";
-                    config.instanceId = pattern;
-                    REQUIRE_NOTHROW(SFSClientImpl<CurlConnectionManager>(std::move(config)));
-                };
-
-                checkValidPattern("aaa"); // Lowercase
-                checkValidPattern("AAA"); // Uppercase
-                checkValidPattern("113"); // Numbers
-                checkValidPattern("aAa"); // Mixed letters
-                checkValidPattern("a2a"); // Mixed letters and numbers
-                checkValidPattern("a1-"); // Mixed with dash
-            }
-
-            SECTION("Invalid patterns")
-            {
-                const std::string expectedErrorMsg =
-                    "ClientConfig::instanceId must match the pattern " + c_instanceIdPattern;
-                auto checkInvalidPattern = [&](const std::string& pattern) {
-                    INFO("Checking pattern " << pattern);
-                    ClientConfig config;
-                    config.accountId = "testAccountId";
-                    config.instanceId = pattern;
-                    REQUIRE_THROWS_CODE_MSG(SFSClientImpl<CurlConnectionManager>(std::move(config)),
-                                            InvalidArg,
-                                            expectedErrorMsg);
-                };
-
-                checkInvalidPattern("-aa");    // Starting dash
-                checkInvalidPattern(".aa");    // Starting dot
-                checkInvalidPattern("aa.");    // Dots anywhere
-                checkInvalidPattern("aa$");    // Disallowed char
-                checkInvalidPattern("a b");    // Spaces
-                checkInvalidPattern("a_b");    // Underscore
-                checkInvalidPattern("¹¹¹¹");   // Non-ASCII
-                checkInvalidPattern(R"(a
-                    bcasd)");                  // Line break
-                checkInvalidPattern("a\tbcd"); // Tab
             }
         }
     }
 
-    SECTION("NameSpace validation")
+    SECTION("instanceId must not be empty")
     {
-        SECTION("NameSpace must be between 1 and 64 chars")
+        const std::string expectedErrorMsg = "ClientConfig::instanceId must not be empty";
+        for (size_t i = 0; i <= 10; ++i)
         {
-            const std::string expectedErrorMsg = "ClientConfig::nameSpace must match the pattern " + c_nameSpacePattern;
-
-            for (size_t i = 0; i <= 65; ++i)
+            ClientConfig config;
+            config.accountId = "testAccountId";
+            config.instanceId = std::string(i, 'a');
+            if (i >= 1)
             {
-                ClientConfig config;
-                config.accountId = "testAccountId";
-                config.nameSpace = std::string(i, 'a');
-                if (i >= 1 && i <= 64)
-                {
-                    REQUIRE_NOTHROW(SFSClientImpl<CurlConnectionManager>(std::move(config)));
-                }
-                else
-                {
-                    REQUIRE_THROWS_CODE_MSG(SFSClientImpl<CurlConnectionManager>(std::move(config)),
-                                            InvalidArg,
-                                            expectedErrorMsg);
-                }
+                REQUIRE_NOTHROW(SFSClientImpl<CurlConnectionManager>(std::move(config)));
+            }
+            else
+            {
+                REQUIRE_THROWS_CODE_MSG(SFSClientImpl<CurlConnectionManager>(std::move(config)),
+                                        InvalidArg,
+                                        expectedErrorMsg);
             }
         }
+    }
 
-        SECTION("Validating nameSpace pattern")
+    SECTION("NameSpace must not be empty")
+    {
+        const std::string expectedErrorMsg = "ClientConfig::nameSpace must not be empty";
+        for (size_t i = 0; i <= 10; ++i)
         {
-            SECTION("Valid patterns")
+            ClientConfig config;
+            config.accountId = "testAccountId";
+            config.nameSpace = std::string(i, 'a');
+            if (i >= 1)
             {
-                auto checkValidPattern = [&](const std::string& pattern) {
-                    INFO("Checking pattern " << pattern);
-                    ClientConfig config;
-                    config.accountId = "testAccountId";
-                    config.nameSpace = pattern;
-                    REQUIRE_NOTHROW(SFSClientImpl<CurlConnectionManager>(std::move(config)));
-                };
-
-                checkValidPattern("a");    // Lowercase
-                checkValidPattern("A");    // Uppercase
-                checkValidPattern("1");    // Numbers
-                checkValidPattern(".");    // Dots
-                checkValidPattern("-");    // Dashes
-                checkValidPattern("a1.-"); // Mixed
+                REQUIRE_NOTHROW(SFSClientImpl<CurlConnectionManager>(std::move(config)));
             }
-
-            SECTION("Invalid patterns")
+            else
             {
-                const std::string expectedErrorMsg =
-                    "ClientConfig::nameSpace must match the pattern " + c_nameSpacePattern;
-                auto checkInvalidPattern = [&](const std::string& pattern) {
-                    INFO("Checking pattern " << pattern);
-                    ClientConfig config;
-                    config.accountId = "testAccountId";
-                    config.nameSpace = pattern;
-                    REQUIRE_THROWS_CODE_MSG(SFSClientImpl<CurlConnectionManager>(std::move(config)),
-                                            InvalidArg,
-                                            expectedErrorMsg);
-                };
-
-                checkInvalidPattern("$");    // Disallowed char
-                checkInvalidPattern("a b");  // Spaces
-                checkInvalidPattern("a_b");  // Underscore
-                checkInvalidPattern("¹");    // Non-ASCII
-                checkInvalidPattern(R"(a
-                    b)");                    // Line break
-                checkInvalidPattern("a\tb"); // Tab
+                REQUIRE_THROWS_CODE_MSG(SFSClientImpl<CurlConnectionManager>(std::move(config)),
+                                        InvalidArg,
+                                        expectedErrorMsg);
             }
         }
     }

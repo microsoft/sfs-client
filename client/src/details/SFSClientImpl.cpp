@@ -17,7 +17,6 @@
 
 #include <nlohmann/json.hpp>
 
-#include <regex>
 #include <unordered_set>
 
 using namespace SFS;
@@ -33,25 +32,19 @@ namespace
 {
 void ValidateClientConfig(const ClientConfig& config, const ReportingHandler& handler)
 {
-    THROW_CODE_IF_NOT_LOG(InvalidArg,
-                          std::regex_match(config.accountId, std::regex(c_accountIdPattern)),
-                          handler,
-                          "ClientConfig::accountId must match the pattern " + c_accountIdPattern);
+    THROW_CODE_IF_LOG(InvalidArg, config.accountId.empty(), handler, "ClientConfig::accountId must not be empty");
 
     if (config.instanceId)
     {
-        THROW_CODE_IF_NOT_LOG(InvalidArg,
-                              std::regex_match(*config.instanceId, std::regex(c_instanceIdPattern)),
-                              handler,
-                              "ClientConfig::instanceId must match the pattern " + c_instanceIdPattern);
+        THROW_CODE_IF_LOG(InvalidArg,
+                          config.instanceId->empty(),
+                          handler,
+                          "ClientConfig::instanceId must not be empty");
     }
 
     if (config.nameSpace)
     {
-        THROW_CODE_IF_NOT_LOG(InvalidArg,
-                              std::regex_match(*config.nameSpace, std::regex(c_nameSpacePattern)),
-                              handler,
-                              "ClientConfig::nameSpace must match the pattern " + c_nameSpacePattern);
+        THROW_CODE_IF_LOG(InvalidArg, config.nameSpace->empty(), handler, "ClientConfig::nameSpace must not be empty");
     }
 }
 
@@ -165,10 +158,7 @@ void ValidateRequestParams(const RequestParams& requestParams, const ReportingHa
 
     for (const auto& [product, _] : requestParams.productRequests)
     {
-        THROW_CODE_IF_NOT_LOG(InvalidArg,
-                              std::regex_match(product, std::regex(c_productPattern)),
-                              handler,
-                              "product must match the pattern " + c_productPattern);
+        THROW_CODE_IF_LOG(InvalidArg, product.empty(), handler, "product must not be empty");
     }
 }
 } // namespace

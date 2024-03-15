@@ -211,9 +211,9 @@ void TestProductInRequestParams(const std::function<Result(const RequestParams&)
                                 const std::function<void()>& checkContents)
 {
     RequestParams params;
-    SECTION("Product must be between 1 and max chars")
+    SECTION("Product must not be empty")
     {
-        const std::string expectedErrorMsg = "product must match the pattern " + c_productPattern;
+        const std::string expectedErrorMsg = "product must not be empty";
 
         params.productRequests = {{"", {}}};
         auto result = apiCall(params);
@@ -227,33 +227,6 @@ void TestProductInRequestParams(const std::function<Result(const RequestParams&)
         REQUIRE(result.GetCode() == Result::InvalidArg);
         REQUIRE(result.GetMsg() == expectedErrorMsg);
         checkContents();
-
-        params.productRequests = {{std::string('a', 65), {}}};
-        result = apiCall(params);
-        REQUIRE(result.GetCode() == Result::InvalidArg);
-        REQUIRE(result.GetMsg() == expectedErrorMsg);
-        checkContents();
-    }
-
-    SECTION("Validating product pattern")
-    {
-        const std::string expectedErrorMsg = "product must match the pattern " + c_productPattern;
-
-        auto checkInvalidPattern = [&](const std::string& product) {
-            params.productRequests = {{product, {}}};
-            auto result = apiCall(params);
-            REQUIRE(result.GetCode() == Result::InvalidArg);
-            REQUIRE(result.GetMsg() == expectedErrorMsg);
-            checkContents();
-        };
-
-        checkInvalidPattern("$");    // Disallowed char
-        checkInvalidPattern("a b");  // Spaces
-        checkInvalidPattern("a_b");  // Underscore
-        checkInvalidPattern("¹");    // Non-ASCII
-        checkInvalidPattern(R"(a
-        b)");                        // Line break
-        checkInvalidPattern("a\tb"); // Tab
     }
 
     SECTION("Does not allow an empty request")

@@ -13,12 +13,10 @@ namespace SFS
 using TargetingAttributes = std::unordered_map<std::string, std::string>;
 
 constexpr unsigned c_maxRetries = 3;
-const std::string c_productPattern = "^[a-zA-Z0-9.-]{1,64}$";
 
 struct ProductRequest
 {
     /// @brief The name or GUID that uniquely represents the product in the service (required)
-    /// @note Must follow pattern: ^[a-zA-Z0-9.-]{1,64}$
     std::string product;
 
     /// @brief Key-value pair to filter the data retrieved from the service. Known from publishing (optional)
