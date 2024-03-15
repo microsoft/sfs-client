@@ -35,6 +35,14 @@ void ValidateClientConfig(const ClientConfig& config, const ReportingHandler& ha
 {
     THROW_CODE_IF_LOG(InvalidArg, config.accountId.empty(), handler, "ClientConfig::accountId cannot be empty");
 
+    if (config.instanceId)
+    {
+        THROW_CODE_IF_NOT_LOG(InvalidArg,
+                              std::regex_match(*config.instanceId, std::regex(c_instanceIdPattern)),
+                              handler,
+                              "ClientConfig::instanceId must match the pattern " + c_instanceIdPattern);
+    }
+
     if (config.nameSpace)
     {
         THROW_CODE_IF_NOT_LOG(InvalidArg,

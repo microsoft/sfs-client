@@ -268,6 +268,79 @@ TEST("Testing class SFSClientImpl()")
 
 TEST("Testing ClientConfig validation")
 {
+    SECTION("instanceId validation")
+    {
+        SECTION("instanceId must be between 3 and 36 chars")
+        {
+            const std::string expectedErrorMsg =
+                "ClientConfig::instanceId must match the pattern " + c_instanceIdPattern;
+
+            for (size_t i = 0; i <= 40; ++i)
+            {
+                ClientConfig config;
+                config.accountId = "testAccountId";
+                config.instanceId = std::string(i, 'a');
+                if (i >= 3 && i <= 36)
+                {
+                    REQUIRE_NOTHROW(SFSClientImpl<CurlConnectionManager>(std::move(config)));
+                }
+                else
+                {
+                    REQUIRE_THROWS_CODE_MSG(SFSClientImpl<CurlConnectionManager>(std::move(config)),
+                                            InvalidArg,
+                                            expectedErrorMsg);
+                }
+            }
+        }
+
+        SECTION("Validating instanceId pattern")
+        {
+            SECTION("Valid patterns")
+            {
+                auto checkValidPattern = [&](const std::string& pattern) {
+                    INFO("Checking pattern " << pattern);
+                    ClientConfig config;
+                    config.accountId = "testAccountId";
+                    config.instanceId = pattern;
+                    REQUIRE_NOTHROW(SFSClientImpl<CurlConnectionManager>(std::move(config)));
+                };
+
+                checkValidPattern("aaa"); // Lowercase
+                checkValidPattern("AAA"); // Uppercase
+                checkValidPattern("113"); // Numbers
+                checkValidPattern("aAa"); // Mixed letters
+                checkValidPattern("a2a"); // Mixed letters and numbers
+                checkValidPattern("a1-"); // Mixed with dash
+            }
+
+            SECTION("Invalid patterns")
+            {
+                const std::string expectedErrorMsg =
+                    "ClientConfig::instanceId must match the pattern " + c_instanceIdPattern;
+                auto checkInvalidPattern = [&](const std::string& pattern) {
+                    INFO("Checking pattern " << pattern);
+                    ClientConfig config;
+                    config.accountId = "testAccountId";
+                    config.instanceId = pattern;
+                    REQUIRE_THROWS_CODE_MSG(SFSClientImpl<CurlConnectionManager>(std::move(config)),
+                                            InvalidArg,
+                                            expectedErrorMsg);
+                };
+
+                checkInvalidPattern("-aa");    // Starting dash
+                checkInvalidPattern(".aa");    // Starting dot
+                checkInvalidPattern("aa.");    // Dots anywhere
+                checkInvalidPattern("aa$");    // Disallowed char
+                checkInvalidPattern("a b");    // Spaces
+                checkInvalidPattern("a_b");    // Underscore
+                checkInvalidPattern("¹¹¹¹");   // Non-ASCII
+                checkInvalidPattern(R"(a
+                    bcasd)");                  // Line break
+                checkInvalidPattern("a\tbcd"); // Tab
+            }
+        }
+    }
+
     SECTION("NameSpace validation")
     {
         SECTION("NameSpace must be between 1 and 64 chars")
