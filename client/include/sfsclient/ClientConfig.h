@@ -10,6 +10,7 @@
 
 namespace SFS
 {
+const std::string c_accountIdPattern = "^[a-zA-Z0-9-]+$";
 const std::string c_instanceIdPattern = "^[a-zA-Z0-9][a-zA-Z0-9-]{2,35}$";
 const std::string c_nameSpacePattern = "^[a-zA-Z0-9.-]{1,64}$";
 
@@ -17,6 +18,7 @@ const std::string c_nameSpacePattern = "^[a-zA-Z0-9.-]{1,64}$";
 struct ClientConfig
 {
     /// @brief The account ID of the SFS service is used to identify the caller (required)
+    /// @note Must follow pattern: ^[a-zA-Z0-9-]+$
     std::string accountId;
 
     /// @brief The instance ID of the SFS service

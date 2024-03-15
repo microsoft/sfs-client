@@ -268,6 +268,51 @@ TEST("Testing class SFSClientImpl()")
 
 TEST("Testing ClientConfig validation")
 {
+    SECTION("Validating accountId pattern")
+    {
+        SECTION("Valid patterns")
+        {
+            auto checkValidPattern = [&](const std::string& pattern) {
+                INFO("Checking pattern " << pattern);
+                ClientConfig config;
+                config.accountId = pattern;
+                REQUIRE_NOTHROW(SFSClientImpl<CurlConnectionManager>(std::move(config)));
+            };
+
+            checkValidPattern("a");   // Lowercase
+            checkValidPattern("A");   // Uppercase
+            checkValidPattern("1");   // Numbers
+            checkValidPattern("aAa"); // Mixed letters
+            checkValidPattern("a2a"); // Mixed letters and numbers
+            checkValidPattern("a1-"); // Mixed with dash
+            checkValidPattern("-aa"); // Starting dash
+        }
+
+        SECTION("Invalid patterns")
+        {
+            const std::string expectedErrorMsg = "ClientConfig::accountId must match the pattern " + c_accountIdPattern;
+            auto checkInvalidPattern = [&](const std::string& pattern) {
+                INFO("Checking pattern " << pattern);
+                ClientConfig config;
+                config.accountId = pattern;
+                REQUIRE_THROWS_CODE_MSG(SFSClientImpl<CurlConnectionManager>(std::move(config)),
+                                        InvalidArg,
+                                        expectedErrorMsg);
+            };
+
+            checkInvalidPattern("");       // Empty
+            checkInvalidPattern(".aa");    // Starting dot
+            checkInvalidPattern("aa.");    // Dots anywhere
+            checkInvalidPattern("aa$");    // Disallowed char
+            checkInvalidPattern("a b");    // Spaces
+            checkInvalidPattern("a_b");    // Underscore
+            checkInvalidPattern("¹¹¹¹");   // Non-ASCII
+            checkInvalidPattern(R"(a
+                bcasd)");                  // Line break
+            checkInvalidPattern("a\tbcd"); // Tab
+        }
+    }
+
     SECTION("instanceId validation")
     {
         SECTION("instanceId must be between 3 and 36 chars")

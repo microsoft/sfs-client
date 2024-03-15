@@ -33,7 +33,10 @@ namespace
 {
 void ValidateClientConfig(const ClientConfig& config, const ReportingHandler& handler)
 {
-    THROW_CODE_IF_LOG(InvalidArg, config.accountId.empty(), handler, "ClientConfig::accountId cannot be empty");
+    THROW_CODE_IF_NOT_LOG(InvalidArg,
+                          std::regex_match(config.accountId, std::regex(c_accountIdPattern)),
+                          handler,
+                          "ClientConfig::accountId must match the pattern " + c_accountIdPattern);
 
     if (config.instanceId)
     {
