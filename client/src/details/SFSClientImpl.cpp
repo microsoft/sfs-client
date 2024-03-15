@@ -423,7 +423,7 @@ std::string SFSClientImpl<ConnectionManagerT>::GetBaseUrl() const
         return *m_customBaseUrl;
     }
 
-    return "https://" + SFSUrlComponents::UrlEscape(m_accountId, m_reportingHandler) + "." + std::string(c_apiDomain);
+    return "https://" + SFSUrlComponents::UrlEscape(m_accountId + "." + std::string(c_apiDomain), m_reportingHandler);
 }
 
 template class SFS::details::SFSClientImpl<CurlConnectionManager>;
