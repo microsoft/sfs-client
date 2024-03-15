@@ -191,7 +191,8 @@ std::unique_ptr<VersionEntity> SFSClientImpl<ConnectionManagerT>::GetLatestVersi
 try
 {
     const auto& [product, attributes] = productRequest;
-    const std::string url{SFSUrlComponents::GetLatestVersionUrl(GetBaseUrl(), m_instanceId, m_nameSpace, product)};
+    const std::string url{
+        SFSUrlComponents::GetLatestVersionUrl(GetBaseUrl(), m_instanceId, m_nameSpace, product, m_reportingHandler)};
 
     LOG_INFO(m_reportingHandler, "Requesting latest version of [%s] from URL [%s]", product.c_str(), url.c_str());
 
@@ -216,7 +217,8 @@ VersionEntities SFSClientImpl<ConnectionManagerT>::GetLatestVersionBatch(
     Connection& connection) const
 try
 {
-    const std::string url{SFSUrlComponents::GetLatestVersionBatchUrl(GetBaseUrl(), m_instanceId, m_nameSpace)};
+    const std::string url{
+        SFSUrlComponents::GetLatestVersionBatchUrl(GetBaseUrl(), m_instanceId, m_nameSpace, m_reportingHandler)};
 
     LOG_INFO(m_reportingHandler, "Requesting latest version of multiple products from URL [%s]", url.c_str());
 
@@ -251,8 +253,12 @@ std::unique_ptr<VersionEntity> SFSClientImpl<ConnectionManagerT>::GetSpecificVer
                                                                                      Connection& connection) const
 try
 {
-    const std::string url{
-        SFSUrlComponents::GetSpecificVersionUrl(GetBaseUrl(), m_instanceId, m_nameSpace, product, version)};
+    const std::string url{SFSUrlComponents::GetSpecificVersionUrl(GetBaseUrl(),
+                                                                  m_instanceId,
+                                                                  m_nameSpace,
+                                                                  product,
+                                                                  version,
+                                                                  m_reportingHandler)};
 
     LOG_INFO(m_reportingHandler,
              "Requesting version [%s] of [%s] from URL [%s]",
@@ -281,8 +287,12 @@ FileEntities SFSClientImpl<ConnectionManagerT>::GetDownloadInfo(const std::strin
                                                                 Connection& connection) const
 try
 {
-    const std::string url{
-        SFSUrlComponents::GetDownloadInfoUrl(GetBaseUrl(), m_instanceId, m_nameSpace, product, version)};
+    const std::string url{SFSUrlComponents::GetDownloadInfoUrl(GetBaseUrl(),
+                                                               m_instanceId,
+                                                               m_nameSpace,
+                                                               product,
+                                                               version,
+                                                               m_reportingHandler)};
 
     LOG_INFO(m_reportingHandler,
              "Requesting download info of version [%s] of [%s] from URL [%s]",
@@ -412,7 +422,8 @@ std::string SFSClientImpl<ConnectionManagerT>::GetBaseUrl() const
     {
         return *m_customBaseUrl;
     }
-    return "https://" + m_accountId + "." + std::string(c_apiDomain);
+
+    return "https://" + SFSUrlComponents::UrlEscape(m_accountId, m_reportingHandler) + "." + std::string(c_apiDomain);
 }
 
 template class SFS::details::SFSClientImpl<CurlConnectionManager>;
