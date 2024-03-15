@@ -10,6 +10,8 @@
 
 namespace SFS
 {
+const std::string c_nameSpacePattern = "^[a-zA-Z0-9.-]{1,64}$";
+
 /// @brief Configurations to create an SFSClient instance
 struct ClientConfig
 {
@@ -20,6 +22,7 @@ struct ClientConfig
     std::optional<std::string> instanceId;
 
     /// @brief The namespace of the SFS service
+    /// @note Must follow pattern: ^[a-zA-Z0-9.-]{1,64}$
     std::optional<std::string> nameSpace;
 
     /**

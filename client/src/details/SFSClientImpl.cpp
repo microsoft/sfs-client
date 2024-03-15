@@ -31,6 +31,19 @@ constexpr const char* c_defaultNameSpace = "default";
 
 namespace
 {
+void ValidateClientConfig(const ClientConfig& config, const ReportingHandler& handler)
+{
+    THROW_CODE_IF_LOG(InvalidArg, config.accountId.empty(), handler, "ClientConfig::accountId cannot be empty");
+
+    if (config.nameSpace)
+    {
+        THROW_CODE_IF_NOT_LOG(InvalidArg,
+                              std::regex_match(*config.nameSpace, std::regex(c_nameSpacePattern)),
+                              handler,
+                              "ClientConfig::nameSpace must match the pattern " + c_nameSpacePattern);
+    }
+}
+
 void LogIfTestOverridesAllowed(const ReportingHandler& handler)
 {
     if (test::AreTestOverridesAllowed())
@@ -151,15 +164,18 @@ void ValidateRequestParams(const RequestParams& requestParams, const ReportingHa
 
 template <typename ConnectionManagerT>
 SFSClientImpl<ConnectionManagerT>::SFSClientImpl(ClientConfig&& config)
-    : m_accountId(std::move(config.accountId))
-    , m_instanceId(config.instanceId && !config.instanceId->empty() ? std::move(*config.instanceId)
-                                                                    : c_defaultInstanceId)
-    , m_nameSpace(config.nameSpace && !config.nameSpace->empty() ? std::move(*config.nameSpace) : c_defaultNameSpace)
 {
     if (config.logCallbackFn)
     {
         m_reportingHandler.SetLoggingCallback(std::move(*config.logCallbackFn));
     }
+
+    ValidateClientConfig(config, m_reportingHandler);
+
+    m_accountId = std::move(config.accountId);
+    m_instanceId =
+        (config.instanceId && !config.instanceId->empty()) ? std::move(*config.instanceId) : c_defaultInstanceId;
+    m_nameSpace = (config.nameSpace && !config.nameSpace->empty()) ? std::move(*config.nameSpace) : c_defaultNameSpace;
 
     static_assert(std::is_base_of<ConnectionManager, ConnectionManagerT>::value,
                   "ConnectionManagerT not derived from ConnectionManager");

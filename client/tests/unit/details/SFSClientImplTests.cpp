@@ -266,6 +266,78 @@ TEST("Testing class SFSClientImpl()")
     }
 }
 
+TEST("Testing ClientConfig validation")
+{
+    SECTION("NameSpace validation")
+    {
+        SECTION("NameSpace must be between 1 and 64 chars")
+        {
+            const std::string expectedErrorMsg = "ClientConfig::nameSpace must match the pattern " + c_nameSpacePattern;
+
+            for (size_t i = 0; i <= 65; ++i)
+            {
+                ClientConfig config;
+                config.accountId = "testAccountId";
+                config.nameSpace = std::string(i, 'a');
+                if (i >= 1 && i <= 64)
+                {
+                    REQUIRE_NOTHROW(SFSClientImpl<CurlConnectionManager>(std::move(config)));
+                }
+                else
+                {
+                    REQUIRE_THROWS_CODE_MSG(SFSClientImpl<CurlConnectionManager>(std::move(config)),
+                                            InvalidArg,
+                                            expectedErrorMsg);
+                }
+            }
+        }
+
+        SECTION("Validating nameSpace pattern")
+        {
+            SECTION("Valid patterns")
+            {
+                auto checkValidPattern = [&](const std::string& pattern) {
+                    INFO("Checking pattern " << pattern);
+                    ClientConfig config;
+                    config.accountId = "testAccountId";
+                    config.nameSpace = pattern;
+                    REQUIRE_NOTHROW(SFSClientImpl<CurlConnectionManager>(std::move(config)));
+                };
+
+                checkValidPattern("a");    // Lowercase
+                checkValidPattern("A");    // Uppercase
+                checkValidPattern("1");    // Numbers
+                checkValidPattern(".");    // Dots
+                checkValidPattern("-");    // Dashes
+                checkValidPattern("a1.-"); // Mixed
+            }
+
+            SECTION("Invalid patterns")
+            {
+                const std::string expectedErrorMsg =
+                    "ClientConfig::nameSpace must match the pattern " + c_nameSpacePattern;
+                auto checkInvalidPattern = [&](const std::string& pattern) {
+                    INFO("Checking pattern " << pattern);
+                    ClientConfig config;
+                    config.accountId = "testAccountId";
+                    config.nameSpace = pattern;
+                    REQUIRE_THROWS_CODE_MSG(SFSClientImpl<CurlConnectionManager>(std::move(config)),
+                                            InvalidArg,
+                                            expectedErrorMsg);
+                };
+
+                checkInvalidPattern("$");    // Disallowed char
+                checkInvalidPattern("a b");  // Spaces
+                checkInvalidPattern("a_b");  // Underscore
+                checkInvalidPattern("¹");    // Non-ASCII
+                checkInvalidPattern(R"(a
+                    b)");                    // Line break
+                checkInvalidPattern("a\tb"); // Tab
+            }
+        }
+    }
+}
+
 TEST("Testing SFSClientImpl::SetCustomBaseUrl()")
 {
     ClientConfig config;
