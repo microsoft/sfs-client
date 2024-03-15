@@ -17,7 +17,7 @@ struct CurlEscapedString
   public:
     CurlEscapedString(const std::string& str, const ReportingHandler& handler)
     {
-        m_escapedString = curl_easy_escape(nullptr /*ignored*/, str.c_str(), 0 /*use strlen*/);
+        m_escapedString = curl_easy_escape(nullptr /*ignored*/, str.c_str(), static_cast<int>(str.length()));
         THROW_CODE_IF_LOG(Unexpected,
                           m_escapedString == nullptr,
                           handler,
