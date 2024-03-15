@@ -17,6 +17,7 @@
 
 #include <nlohmann/json.hpp>
 
+#include <regex>
 #include <unordered_set>
 
 using namespace SFS;
@@ -140,7 +141,10 @@ void ValidateRequestParams(const RequestParams& requestParams, const ReportingHa
 
     for (const auto& [product, _] : requestParams.productRequests)
     {
-        THROW_CODE_IF_LOG(InvalidArg, product.empty(), handler, "product cannot be empty");
+        THROW_CODE_IF_NOT_LOG(InvalidArg,
+                              std::regex_match(product, std::regex(c_productPattern)),
+                              handler,
+                              "product must match the pattern " + c_productPattern);
     }
 }
 } // namespace
