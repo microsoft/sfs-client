@@ -30,6 +30,7 @@ class Result
         // Connection errors start at 0x8000'1000
         ConnectionSetupFailed = 0x8000'1000,
         ConnectionUnexpectedError = 0x8000'1001,
+        ConnectionUrlSetupFailed = 0x8000'1002,
 
         // Http Errors start at 0x8000'2000
         // Generic Http errors

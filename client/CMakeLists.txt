@@ -40,6 +40,7 @@ target_sources(
             src/details/SFSException.cpp
             src/details/SFSUrlComponents.cpp
             src/details/TestOverride.cpp
+            src/details/UrlBuilder.cpp
             src/details/Util.cpp
             src/File.cpp
             src/Logging.cpp

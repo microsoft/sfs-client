@@ -86,6 +86,8 @@ std::string_view SFS::ToString(Result::Code code) noexcept
         return "ConnectionSetupFailed";
     case Result::ConnectionUnexpectedError:
         return "ConnectionUnexpectedError";
+    case Result::ConnectionUrlSetupFailed:
+        return "ConnectionUrlSetupFailed";
 
     // Http Errors
     case Result::HttpTimeout:
