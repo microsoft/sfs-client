@@ -386,29 +386,6 @@ TEST("Testing test override SFS_TEST_OVERRIDE_BASE_URL")
     REQUIRE(sfsClient.GetBaseUrl() == "customUrl");
 }
 
-TEST("Test accountId is properly encoded")
-{
-    auto check = [&](const std::string& accountId, const std::string& expectedEncodedAccountId) {
-        ClientConfig config;
-        config.accountId = accountId;
-        SFSClientImpl<MockConnectionManager> sfsClient(std::move(config));
-        REQUIRE(sfsClient.GetBaseUrl() == "https://" + expectedEncodedAccountId + ".api.cdp.microsoft.com");
-    };
-
-    SECTION("No special characters")
-    {
-        check("testAccountId", "testAccountId");
-    }
-
-    SECTION("Special characters")
-    {
-        check("testAccountId<", "testAccountId%3C");
-        check("testAccountId\\", "testAccountId%5C");
-        check("testAccountId ", "testAccountId%20");
-        check("testAccountId@", "testAccountId%40");
-    }
-}
-
 TEST("Testing passing a logging callback to constructor of SFSClientImpl")
 {
     SFSClientImpl<MockConnectionManager> sfsClient(

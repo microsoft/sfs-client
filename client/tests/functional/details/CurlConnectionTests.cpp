@@ -102,8 +102,7 @@ TEST("Testing CurlConnection()")
                                                                         c_instanceId,
                                                                         c_namespace,
                                                                         c_productName,
-                                                                        c_version,
-                                                                        handler);
+                                                                        c_version);
 
         // Before registering the product, the URL returns 404 Not Found
         REQUIRE_THROWS_CODE(connection->Get(url), HttpNotFound);
@@ -128,7 +127,7 @@ TEST("Testing CurlConnection()")
         SECTION("With GetLatestVersionBatch mock")
         {
             const std::string url =
-                SFSUrlComponents::GetLatestVersionBatchUrl(server.GetBaseUrl(), c_instanceId, c_namespace, handler);
+                SFSUrlComponents::GetLatestVersionBatchUrl(server.GetBaseUrl(), c_instanceId, c_namespace);
 
             // Missing proper body returns HttpBadRequest
             REQUIRE_THROWS_CODE(connection->Post(url), HttpBadRequest);
@@ -165,8 +164,7 @@ TEST("Testing CurlConnection()")
                                                                          c_instanceId,
                                                                          c_namespace,
                                                                          c_productName,
-                                                                         c_version,
-                                                                         handler);
+                                                                         c_version);
 
             // Before registering the product, the URL returns 404 Not Found
             REQUIRE_THROWS_CODE(connection->Post(url), HttpNotFound);
@@ -264,8 +262,7 @@ TEST("Testing CurlConnection works from a second ConnectionManager")
                                                                     c_instanceId,
                                                                     c_namespace,
                                                                     c_productName,
-                                                                    c_version,
-                                                                    handler);
+                                                                    c_version);
 
     // Register the product
     server.RegisterProduct(c_productName, c_version);
@@ -301,8 +298,7 @@ TEST("Testing a url that's too big throws 414")
                                                                                     c_instanceId,
                                                                                     c_namespace,
                                                                                     largeProductName,
-                                                                                    c_version,
-                                                                                    handler)),
+                                                                                    c_version)),
                             HttpUnexpected,
                             "Unexpected HTTP code 414");
 }
@@ -326,8 +322,7 @@ TEST("Testing a response over the limit fails the operation")
 
     // Using GetLatestVersionBatch api since the product name is in the body and not in the url, to avoid a 414 error
     // like on the test above
-    const std::string url =
-        SFSUrlComponents::GetLatestVersionBatchUrl(server.GetBaseUrl(), c_instanceId, c_namespace, handler);
+    const std::string url = SFSUrlComponents::GetLatestVersionBatchUrl(server.GetBaseUrl(), c_instanceId, c_namespace);
 
     // Large one works
     json body = {{{"TargetingAttributes", {}}, {"Product", largeProductName}}};
@@ -356,8 +351,7 @@ TEST("Testing MS-CV is sent to server")
                                                                     c_instanceId,
                                                                     c_namespace,
                                                                     c_productName,
-                                                                    c_version,
-                                                                    handler);
+                                                                    c_version);
 
     server.RegisterProduct(c_productName, c_version);
 
@@ -392,8 +386,7 @@ TEST("Testing retry behavior")
                                                                     c_instanceId,
                                                                     c_namespace,
                                                                     c_productName,
-                                                                    c_version,
-                                                                    handler);
+                                                                    c_version);
 
     SECTION("Test exponential backoff")
     {
