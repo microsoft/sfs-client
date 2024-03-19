@@ -21,41 +21,18 @@ using namespace SFS::details;
 
 namespace
 {
-struct CurlString
+struct CurlCharDeleter
 {
-  public:
-    CurlString() = default;
-
-    ~CurlString()
+    void operator()(char* val)
     {
-        Release();
-    }
-
-    CurlString(const CurlString&) = delete;
-    CurlString& operator=(const CurlString&) = delete;
-
-    char* Get() const
-    {
-        return m_data;
-    }
-
-    char** ReleaseAndGetAddressOf()
-    {
-        Release();
-        return &m_data;
-    }
-
-  private:
-    void Release()
-    {
-        if (m_data)
+        if (val)
         {
-            curl_free(m_data);
+            curl_free(val);
         }
     }
-
-    char* m_data = nullptr;
 };
+
+using CurlCharPtr = std::unique_ptr<char, CurlCharDeleter>;
 
 std::string GetCurlUrlStrError(CURLUcode code)
 {
@@ -75,9 +52,10 @@ UrlBuilder::~UrlBuilder()
 
 std::string UrlBuilder::GetUrl() const
 {
-    CurlString url;
-    THROW_IF_CURLU_SETUP_ERROR(curl_url_get(m_handle, CURLUPART_URL, url.ReleaseAndGetAddressOf(), 0 /*flags*/));
-    return url.Get();
+    CurlCharPtr url;
+    char* urlPtr = url.get();
+    THROW_IF_CURLU_SETUP_ERROR(curl_url_get(m_handle, CURLUPART_URL, &urlPtr, 0 /*flags*/));
+    return urlPtr;
 }
 
 void UrlBuilder::SetScheme(Scheme scheme)
