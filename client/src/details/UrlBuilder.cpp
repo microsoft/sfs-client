@@ -10,14 +10,14 @@
 
 #include <memory>
 
-#define THROW_IF_CURLU_ERROR(curlCall, error)                                                                          \
+#define THROW_IF_CURL_URL_ERROR(curlCall, error)                                                                       \
     do                                                                                                                 \
     {                                                                                                                  \
         auto __curlUrlCode = (curlCall);                                                                               \
         THROW_CODE_IF_NOT_LOG(error, __curlUrlCode == CURLUE_OK, m_handler, GetCurlUrlStrError(__curlUrlCode));        \
     } while ((void)0, 0)
 
-#define THROW_IF_CURLU_SETUP_ERROR(curlCall) THROW_IF_CURLU_ERROR(curlCall, ConnectionUrlSetupFailed)
+#define THROW_IF_CURL_URL_SETUP_ERROR(curlCall) THROW_IF_CURL_URL_ERROR(curlCall, ConnectionUrlSetupFailed)
 
 using namespace SFS::details;
 
@@ -57,7 +57,7 @@ std::string UrlBuilder::GetUrl() const
 {
     CurlCharPtr url;
     char* urlPtr = url.get();
-    THROW_IF_CURLU_SETUP_ERROR(curl_url_get(m_handle, CURLUPART_URL, &urlPtr, 0 /*flags*/));
+    THROW_IF_CURL_URL_SETUP_ERROR(curl_url_get(m_handle, CURLUPART_URL, &urlPtr, 0 /*flags*/));
     return urlPtr;
 }
 
@@ -66,14 +66,14 @@ void UrlBuilder::SetScheme(Scheme scheme)
     switch (scheme)
     {
     case Scheme::Https:
-        THROW_IF_CURLU_SETUP_ERROR(curl_url_set(m_handle, CURLUPART_SCHEME, "https", 0 /*flags*/));
+        THROW_IF_CURL_URL_SETUP_ERROR(curl_url_set(m_handle, CURLUPART_SCHEME, "https", 0 /*flags*/));
         break;
     }
 }
 
 void UrlBuilder::SetHost(const std::string& host)
 {
-    THROW_IF_CURLU_SETUP_ERROR(curl_url_set(m_handle, CURLUPART_HOST, host.c_str(), 0 /*flags*/));
+    THROW_IF_CURL_URL_SETUP_ERROR(curl_url_set(m_handle, CURLUPART_HOST, host.c_str(), 0 /*flags*/));
 }
 
 void UrlBuilder::SetPath(const std::string& path, bool encode)
@@ -83,7 +83,7 @@ void UrlBuilder::SetPath(const std::string& path, bool encode)
     {
         flags |= CURLU_URLENCODE;
     }
-    THROW_IF_CURLU_SETUP_ERROR(curl_url_set(m_handle, CURLUPART_PATH, path.c_str(), flags));
+    THROW_IF_CURL_URL_SETUP_ERROR(curl_url_set(m_handle, CURLUPART_PATH, path.c_str(), flags));
 }
 
 void UrlBuilder::SetQuery(const std::string& query, bool append)
@@ -93,10 +93,10 @@ void UrlBuilder::SetQuery(const std::string& query, bool append)
     {
         flags |= CURLU_APPENDQUERY;
     }
-    THROW_IF_CURLU_SETUP_ERROR(curl_url_set(m_handle, CURLUPART_QUERY, query.c_str(), flags));
+    THROW_IF_CURL_URL_SETUP_ERROR(curl_url_set(m_handle, CURLUPART_QUERY, query.c_str(), flags));
 }
 
 void UrlBuilder::SetUrl(const std::string& url)
 {
-    THROW_IF_CURLU_SETUP_ERROR(curl_url_set(m_handle, CURLUPART_URL, url.c_str(), 0 /*flags*/));
+    THROW_IF_CURL_URL_SETUP_ERROR(curl_url_set(m_handle, CURLUPART_URL, url.c_str(), 0 /*flags*/));
 }
