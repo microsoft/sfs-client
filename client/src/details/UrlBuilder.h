@@ -81,6 +81,12 @@ class UrlBuilder
      */
     void SetUrl(const std::string& url);
 
+  protected:
+    /**
+     * @brief URL-escape a given string
+     */
+    std::string EscapeString(const std::string& str) const;
+
   private:
     const ReportingHandler& m_handler;
 
