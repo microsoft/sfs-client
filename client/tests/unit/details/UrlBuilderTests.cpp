@@ -94,4 +94,14 @@ TEST("UrlBuilder")
 
         REQUIRE(builder.GetUrl() == "https://www.example.com/index%40.html?key=value");
     }
+
+    SECTION("Constructor with URL")
+    {
+        UrlBuilder builder2("https://www.example.com/index.html?key=value", handler);
+        REQUIRE(builder2.GetUrl() == "https://www.example.com/index.html?key=value");
+
+        REQUIRE_THROWS_CODE_MSG(UrlBuilder("https://www.+.com", handler),
+                                ConnectionUrlSetupFailed,
+                                "Curl URL error: Bad hostname");
+    }
 }

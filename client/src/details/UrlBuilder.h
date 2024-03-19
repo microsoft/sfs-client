@@ -21,7 +21,17 @@ enum class Scheme
 class UrlBuilder
 {
   public:
-    UrlBuilder(const ReportingHandler& handler);
+    /**
+     * @brief Construct a new Url Builder object with an empty URL
+     */
+    explicit UrlBuilder(const ReportingHandler& handler);
+
+    /**
+     * @brief Construct a new Url Builder object with an existing URL
+     * @param url The URL to set
+     */
+    UrlBuilder(const std::string& url, const ReportingHandler& handler);
+
     ~UrlBuilder();
 
     UrlBuilder(const UrlBuilder&) = delete;

@@ -48,6 +48,11 @@ UrlBuilder::UrlBuilder(const ReportingHandler& handler) : m_handler(handler)
     THROW_CODE_IF_NOT_LOG(ConnectionUrlSetupFailed, m_handle, m_handler, "Curl URL error: Failed to create URL");
 }
 
+UrlBuilder::UrlBuilder(const std::string& url, const ReportingHandler& handler) : UrlBuilder(handler)
+{
+    SetUrl(url);
+}
+
 UrlBuilder::~UrlBuilder()
 {
     curl_url_cleanup(m_handle);
