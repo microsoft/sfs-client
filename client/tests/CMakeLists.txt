@@ -31,6 +31,7 @@ target_sources(
             unit/details/ReportingHandlerTests.cpp
             unit/details/SFSClientImplTests.cpp
             unit/details/TestOverrideTests.cpp
+            unit/details/UrlBuilderTests.cpp
             unit/details/UtilTests.cpp
             unit/FileTests.cpp
             unit/ResultTests.cpp
