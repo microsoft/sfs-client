@@ -86,14 +86,14 @@ void UrlBuilder::SetPath(const std::string& path, bool encode)
     THROW_IF_CURL_URL_SETUP_ERROR(curl_url_set(m_handle, CURLUPART_PATH, path.c_str(), flags));
 }
 
-void UrlBuilder::SetQuery(const std::string& query, bool append)
+void UrlBuilder::SetQuery(const std::string& query)
 {
-    unsigned flags = 0;
-    if (append)
-    {
-        flags |= CURLU_APPENDQUERY;
-    }
-    THROW_IF_CURL_URL_SETUP_ERROR(curl_url_set(m_handle, CURLUPART_QUERY, query.c_str(), flags));
+    THROW_IF_CURL_URL_SETUP_ERROR(curl_url_set(m_handle, CURLUPART_QUERY, query.c_str(), 0 /*flags*/));
+}
+
+void UrlBuilder::AppendQuery(const std::string& query)
+{
+    THROW_IF_CURL_URL_SETUP_ERROR(curl_url_set(m_handle, CURLUPART_QUERY, query.c_str(), CURLU_APPENDQUERY));
 }
 
 void UrlBuilder::SetUrl(const std::string& url)

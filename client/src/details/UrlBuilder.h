@@ -53,10 +53,16 @@ class UrlBuilder
     /**
      * @brief Set a query to the URL
      * @param query The query to set to the URL. Ex: key=value
-     * @param append If true, the query will be appended to the existing query
      * @throws SFSException if the string is invalid
      */
-    void SetQuery(const std::string& query, bool append = false);
+    void SetQuery(const std::string& query);
+
+    /**
+     * @brief Append a query to the URL
+     * @param query The query to append to the URL. Ex: key=value
+     * @throws SFSException if the string is invalid
+     */
+    void AppendQuery(const std::string& query);
 
     /**
      * @brief Set the URL through a string. Other methods can still be called later to modify the URl

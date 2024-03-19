@@ -54,15 +54,15 @@ TEST("UrlBuilder")
         REQUIRE(builder.GetUrl() == "https://www.example.com/index%3e%40/index");
     }
 
-    SECTION("SetQuery")
+    SECTION("SetQuery, AppendQuery")
     {
         builder.SetQuery("key=value");
         REQUIRE(builder.GetUrl() == "https://www.example.com/?key=value");
 
-        builder.SetQuery("key2=value2", true /*append*/);
+        builder.AppendQuery("key2=value2");
         REQUIRE(builder.GetUrl() == "https://www.example.com/?key=value&key2=value2");
 
-        builder.SetQuery("key2=value2", false /*append*/);
+        builder.SetQuery("key2=value2");
         REQUIRE(builder.GetUrl() == "https://www.example.com/?key2=value2");
     }
 
@@ -75,7 +75,7 @@ TEST("UrlBuilder")
                                 "Curl URL error: Bad hostname");
     }
 
-    SECTION("SetScheme, SetHost, SetPath, AppendQuery")
+    SECTION("SetScheme, SetHost, SetPath, SetQuery")
     {
         builder.SetScheme(Scheme::Https);
         builder.SetHost("www.example.com");
@@ -85,7 +85,7 @@ TEST("UrlBuilder")
         REQUIRE(builder.GetUrl() == "https://www.example.com/index.html?key=value");
     }
 
-    SECTION("SetScheme, SetHost, SetPath, AppendQuery with encoding")
+    SECTION("SetScheme, SetHost, SetPath, SetQuery with encoding")
     {
         builder.SetScheme(Scheme::Https);
         builder.SetHost("www.example.com");
