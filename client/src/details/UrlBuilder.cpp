@@ -43,6 +43,7 @@ std::string GetCurlUrlStrError(CURLUcode code)
 UrlBuilder::UrlBuilder(const ReportingHandler& handler) : m_handler(handler)
 {
     m_handle = curl_url();
+    THROW_CODE_IF_NOT_LOG(ConnectionUrlSetupFailed, m_handle, m_handler, "Curl URL error: Failed to create URL");
 }
 
 UrlBuilder::~UrlBuilder()
