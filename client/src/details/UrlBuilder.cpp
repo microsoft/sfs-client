@@ -8,6 +8,8 @@
 
 #include <curl/curl.h>
 
+#include <memory>
+
 #define THROW_IF_CURLU_ERROR(curlCall, error)                                                                          \
     do                                                                                                                 \
     {                                                                                                                  \
