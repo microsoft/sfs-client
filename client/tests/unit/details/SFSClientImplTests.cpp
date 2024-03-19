@@ -266,6 +266,71 @@ TEST("Testing class SFSClientImpl()")
     }
 }
 
+TEST("Testing ClientConfig validation")
+{
+    SECTION("accountId must not be empty")
+    {
+        const std::string expectedErrorMsg = "ClientConfig::accountId must not be empty";
+        for (size_t i = 0; i <= 10; ++i)
+        {
+            ClientConfig config;
+            config.accountId = std::string(i, 'a');
+            if (i >= 1)
+            {
+                REQUIRE_NOTHROW(SFSClientImpl<CurlConnectionManager>(std::move(config)));
+            }
+            else
+            {
+                REQUIRE_THROWS_CODE_MSG(SFSClientImpl<CurlConnectionManager>(std::move(config)),
+                                        InvalidArg,
+                                        expectedErrorMsg);
+            }
+        }
+    }
+
+    SECTION("instanceId must not be empty")
+    {
+        const std::string expectedErrorMsg = "ClientConfig::instanceId must not be empty";
+        for (size_t i = 0; i <= 10; ++i)
+        {
+            ClientConfig config;
+            config.accountId = "testAccountId";
+            config.instanceId = std::string(i, 'a');
+            if (i >= 1)
+            {
+                REQUIRE_NOTHROW(SFSClientImpl<CurlConnectionManager>(std::move(config)));
+            }
+            else
+            {
+                REQUIRE_THROWS_CODE_MSG(SFSClientImpl<CurlConnectionManager>(std::move(config)),
+                                        InvalidArg,
+                                        expectedErrorMsg);
+            }
+        }
+    }
+
+    SECTION("NameSpace must not be empty")
+    {
+        const std::string expectedErrorMsg = "ClientConfig::nameSpace must not be empty";
+        for (size_t i = 0; i <= 10; ++i)
+        {
+            ClientConfig config;
+            config.accountId = "testAccountId";
+            config.nameSpace = std::string(i, 'a');
+            if (i >= 1)
+            {
+                REQUIRE_NOTHROW(SFSClientImpl<CurlConnectionManager>(std::move(config)));
+            }
+            else
+            {
+                REQUIRE_THROWS_CODE_MSG(SFSClientImpl<CurlConnectionManager>(std::move(config)),
+                                        InvalidArg,
+                                        expectedErrorMsg);
+            }
+        }
+    }
+}
+
 TEST("Testing SFSClientImpl::SetCustomBaseUrl()")
 {
     ClientConfig config;

@@ -30,6 +30,24 @@ constexpr const char* c_defaultNameSpace = "default";
 
 namespace
 {
+void ValidateClientConfig(const ClientConfig& config, const ReportingHandler& handler)
+{
+    THROW_CODE_IF_LOG(InvalidArg, config.accountId.empty(), handler, "ClientConfig::accountId must not be empty");
+
+    if (config.instanceId)
+    {
+        THROW_CODE_IF_LOG(InvalidArg,
+                          config.instanceId->empty(),
+                          handler,
+                          "ClientConfig::instanceId must not be empty");
+    }
+
+    if (config.nameSpace)
+    {
+        THROW_CODE_IF_LOG(InvalidArg, config.nameSpace->empty(), handler, "ClientConfig::nameSpace must not be empty");
+    }
+}
+
 void LogIfTestOverridesAllowed(const ReportingHandler& handler)
 {
     if (test::AreTestOverridesAllowed())
@@ -140,22 +158,25 @@ void ValidateRequestParams(const RequestParams& requestParams, const ReportingHa
 
     for (const auto& [product, _] : requestParams.productRequests)
     {
-        THROW_CODE_IF_LOG(InvalidArg, product.empty(), handler, "product cannot be empty");
+        THROW_CODE_IF_LOG(InvalidArg, product.empty(), handler, "product must not be empty");
     }
 }
 } // namespace
 
 template <typename ConnectionManagerT>
 SFSClientImpl<ConnectionManagerT>::SFSClientImpl(ClientConfig&& config)
-    : m_accountId(std::move(config.accountId))
-    , m_instanceId(config.instanceId && !config.instanceId->empty() ? std::move(*config.instanceId)
-                                                                    : c_defaultInstanceId)
-    , m_nameSpace(config.nameSpace && !config.nameSpace->empty() ? std::move(*config.nameSpace) : c_defaultNameSpace)
 {
     if (config.logCallbackFn)
     {
         m_reportingHandler.SetLoggingCallback(std::move(*config.logCallbackFn));
     }
+
+    ValidateClientConfig(config, m_reportingHandler);
+
+    m_accountId = std::move(config.accountId);
+    m_instanceId =
+        (config.instanceId && !config.instanceId->empty()) ? std::move(*config.instanceId) : c_defaultInstanceId;
+    m_nameSpace = (config.nameSpace && !config.nameSpace->empty()) ? std::move(*config.nameSpace) : c_defaultNameSpace;
 
     static_assert(std::is_base_of<ConnectionManager, ConnectionManagerT>::value,
                   "ConnectionManagerT not derived from ConnectionManager");

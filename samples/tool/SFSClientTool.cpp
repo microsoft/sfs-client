@@ -445,8 +445,14 @@ int main(int argc, char* argv[])
 
     ClientConfig config;
     config.accountId = settings.accountId;
-    config.instanceId = settings.instanceId;
-    config.nameSpace = settings.nameSpace;
+    if (!settings.instanceId.empty())
+    {
+        config.instanceId = settings.instanceId;
+    }
+    if (!settings.nameSpace.empty())
+    {
+        config.nameSpace = settings.nameSpace;
+    }
     config.logCallbackFn = LoggingCallback;
 
     std::unique_ptr<SFSClient> sfsClient;

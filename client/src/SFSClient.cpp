@@ -18,11 +18,6 @@ SFSClient::~SFSClient() noexcept = default;
 Result SFSClient::Make(ClientConfig config, std::unique_ptr<SFSClient>& out) noexcept
 try
 {
-    if (config.accountId.empty())
-    {
-        return Result(Result::InvalidArg, "ClientConfig::accountId cannot be empty");
-    }
-
     out.reset();
     std::unique_ptr<SFSClient> tmp(new SFSClient());
     tmp->m_impl = std::make_unique<details::SFSClientImpl<CurlConnectionManager>>(std::move(config));
