@@ -30,6 +30,7 @@ target_sources(
             unit/details/ErrorHandlingTests.cpp
             unit/details/ReportingHandlerTests.cpp
             unit/details/SFSClientImplTests.cpp
+            unit/details/SFSUrlBuilderTests.cpp
             unit/details/TestOverrideTests.cpp
             unit/details/UrlBuilderTests.cpp
             unit/details/UtilTests.cpp
