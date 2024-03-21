@@ -33,39 +33,58 @@ SFSUrlBuilder::SFSUrlBuilder(const SFSCustomUrl& customUrl,
 
 std::string SFSUrlBuilder::GetLatestVersionUrl(const std::string& product)
 {
-    SetPath(GetVersionsUrlPath(product) + "latest");
+    SetVersionsUrlPath(product);
+    AppendPath("latest");
     SetQuery("action=select");
     return GetUrl();
 }
 
 std::string SFSUrlBuilder::GetLatestVersionBatchUrl()
 {
-    SetPath(GetNamesUrlPath());
+    SetNamesUrlPath();
     SetQuery("action=BatchUpdates");
     return GetUrl();
 }
 
 std::string SFSUrlBuilder::GetSpecificVersionUrl(const std::string& product, const std::string& version)
 {
-    SetPath(GetVersionsUrlPath(product) + EscapeString(version));
-    SetQuery("");
+    SetVersionsUrlPath(product);
+    AppendPath(version, true /*encode*/);
+
     return GetUrl();
 }
 
 std::string SFSUrlBuilder::GetDownloadInfoUrl(const std::string& product, const std::string& version)
 {
-    SetPath(GetVersionsUrlPath(product) + EscapeString(version) + "/files");
+    SetVersionsUrlPath(product);
+    AppendPath(version, true /*encode*/);
+    AppendPath("files");
     SetQuery("action=GenerateDownloadInfo");
+
     return GetUrl();
 }
 
-std::string SFSUrlBuilder::GetNamesUrlPath() const
+void SFSUrlBuilder::ResetPathAndQuery()
 {
-    return "api/" + std::string(c_apiVersion) + "/contents/" + EscapeString(m_instanceId) + "/namespaces/" +
-           EscapeString(m_nameSpace) + "/names";
+    SetPath("");
+    SetQuery("");
 }
 
-std::string SFSUrlBuilder::GetVersionsUrlPath(const std::string& product) const
+void SFSUrlBuilder::SetNamesUrlPath()
 {
-    return GetNamesUrlPath() + "/" + EscapeString(product) + "/versions/";
+    ResetPathAndQuery();
+    AppendPath("api");
+    AppendPath(c_apiVersion);
+    AppendPath("contents");
+    AppendPath(m_instanceId, true /*encode*/);
+    AppendPath("namespaces");
+    AppendPath(m_nameSpace, true /*encode*/);
+    AppendPath("names");
+}
+
+void SFSUrlBuilder::SetVersionsUrlPath(const std::string& product)
+{
+    SetNamesUrlPath();
+    AppendPath(product, true /*encode*/);
+    AppendPath("versions");
 }

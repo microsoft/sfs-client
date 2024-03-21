@@ -61,6 +61,14 @@ class UrlBuilder
     void SetPath(const std::string& path, bool encode = false);
 
     /**
+     * @brief Append a path to the URL
+     * @param path The path to be appended for the URL. Ex: index.html
+     * @param encode If true, the new path element will be URL encoded, including forward slashes
+     * @throws SFSException if the string is invalid
+     */
+    void AppendPath(const std::string& path, bool encode = false);
+
+    /**
      * @brief Set a query to the URL
      * @param query The query to set to the URL. Ex: key=value
      * @throws SFSException if the string is invalid
@@ -81,13 +89,12 @@ class UrlBuilder
      */
     void SetUrl(const std::string& url);
 
-  protected:
+  private:
     /**
      * @brief URL-escape a given string
      */
     std::string EscapeString(const std::string& str) const;
 
-  private:
     const ReportingHandler& m_handler;
 
     CURLU* m_handle = nullptr;

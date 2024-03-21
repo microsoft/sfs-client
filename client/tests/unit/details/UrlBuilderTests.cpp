@@ -54,6 +54,29 @@ TEST("UrlBuilder")
         REQUIRE(builder.GetUrl() == "https://www.example.com/index%3e%40/index");
     }
 
+    SECTION("AppendPath")
+    {
+        builder.SetPath("index.html");
+        REQUIRE(builder.GetUrl() == "https://www.example.com/index.html");
+
+        builder.AppendPath("index.html", true);
+        REQUIRE(builder.GetUrl() == "https://www.example.com/index.html/index.html");
+
+        builder.AppendPath("a/", false);
+        REQUIRE(builder.GetUrl() == "https://www.example.com/index.html/index.html/a/");
+
+        builder.AppendPath("b/", false);
+        REQUIRE(builder.GetUrl() == "https://www.example.com/index.html/index.html/a/b/");
+
+        INFO("Encoding for append includes the / character");
+        builder.AppendPath("c/", true);
+        REQUIRE(builder.GetUrl() == "https://www.example.com/index.html/index.html/a/b/c%2f");
+
+        INFO("Calling SetPath() resets the path");
+        builder.SetPath("index>@", true);
+        REQUIRE(builder.GetUrl() == "https://www.example.com/index%3e%40");
+    }
+
     SECTION("SetQuery, AppendQuery")
     {
         builder.SetQuery("key=value");

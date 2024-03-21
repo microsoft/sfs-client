@@ -118,6 +118,33 @@ void UrlBuilder::SetPath(const std::string& path, bool encode)
     THROW_IF_CURL_URL_SETUP_ERROR(curl_url_set(m_handle, CURLUPART_PATH, path.c_str(), flags));
 }
 
+void UrlBuilder::AppendPath(const std::string& path, bool encode)
+{
+    std::string curPathStr;
+    {
+        CurlCharPtr curPath;
+        char* curPathPtr = curPath.get();
+        THROW_IF_CURL_URL_SETUP_ERROR(curl_url_get(m_handle, CURLUPART_PATH, &curPathPtr, 0 /*flags*/));
+        curPathStr = curPathPtr;
+    }
+
+    if (!curPathStr.empty() && curPathStr.back() != '/')
+    {
+        curPathStr += '/';
+    }
+
+    if (encode)
+    {
+        curPathStr += EscapeString(path);
+    }
+    else
+    {
+        curPathStr += path;
+    }
+
+    THROW_IF_CURL_URL_SETUP_ERROR(curl_url_set(m_handle, CURLUPART_PATH, curPathStr.c_str(), 0 /*flags*/));
+}
+
 void UrlBuilder::SetQuery(const std::string& query)
 {
     THROW_IF_CURL_URL_SETUP_ERROR(curl_url_set(m_handle, CURLUPART_QUERY, query.c_str(), 0 /*flags*/));

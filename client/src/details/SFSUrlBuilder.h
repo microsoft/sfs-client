@@ -38,8 +38,9 @@ class SFSUrlBuilder : private UrlBuilder
     using UrlBuilder::GetUrl;
 
   private:
-    std::string GetNamesUrlPath() const;
-    std::string GetVersionsUrlPath(const std::string& product) const;
+    void ResetPathAndQuery();
+    void SetNamesUrlPath();
+    void SetVersionsUrlPath(const std::string& product);
 
     std::string m_instanceId;
     std::string m_nameSpace;
