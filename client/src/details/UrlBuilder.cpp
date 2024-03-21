@@ -23,33 +23,6 @@ using namespace SFS::details;
 
 namespace
 {
-
-struct CurlEscapedUrlString
-{
-  public:
-    CurlEscapedUrlString(const std::string& str, const ReportingHandler& handler)
-    {
-        m_escapedString = curl_easy_escape(nullptr /*ignored*/, str.c_str(), static_cast<int>(str.length()));
-        THROW_CODE_IF_NOT_LOG(ConnectionUrlSetupFailed, m_escapedString, handler, "Failed to escape URL string");
-    }
-
-    ~CurlEscapedUrlString()
-    {
-        curl_free(m_escapedString);
-    }
-
-    CurlEscapedUrlString(const CurlEscapedUrlString&) = delete;
-    CurlEscapedUrlString& operator=(const CurlEscapedUrlString&) = delete;
-
-    char* Get()
-    {
-        return m_escapedString;
-    }
-
-  private:
-    char* m_escapedString = nullptr;
-};
-
 struct CurlCharDeleter
 {
     void operator()(char* val)
@@ -169,6 +142,7 @@ UrlBuilder& UrlBuilder::SetUrl(const std::string& url)
 
 std::string UrlBuilder::EscapeString(const std::string& str) const
 {
-    CurlEscapedUrlString escapedStr(str, m_handler);
-    return escapedStr.Get();
+    CurlCharPtr escapedStr{curl_easy_escape(nullptr /*ignored*/, str.c_str(), static_cast<int>(str.length()))};
+    THROW_CODE_IF_NOT_LOG(ConnectionUrlSetupFailed, escapedStr, m_handler, "Failed to escape URL string");
+    return escapedStr.get();
 }
