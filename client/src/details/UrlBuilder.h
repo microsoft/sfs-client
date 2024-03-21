@@ -42,52 +42,59 @@ class UrlBuilder
     /**
      * @brief Set the scheme for the URL
      * @param scheme The scheme to set for the URL Ex: Https
+     * @return The reference to the current object
      */
-    void SetScheme(Scheme scheme);
+    UrlBuilder& SetScheme(Scheme scheme);
 
     /**
      * @brief Set the host for the URL
      * @param host The host to set for the URL. Ex: www.example.com
      * @throws SFSException if the string is invalid
+     * @return The reference to the current object
      */
-    void SetHost(const std::string& host);
+    UrlBuilder& SetHost(const std::string& host);
 
     /**
      * @brief Set a path to the URL
      * @param path The path to set for the URL. Ex: index.html
      * @param encode If true, the path will be URL encoded
      * @throws SFSException if the string is invalid
+     * @return The reference to the current object
      */
-    void SetPath(const std::string& path, bool encode = false);
+    UrlBuilder& SetPath(const std::string& path, bool encode = false);
 
     /**
      * @brief Append a path to the URL
      * @param path The path to be appended for the URL. Ex: index.html
      * @param encode If true, the new path element will be URL encoded, including forward slashes
      * @throws SFSException if the string is invalid
+     * @return The reference to the current object
      */
-    void AppendPath(const std::string& path, bool encode = false);
+    UrlBuilder& AppendPath(const std::string& path, bool encode = false);
 
     /**
      * @brief Set a query to the URL
      * @param query The query to set to the URL. Ex: key=value
      * @throws SFSException if the string is invalid
+     * @return The reference to the current object
      */
-    void SetQuery(const std::string& query);
+    UrlBuilder& SetQuery(const std::string& query);
 
     /**
      * @brief Append a query to the URL
      * @param query The query to append to the URL. Ex: key=value
      * @throws SFSException if the string is invalid
+     * @return The reference to the current object
      */
-    void AppendQuery(const std::string& query);
+    UrlBuilder& AppendQuery(const std::string& query);
 
     /**
      * @brief Set the URL through a string. Other methods can still be called later to modify the URl
      * @param url The string to set as URL. Ex: http://www.example.com/index.html
      * @throws SFSException if the string is invalid
+     * @return The reference to the current object
      */
-    void SetUrl(const std::string& url);
+    UrlBuilder& SetUrl(const std::string& url);
 
   private:
     /**

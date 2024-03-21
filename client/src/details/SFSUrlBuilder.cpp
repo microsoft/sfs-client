@@ -50,7 +50,6 @@ std::string SFSUrlBuilder::GetSpecificVersionUrl(const std::string& product, con
 {
     SetVersionsUrlPath(product);
     AppendPath(version, true /*encode*/);
-
     return GetUrl();
 }
 
@@ -60,31 +59,29 @@ std::string SFSUrlBuilder::GetDownloadInfoUrl(const std::string& product, const 
     AppendPath(version, true /*encode*/);
     AppendPath("files");
     SetQuery("action=GenerateDownloadInfo");
-
     return GetUrl();
 }
 
-void SFSUrlBuilder::ResetPathAndQuery()
+SFSUrlBuilder& SFSUrlBuilder::ResetPathAndQuery()
 {
-    SetPath("");
-    SetQuery("");
+    SetPath("").SetQuery("");
+    return *this;
 }
 
-void SFSUrlBuilder::SetNamesUrlPath()
+SFSUrlBuilder& SFSUrlBuilder::SetNamesUrlPath()
 {
     ResetPathAndQuery();
-    AppendPath("api");
-    AppendPath(c_apiVersion);
-    AppendPath("contents");
-    AppendPath(m_instanceId, true /*encode*/);
-    AppendPath("namespaces");
-    AppendPath(m_nameSpace, true /*encode*/);
+    AppendPath("api").AppendPath(c_apiVersion);
+    AppendPath("contents").AppendPath(m_instanceId, true /*encode*/);
+    AppendPath("namespaces").AppendPath(m_nameSpace, true /*encode*/);
     AppendPath("names");
+    return *this;
 }
 
-void SFSUrlBuilder::SetVersionsUrlPath(const std::string& product)
+SFSUrlBuilder& SFSUrlBuilder::SetVersionsUrlPath(const std::string& product)
 {
     SetNamesUrlPath();
     AppendPath(product, true /*encode*/);
     AppendPath("versions");
+    return *this;
 }

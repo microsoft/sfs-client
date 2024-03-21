@@ -93,7 +93,7 @@ std::string UrlBuilder::GetUrl() const
     return urlPtr;
 }
 
-void UrlBuilder::SetScheme(Scheme scheme)
+UrlBuilder& UrlBuilder::SetScheme(Scheme scheme)
 {
     switch (scheme)
     {
@@ -101,14 +101,16 @@ void UrlBuilder::SetScheme(Scheme scheme)
         THROW_IF_CURL_URL_SETUP_ERROR(curl_url_set(m_handle, CURLUPART_SCHEME, "https", 0 /*flags*/));
         break;
     }
+    return *this;
 }
 
-void UrlBuilder::SetHost(const std::string& host)
+UrlBuilder& UrlBuilder::SetHost(const std::string& host)
 {
     THROW_IF_CURL_URL_SETUP_ERROR(curl_url_set(m_handle, CURLUPART_HOST, host.c_str(), 0 /*flags*/));
+    return *this;
 }
 
-void UrlBuilder::SetPath(const std::string& path, bool encode)
+UrlBuilder& UrlBuilder::SetPath(const std::string& path, bool encode)
 {
     unsigned flags = 0;
     if (encode)
@@ -116,9 +118,10 @@ void UrlBuilder::SetPath(const std::string& path, bool encode)
         flags |= CURLU_URLENCODE;
     }
     THROW_IF_CURL_URL_SETUP_ERROR(curl_url_set(m_handle, CURLUPART_PATH, path.c_str(), flags));
+    return *this;
 }
 
-void UrlBuilder::AppendPath(const std::string& path, bool encode)
+UrlBuilder& UrlBuilder::AppendPath(const std::string& path, bool encode)
 {
     std::string curPathStr;
     {
@@ -143,21 +146,25 @@ void UrlBuilder::AppendPath(const std::string& path, bool encode)
     }
 
     THROW_IF_CURL_URL_SETUP_ERROR(curl_url_set(m_handle, CURLUPART_PATH, curPathStr.c_str(), 0 /*flags*/));
+    return *this;
 }
 
-void UrlBuilder::SetQuery(const std::string& query)
+UrlBuilder& UrlBuilder::SetQuery(const std::string& query)
 {
     THROW_IF_CURL_URL_SETUP_ERROR(curl_url_set(m_handle, CURLUPART_QUERY, query.c_str(), 0 /*flags*/));
+    return *this;
 }
 
-void UrlBuilder::AppendQuery(const std::string& query)
+UrlBuilder& UrlBuilder::AppendQuery(const std::string& query)
 {
     THROW_IF_CURL_URL_SETUP_ERROR(curl_url_set(m_handle, CURLUPART_QUERY, query.c_str(), CURLU_APPENDQUERY));
+    return *this;
 }
 
-void UrlBuilder::SetUrl(const std::string& url)
+UrlBuilder& UrlBuilder::SetUrl(const std::string& url)
 {
     THROW_IF_CURL_URL_SETUP_ERROR(curl_url_set(m_handle, CURLUPART_URL, url.c_str(), 0 /*flags*/));
+    return *this;
 }
 
 std::string UrlBuilder::EscapeString(const std::string& str) const

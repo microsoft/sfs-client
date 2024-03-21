@@ -100,21 +100,13 @@ TEST("UrlBuilder")
 
     SECTION("SetScheme, SetHost, SetPath, SetQuery")
     {
-        builder.SetScheme(Scheme::Https);
-        builder.SetHost("www.example.com");
-        builder.SetPath("index.html");
-        builder.SetQuery("key=value");
-
+        builder.SetScheme(Scheme::Https).SetHost("www.example.com").SetPath("index.html").SetQuery("key=value");
         REQUIRE(builder.GetUrl() == "https://www.example.com/index.html?key=value");
     }
 
     SECTION("SetScheme, SetHost, SetPath, SetQuery with encoding")
     {
-        builder.SetScheme(Scheme::Https);
-        builder.SetHost("www.example.com");
-        builder.SetPath("index@.html", true);
-        builder.SetQuery("key=value");
-
+        builder.SetScheme(Scheme::Https).SetHost("www.example.com").SetPath("index@.html", true).SetQuery("key=value");
         REQUIRE(builder.GetUrl() == "https://www.example.com/index%40.html?key=value");
     }
 
