@@ -56,9 +56,6 @@
     }
   ],
   "vcpkg-configuration": {
-    "overlay-ports": [
-      "./vcpkg-custom-ports"
-    ],
     "overlay-triplets": [
       "./vcpkg-custom-triplets"
     ]
