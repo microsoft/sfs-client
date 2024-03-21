@@ -403,7 +403,7 @@ SFSUrlBuilder SFSClientImpl<ConnectionManagerT>::MakeUrlBuilder() const
     {
         return SFSUrlBuilder(SFSCustomUrl(*envVar), m_instanceId, m_nameSpace, m_reportingHandler);
     }
-    else if (m_customBaseUrl)
+    if (m_customBaseUrl)
     {
         return SFSUrlBuilder(SFSCustomUrl(*m_customBaseUrl), m_instanceId, m_nameSpace, m_reportingHandler);
     }
