@@ -83,15 +83,20 @@ UrlBuilder& UrlBuilder::SetHost(const std::string& host)
     return *this;
 }
 
-UrlBuilder& UrlBuilder::SetPath(const std::string& path, bool encode)
+UrlBuilder& UrlBuilder::SetPath(const std::string& path)
 {
-    unsigned flags = 0;
-    if (encode)
-    {
-        flags |= CURLU_URLENCODE;
-    }
-    THROW_IF_CURL_URL_SETUP_ERROR(curl_url_set(m_handle, CURLUPART_PATH, path.c_str(), flags));
+    THROW_IF_CURL_URL_SETUP_ERROR(curl_url_set(m_handle, CURLUPART_PATH, path.c_str(), 0 /*flags*/));
     return *this;
+}
+
+UrlBuilder& UrlBuilder::AppendPath(const std::string& path)
+{
+    return AppendPath(path, false /*encode*/);
+}
+
+UrlBuilder& UrlBuilder::AppendPathEncoded(const std::string& path)
+{
+    return AppendPath(path, true /*encode*/);
 }
 
 UrlBuilder& UrlBuilder::AppendPath(const std::string& path, bool encode)

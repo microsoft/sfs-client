@@ -57,20 +57,26 @@ class UrlBuilder
     /**
      * @brief Set a path to the URL
      * @param path The path to set for the URL. Ex: index.html
-     * @param encode If true, the path will be URL encoded
      * @throws SFSException if the string is invalid
      * @return The reference to the current object
      */
-    UrlBuilder& SetPath(const std::string& path, bool encode = false);
+    UrlBuilder& SetPath(const std::string& path);
 
     /**
      * @brief Append a path to the URL
      * @param path The path to be appended for the URL. Ex: index.html
-     * @param encode If true, the new path element will be URL encoded, including forward slashes
      * @throws SFSException if the string is invalid
      * @return The reference to the current object
      */
-    UrlBuilder& AppendPath(const std::string& path, bool encode = false);
+    UrlBuilder& AppendPath(const std::string& path);
+
+    /**
+     * @brief Append a path to the URL. The new path element will be URL encoded, including forward slashes
+     * @param path The path to be appended for the URL. Ex: index.html
+     * @throws SFSException if the string is invalid
+     * @return The reference to the current object
+     */
+    UrlBuilder& AppendPathEncoded(const std::string& path);
 
     /**
      * @brief Set a query to the URL
@@ -97,6 +103,15 @@ class UrlBuilder
     UrlBuilder& SetUrl(const std::string& url);
 
   private:
+    /**
+     * @brief Append a path to the URL
+     * @param path The path to be appended for the URL. Ex: index.html
+     * @param encode If true, the new path element will be URL encoded, including forward slashes
+     * @throws SFSException if the string is invalid
+     * @return The reference to the current object
+     */
+    UrlBuilder& AppendPath(const std::string& path, bool encode);
+
     /**
      * @brief URL-escape a given string
      */

@@ -42,16 +42,6 @@ TEST("UrlBuilder")
     {
         builder.SetPath("index.html");
         REQUIRE(builder.GetUrl() == "https://www.example.com/index.html");
-
-        builder.SetPath("index.html", true);
-        REQUIRE(builder.GetUrl() == "https://www.example.com/index.html");
-
-        builder.SetPath("index>@", true);
-        REQUIRE(builder.GetUrl() == "https://www.example.com/index%3e%40");
-
-        INFO("Encoding skips the / character");
-        builder.SetPath("index>@/index", true);
-        REQUIRE(builder.GetUrl() == "https://www.example.com/index%3e%40/index");
     }
 
     SECTION("AppendPath")
@@ -59,22 +49,22 @@ TEST("UrlBuilder")
         builder.SetPath("index.html");
         REQUIRE(builder.GetUrl() == "https://www.example.com/index.html");
 
-        builder.AppendPath("index.html", true);
+        builder.AppendPathEncoded("index.html");
         REQUIRE(builder.GetUrl() == "https://www.example.com/index.html/index.html");
 
-        builder.AppendPath("a/", false);
+        builder.AppendPath("a/");
         REQUIRE(builder.GetUrl() == "https://www.example.com/index.html/index.html/a/");
 
-        builder.AppendPath("b/", false);
+        builder.AppendPath("b/");
         REQUIRE(builder.GetUrl() == "https://www.example.com/index.html/index.html/a/b/");
 
         INFO("Encoding for append includes the / character");
-        builder.AppendPath("c/", true);
+        builder.AppendPathEncoded("c/");
         REQUIRE(builder.GetUrl() == "https://www.example.com/index.html/index.html/a/b/c%2f");
 
         INFO("Calling SetPath() resets the path");
-        builder.SetPath("index>@", true);
-        REQUIRE(builder.GetUrl() == "https://www.example.com/index%3e%40");
+        builder.SetPath("index");
+        REQUIRE(builder.GetUrl() == "https://www.example.com/index");
     }
 
     SECTION("SetQuery, AppendQuery")
@@ -104,9 +94,12 @@ TEST("UrlBuilder")
         REQUIRE(builder.GetUrl() == "https://www.example.com/index.html?key=value");
     }
 
-    SECTION("SetScheme, SetHost, SetPath, SetQuery with encoding")
+    SECTION("SetScheme, SetHost, AppendPathEncoded, SetQuery")
     {
-        builder.SetScheme(Scheme::Https).SetHost("www.example.com").SetPath("index@.html", true).SetQuery("key=value");
+        builder.SetScheme(Scheme::Https)
+            .SetHost("www.example.com")
+            .AppendPathEncoded("index@.html")
+            .SetQuery("key=value");
         REQUIRE(builder.GetUrl() == "https://www.example.com/index%40.html?key=value");
     }
 
