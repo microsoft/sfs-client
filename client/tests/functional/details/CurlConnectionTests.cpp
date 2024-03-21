@@ -95,11 +95,11 @@ TEST("Testing CurlConnection()")
     handler.SetLoggingCallback(LogCallbackToTest);
     CurlConnectionManager connectionManager(handler);
     auto connection = connectionManager.MakeConnection({});
-    auto urlBuilder = SFSUrlBuilder::CreateFromCustomUrl(server.GetBaseUrl(), c_instanceId, c_namespace, handler);
+    SFSUrlBuilder urlBuilder(SFSCustomUrl(server.GetBaseUrl()), c_instanceId, c_namespace, handler);
 
     SECTION("Testing CurlConnection::Get()")
     {
-        const std::string url = urlBuilder->GetSpecificVersionUrl(c_productName, c_version);
+        const std::string url = urlBuilder.GetSpecificVersionUrl(c_productName, c_version);
 
         // Before registering the product, the URL returns 404 Not Found
         REQUIRE_THROWS_CODE(connection->Get(url), HttpNotFound);
@@ -123,7 +123,7 @@ TEST("Testing CurlConnection()")
 
         SECTION("With GetLatestVersionBatch mock")
         {
-            const std::string url = urlBuilder->GetLatestVersionBatchUrl();
+            const std::string url = urlBuilder.GetLatestVersionBatchUrl();
 
             // Missing proper body returns HttpBadRequest
             REQUIRE_THROWS_CODE(connection->Post(url), HttpBadRequest);
@@ -156,7 +156,7 @@ TEST("Testing CurlConnection()")
 
         SECTION("With GetDownloadInfo mock")
         {
-            const std::string url = urlBuilder->GetDownloadInfoUrl(c_productName, c_version);
+            const std::string url = urlBuilder.GetDownloadInfoUrl(c_productName, c_version);
 
             // Before registering the product, the URL returns 404 Not Found
             REQUIRE_THROWS_CODE(connection->Post(url), HttpNotFound);
@@ -249,9 +249,9 @@ TEST("Testing CurlConnection works from a second ConnectionManager")
     CurlConnectionManager connectionManager(handler);
     handler.SetLoggingCallback(LogCallbackToTest);
     auto connection = connectionManager.MakeConnection({});
-    auto urlBuilder = SFSUrlBuilder::CreateFromCustomUrl(server.GetBaseUrl(), c_instanceId, c_namespace, handler);
+    SFSUrlBuilder urlBuilder(SFSCustomUrl(server.GetBaseUrl()), c_instanceId, c_namespace, handler);
 
-    const std::string url = urlBuilder->GetSpecificVersionUrl(c_productName, c_version);
+    const std::string url = urlBuilder.GetSpecificVersionUrl(c_productName, c_version);
 
     // Register the product
     server.RegisterProduct(c_productName, c_version);
@@ -274,7 +274,7 @@ TEST("Testing a url that's too big throws 414")
     test::MockWebServer server;
     CurlConnectionManager connectionManager(handler);
     auto connection = connectionManager.MakeConnection({});
-    auto urlBuilder = SFSUrlBuilder::CreateFromCustomUrl(server.GetBaseUrl(), c_instanceId, c_namespace, handler);
+    SFSUrlBuilder urlBuilder(SFSCustomUrl(server.GetBaseUrl()), c_instanceId, c_namespace, handler);
 
     // Will use a fake large product name to produce a large url
     const std::string largeProductName(90000, 'a');
@@ -284,7 +284,7 @@ TEST("Testing a url that's too big throws 414")
 
     // Url produces: 414 URI Too Long
     std::string out;
-    REQUIRE_THROWS_CODE_MSG(connection->Get(urlBuilder->GetSpecificVersionUrl(largeProductName, c_version)),
+    REQUIRE_THROWS_CODE_MSG(connection->Get(urlBuilder.GetSpecificVersionUrl(largeProductName, c_version)),
                             HttpUnexpected,
                             "Unexpected HTTP code 414");
 }
@@ -297,7 +297,7 @@ TEST("Testing a response over the limit fails the operation")
     test::MockWebServer server;
     CurlConnectionManager connectionManager(handler);
     auto connection = connectionManager.MakeConnection({});
-    auto urlBuilder = SFSUrlBuilder::CreateFromCustomUrl(server.GetBaseUrl(), c_instanceId, c_namespace, handler);
+    SFSUrlBuilder urlBuilder(SFSCustomUrl(server.GetBaseUrl()), c_instanceId, c_namespace, handler);
 
     // Will use a fake large product name to produce a response over the limit of 100k characters
     const std::string largeProductName(90000, 'a');
@@ -309,7 +309,7 @@ TEST("Testing a response over the limit fails the operation")
 
     // Using GetLatestVersionBatch api since the product name is in the body and not in the url, to avoid a 414 error
     // like on the test above
-    const std::string url = urlBuilder->GetLatestVersionBatchUrl();
+    const std::string url = urlBuilder.GetLatestVersionBatchUrl();
 
     // Large one works
     json body = {{{"TargetingAttributes", {}}, {"Product", largeProductName}}};
@@ -333,9 +333,9 @@ TEST("Testing MS-CV is sent to server")
     ConnectionConfig config;
     config.baseCV = cv;
     auto connection = connectionManager.MakeConnection(config);
-    auto urlBuilder = SFSUrlBuilder::CreateFromCustomUrl(server.GetBaseUrl(), c_instanceId, c_namespace, handler);
+    SFSUrlBuilder urlBuilder(SFSCustomUrl(server.GetBaseUrl()), c_instanceId, c_namespace, handler);
 
-    const std::string url = urlBuilder->GetSpecificVersionUrl(c_productName, c_version);
+    const std::string url = urlBuilder.GetSpecificVersionUrl(c_productName, c_version);
 
     server.RegisterProduct(c_productName, c_version);
 
@@ -364,10 +364,10 @@ TEST("Testing retry behavior")
 
     MockWebServer server;
     CurlConnectionManager connectionManager(handler);
-    auto urlBuilder = SFSUrlBuilder::CreateFromCustomUrl(server.GetBaseUrl(), c_instanceId, c_namespace, handler);
+    SFSUrlBuilder urlBuilder(SFSCustomUrl(server.GetBaseUrl()), c_instanceId, c_namespace, handler);
 
     server.RegisterProduct(c_productName, c_version);
-    const std::string url = urlBuilder->GetSpecificVersionUrl(c_productName, c_version);
+    const std::string url = urlBuilder.GetSpecificVersionUrl(c_productName, c_version);
 
     SECTION("Test exponential backoff")
     {

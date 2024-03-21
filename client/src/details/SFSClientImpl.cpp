@@ -189,7 +189,7 @@ std::unique_ptr<VersionEntity> SFSClientImpl<ConnectionManagerT>::GetLatestVersi
 try
 {
     const auto& [product, attributes] = productRequest;
-    const std::string url{MakeUrlBuilder()->GetLatestVersionUrl(product)};
+    const std::string url{MakeUrlBuilder().GetLatestVersionUrl(product)};
 
     LOG_INFO(m_reportingHandler, "Requesting latest version of [%s] from URL [%s]", product.c_str(), url.c_str());
 
@@ -214,7 +214,7 @@ VersionEntities SFSClientImpl<ConnectionManagerT>::GetLatestVersionBatch(
     Connection& connection) const
 try
 {
-    const std::string url{MakeUrlBuilder()->GetLatestVersionBatchUrl()};
+    const std::string url{MakeUrlBuilder().GetLatestVersionBatchUrl()};
 
     LOG_INFO(m_reportingHandler, "Requesting latest version of multiple products from URL [%s]", url.c_str());
 
@@ -249,7 +249,7 @@ std::unique_ptr<VersionEntity> SFSClientImpl<ConnectionManagerT>::GetSpecificVer
                                                                                      Connection& connection) const
 try
 {
-    const std::string url{MakeUrlBuilder()->GetSpecificVersionUrl(product, version)};
+    const std::string url{MakeUrlBuilder().GetSpecificVersionUrl(product, version)};
 
     LOG_INFO(m_reportingHandler,
              "Requesting version [%s] of [%s] from URL [%s]",
@@ -278,7 +278,7 @@ FileEntities SFSClientImpl<ConnectionManagerT>::GetDownloadInfo(const std::strin
                                                                 Connection& connection) const
 try
 {
-    const std::string url{MakeUrlBuilder()->GetDownloadInfoUrl(product, version)};
+    const std::string url{MakeUrlBuilder().GetDownloadInfoUrl(product, version)};
 
     LOG_INFO(m_reportingHandler,
              "Requesting download info of version [%s] of [%s] from URL [%s]",
@@ -397,18 +397,18 @@ void SFSClientImpl<ConnectionManagerT>::SetCustomBaseUrl(std::string customBaseU
 }
 
 template <typename ConnectionManagerT>
-std::unique_ptr<SFSUrlBuilder> SFSClientImpl<ConnectionManagerT>::MakeUrlBuilder() const
+SFSUrlBuilder SFSClientImpl<ConnectionManagerT>::MakeUrlBuilder() const
 {
     if (auto envVar = test::GetTestOverride(test::TestOverride::BaseUrl))
     {
-        return SFSUrlBuilder::CreateFromCustomUrl(*envVar, m_instanceId, m_nameSpace, m_reportingHandler);
+        return SFSUrlBuilder(SFSCustomUrl(*envVar), m_instanceId, m_nameSpace, m_reportingHandler);
     }
     else if (m_customBaseUrl)
     {
-        return SFSUrlBuilder::CreateFromCustomUrl(*m_customBaseUrl, m_instanceId, m_nameSpace, m_reportingHandler);
+        return SFSUrlBuilder(SFSCustomUrl(*m_customBaseUrl), m_instanceId, m_nameSpace, m_reportingHandler);
     }
 
-    return SFSUrlBuilder::CreateFromAccountId(m_accountId, m_instanceId, m_nameSpace, m_reportingHandler);
+    return SFSUrlBuilder(m_accountId, m_instanceId, m_nameSpace, m_reportingHandler);
 }
 
 template class SFS::details::SFSClientImpl<CurlConnectionManager>;

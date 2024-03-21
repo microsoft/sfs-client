@@ -100,7 +100,7 @@ class SFSClientImpl : public SFSClientInterface
     /**
      * @return A SFSUrlBuilder object that can be used to build URLs for the SFS service
      */
-    std::unique_ptr<SFSUrlBuilder> MakeUrlBuilder() const;
+    SFSUrlBuilder MakeUrlBuilder() const;
 
   private:
     std::string m_accountId;

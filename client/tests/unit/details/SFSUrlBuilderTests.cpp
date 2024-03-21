@@ -26,75 +26,74 @@ TEST("SFSUrlBuilder")
     {
         SECTION("ASCII strings")
         {
-            auto builder = SFSUrlBuilder::CreateFromAccountId(c_accountId, c_instanceId, c_nameSpace, handler);
-            REQUIRE(builder->GetUrl() == "https://accountId.api.cdp.microsoft.com/");
+            SFSUrlBuilder builder(c_accountId, c_instanceId, c_nameSpace, handler);
+            REQUIRE(builder.GetUrl() == "https://accountId.api.cdp.microsoft.com/");
 
             REQUIRE(
-                builder->GetLatestVersionUrl("product") ==
+                builder.GetLatestVersionUrl("product") ==
                 "https://accountId.api.cdp.microsoft.com/api/v2/contents/instanceId/namespaces/nameSpace/names/product/versions/latest?action=select");
 
             REQUIRE(
-                builder->GetLatestVersionBatchUrl() ==
+                builder.GetLatestVersionBatchUrl() ==
                 "https://accountId.api.cdp.microsoft.com/api/v2/contents/instanceId/namespaces/nameSpace/names?action=BatchUpdates");
 
             REQUIRE(
-                builder->GetSpecificVersionUrl("product", "version") ==
+                builder.GetSpecificVersionUrl("product", "version") ==
                 "https://accountId.api.cdp.microsoft.com/api/v2/contents/instanceId/namespaces/nameSpace/names/product/versions/version");
 
             REQUIRE(
-                builder->GetDownloadInfoUrl("product", "version") ==
+                builder.GetDownloadInfoUrl("product", "version") ==
                 "https://accountId.api.cdp.microsoft.com/api/v2/contents/instanceId/namespaces/nameSpace/names/product/versions/version/files?action=GenerateDownloadInfo");
         }
 
         SECTION("Non-ASCII strings")
         {
-            REQUIRE_THROWS_CODE_MSG(SFSUrlBuilder::CreateFromAccountId("a&b", c_instanceId, c_nameSpace, handler),
+            REQUIRE_THROWS_CODE_MSG(SFSUrlBuilder("a&b", c_instanceId, c_nameSpace, handler),
                                     ConnectionUrlSetupFailed,
                                     "Curl URL error: Bad hostname");
 
-            REQUIRE_THROWS_CODE_MSG(SFSUrlBuilder::CreateFromAccountId("a\nb", c_instanceId, c_nameSpace, handler),
+            REQUIRE_THROWS_CODE_MSG(SFSUrlBuilder("a\nb", c_instanceId, c_nameSpace, handler),
                                     ConnectionUrlSetupFailed,
                                     "Curl URL error: Bad hostname");
 
-            REQUIRE_THROWS_CODE_MSG(SFSUrlBuilder::CreateFromAccountId("a\tb", c_instanceId, c_nameSpace, handler),
+            REQUIRE_THROWS_CODE_MSG(SFSUrlBuilder("a\tb", c_instanceId, c_nameSpace, handler),
                                     ConnectionUrlSetupFailed,
                                     "Curl URL error: Bad hostname");
 
-            auto builder = SFSUrlBuilder::CreateFromAccountId(c_accountId, "instanceId@", "namespace+", handler);
-            REQUIRE(builder->GetUrl() == "https://accountId.api.cdp.microsoft.com/");
+            SFSUrlBuilder builder(c_accountId, "instanceId@", "namespace+", handler);
+            REQUIRE(builder.GetUrl() == "https://accountId.api.cdp.microsoft.com/");
 
             REQUIRE(
-                builder->GetLatestVersionUrl("pr$duct") ==
+                builder.GetLatestVersionUrl("pr$duct") ==
                 "https://accountId.api.cdp.microsoft.com/api/v2/contents/instanceId%40/namespaces/namespace%2b/names/pr%24duct/versions/latest?action=select");
 
             REQUIRE(
-                builder->GetLatestVersionBatchUrl() ==
+                builder.GetLatestVersionBatchUrl() ==
                 "https://accountId.api.cdp.microsoft.com/api/v2/contents/instanceId%40/namespaces/namespace%2b/names?action=BatchUpdates");
 
             REQUIRE(
-                builder->GetSpecificVersionUrl("pr$duct", "versi/n") ==
+                builder.GetSpecificVersionUrl("pr$duct", "versi/n") ==
                 "https://accountId.api.cdp.microsoft.com/api/v2/contents/instanceId%40/namespaces/namespace%2b/names/pr%24duct/versions/versi%2fn");
 
             REQUIRE(
-                builder->GetDownloadInfoUrl("pr$duct", "versi/n") ==
+                builder.GetDownloadInfoUrl("pr$duct", "versi/n") ==
                 "https://accountId.api.cdp.microsoft.com/api/v2/contents/instanceId%40/namespaces/namespace%2b/names/pr%24duct/versions/versi%2fn/files?action=GenerateDownloadInfo");
         }
     }
 
     SECTION("CreateFromCustomUrl()")
     {
-        auto builder = SFSUrlBuilder::CreateFromCustomUrl("http://www.example.com", c_instanceId, c_nameSpace, handler);
-        REQUIRE(builder->GetUrl() == "http://www.example.com/");
+        SFSUrlBuilder builder(SFSCustomUrl("http://www.example.com"), c_instanceId, c_nameSpace, handler);
+        REQUIRE(builder.GetUrl() == "http://www.example.com/");
 
-        builder = SFSUrlBuilder::CreateFromCustomUrl("http://www.example2.com", c_instanceId, c_nameSpace, handler);
-        REQUIRE(builder->GetUrl() == "http://www.example2.com/");
+        SFSUrlBuilder builder2(SFSCustomUrl("http://www.example2.com"), c_instanceId, c_nameSpace, handler);
+        REQUIRE(builder2.GetUrl() == "http://www.example2.com/");
 
-        REQUIRE_THROWS_CODE_MSG(
-            SFSUrlBuilder::CreateFromCustomUrl("http://www.+.com", c_instanceId, c_nameSpace, handler),
-            ConnectionUrlSetupFailed,
-            "Curl URL error: Bad hostname");
+        REQUIRE_THROWS_CODE_MSG(SFSUrlBuilder(SFSCustomUrl("http://www.+.com"), c_instanceId, c_nameSpace, handler),
+                                ConnectionUrlSetupFailed,
+                                "Curl URL error: Bad hostname");
 
-        REQUIRE_THROWS_CODE_MSG(SFSUrlBuilder::CreateFromCustomUrl("example", c_instanceId, c_nameSpace, handler),
+        REQUIRE_THROWS_CODE_MSG(SFSUrlBuilder(SFSCustomUrl("example"), c_instanceId, c_nameSpace, handler),
                                 ConnectionUrlSetupFailed,
                                 "Curl URL error: Bad scheme");
     }

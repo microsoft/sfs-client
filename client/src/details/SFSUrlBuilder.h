@@ -5,22 +5,30 @@
 
 #include "UrlBuilder.h"
 
-#include <memory>
-
 namespace SFS::details
 {
+// Wrapper struct that only exists to allow the SFSUrlBuilder to have a constructor that takes a custom URL
+struct SFSCustomUrl
+{
+    explicit SFSCustomUrl(std::string url) : url(std::move(url))
+    {
+    }
+
+    std::string url;
+};
+
 class SFSUrlBuilder : private UrlBuilder
 {
   public:
-    static std::unique_ptr<SFSUrlBuilder> CreateFromAccountId(const std::string& accountId,
-                                                              std::string instanceId,
-                                                              std::string nameSpace,
-                                                              const ReportingHandler& handler);
+    SFSUrlBuilder(const std::string& accountId,
+                  std::string instanceId,
+                  std::string nameSpace,
+                  const ReportingHandler& handler);
 
-    static std::unique_ptr<SFSUrlBuilder> CreateFromCustomUrl(const std::string& customUrl,
-                                                              std::string instanceId,
-                                                              std::string nameSpace,
-                                                              const ReportingHandler& handler);
+    SFSUrlBuilder(const SFSCustomUrl& customUrl,
+                  std::string instanceId,
+                  std::string nameSpace,
+                  const ReportingHandler& handler);
 
     std::string GetLatestVersionUrl(const std::string& product);
     std::string GetLatestVersionBatchUrl();
@@ -30,8 +38,6 @@ class SFSUrlBuilder : private UrlBuilder
     using UrlBuilder::GetUrl;
 
   private:
-    SFSUrlBuilder(std::string&& instanceId, std::string&& nameSpace, const ReportingHandler& handler);
-
     std::string GetNamesUrlPath() const;
     std::string GetVersionsUrlPath(const std::string& product) const;
 

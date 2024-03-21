@@ -337,15 +337,15 @@ TEST("Testing SFSClientImpl::SetCustomBaseUrl()")
     config.accountId = "testAccountId";
     SFSClientImpl<MockConnectionManager> sfsClient(std::move(config));
 
-    REQUIRE(sfsClient.MakeUrlBuilder()->GetUrl() == "https://testAccountId.api.cdp.microsoft.com/");
+    REQUIRE(sfsClient.MakeUrlBuilder().GetUrl() == "https://testAccountId.api.cdp.microsoft.com/");
 
     sfsClient.SetCustomBaseUrl("customUrl");
-    REQUIRE_THROWS_CODE_MSG(sfsClient.MakeUrlBuilder()->GetUrl(),
+    REQUIRE_THROWS_CODE_MSG(sfsClient.MakeUrlBuilder().GetUrl(),
                             ConnectionUrlSetupFailed,
                             "Curl URL error: Bad scheme");
 
     sfsClient.SetCustomBaseUrl("http://customUrl.com/");
-    REQUIRE(sfsClient.MakeUrlBuilder()->GetUrl() == "http://customUrl.com/");
+    REQUIRE(sfsClient.MakeUrlBuilder().GetUrl() == "http://customUrl.com/");
 }
 
 TEST("Testing test override SFS_TEST_OVERRIDE_BASE_URL")
@@ -354,18 +354,18 @@ TEST("Testing test override SFS_TEST_OVERRIDE_BASE_URL")
     config.accountId = "testAccountId";
     SFSClientImpl<MockConnectionManager> sfsClient(std::move(config));
 
-    REQUIRE(sfsClient.MakeUrlBuilder()->GetUrl() == "https://testAccountId.api.cdp.microsoft.com/");
+    REQUIRE(sfsClient.MakeUrlBuilder().GetUrl() == "https://testAccountId.api.cdp.microsoft.com/");
 
     {
         INFO("Can override the base url with the test key");
         ScopedTestOverride override(TestOverride::BaseUrl, "http://override.com");
         if (AreTestOverridesAllowed())
         {
-            REQUIRE(sfsClient.MakeUrlBuilder()->GetUrl() == "http://override.com/");
+            REQUIRE(sfsClient.MakeUrlBuilder().GetUrl() == "http://override.com/");
         }
         else
         {
-            REQUIRE(sfsClient.MakeUrlBuilder()->GetUrl() == "https://testAccountId.api.cdp.microsoft.com/");
+            REQUIRE(sfsClient.MakeUrlBuilder().GetUrl() == "https://testAccountId.api.cdp.microsoft.com/");
         }
     }
 
@@ -374,32 +374,32 @@ TEST("Testing test override SFS_TEST_OVERRIDE_BASE_URL")
         INFO("Fails if the override is not a valid URL");
         ScopedTestOverride override(TestOverride::BaseUrl, "override");
         {
-            REQUIRE_THROWS_CODE_MSG(sfsClient.MakeUrlBuilder()->GetUrl(),
+            REQUIRE_THROWS_CODE_MSG(sfsClient.MakeUrlBuilder().GetUrl(),
                                     ConnectionUrlSetupFailed,
                                     "Curl URL error: Bad scheme");
         }
     }
 
     INFO("Override is unset after ScopedEnv goes out of scope");
-    REQUIRE(sfsClient.MakeUrlBuilder()->GetUrl() == "https://testAccountId.api.cdp.microsoft.com/");
+    REQUIRE(sfsClient.MakeUrlBuilder().GetUrl() == "https://testAccountId.api.cdp.microsoft.com/");
 
     sfsClient.SetCustomBaseUrl("http://customUrl.com");
-    REQUIRE(sfsClient.MakeUrlBuilder()->GetUrl() == "http://customUrl.com/");
+    REQUIRE(sfsClient.MakeUrlBuilder().GetUrl() == "http://customUrl.com/");
 
     {
         INFO("Can also override a custom base base url with the test key");
         ScopedTestOverride override(TestOverride::BaseUrl, "http://override.com");
         if (AreTestOverridesAllowed())
         {
-            REQUIRE(sfsClient.MakeUrlBuilder()->GetUrl() == "http://override.com/");
+            REQUIRE(sfsClient.MakeUrlBuilder().GetUrl() == "http://override.com/");
         }
         else
         {
-            REQUIRE(sfsClient.MakeUrlBuilder()->GetUrl() == "http://customUrl.com/");
+            REQUIRE(sfsClient.MakeUrlBuilder().GetUrl() == "http://customUrl.com/");
         }
     }
 
-    REQUIRE(sfsClient.MakeUrlBuilder()->GetUrl() == "http://customUrl.com/");
+    REQUIRE(sfsClient.MakeUrlBuilder().GetUrl() == "http://customUrl.com/");
 }
 
 TEST("Testing passing a logging callback to constructor of SFSClientImpl")

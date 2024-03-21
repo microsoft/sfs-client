@@ -8,34 +8,27 @@ using namespace SFS::details;
 constexpr const char* c_apiVersion = "v2";
 constexpr const char* c_apiDomain = "api.cdp.microsoft.com";
 
-std::unique_ptr<SFSUrlBuilder> SFSUrlBuilder::CreateFromAccountId(const std::string& accountId,
-                                                                  std::string instanceId,
-                                                                  std::string nameSpace,
-                                                                  const ReportingHandler& handler)
-{
-    auto builder =
-        std::unique_ptr<SFSUrlBuilder>(new SFSUrlBuilder(std::move(instanceId), std::move(nameSpace), handler));
-    builder->SetScheme(Scheme::Https);
-    builder->SetHost(accountId + "." + std::string(c_apiDomain));
-    return builder;
-}
-
-std::unique_ptr<SFSUrlBuilder> SFSUrlBuilder::CreateFromCustomUrl(const std::string& customUrl,
-                                                                  std::string instanceId,
-                                                                  std::string nameSpace,
-                                                                  const ReportingHandler& handler)
-{
-    auto builder =
-        std::unique_ptr<SFSUrlBuilder>(new SFSUrlBuilder(std::move(instanceId), std::move(nameSpace), handler));
-    builder->SetUrl(customUrl);
-    return builder;
-}
-
-SFSUrlBuilder::SFSUrlBuilder(std::string&& instanceId, std::string&& nameSpace, const ReportingHandler& handler)
+SFSUrlBuilder::SFSUrlBuilder(const std::string& accountId,
+                             std::string instanceId,
+                             std::string nameSpace,
+                             const ReportingHandler& handler)
     : UrlBuilder(handler)
     , m_instanceId(std::move(instanceId))
     , m_nameSpace(std::move(nameSpace))
 {
+    SetScheme(Scheme::Https);
+    SetHost(accountId + "." + std::string(c_apiDomain));
+}
+
+SFSUrlBuilder::SFSUrlBuilder(const SFSCustomUrl& customUrl,
+                             std::string instanceId,
+                             std::string nameSpace,
+                             const ReportingHandler& handler)
+    : UrlBuilder(handler)
+    , m_instanceId(std::move(instanceId))
+    , m_nameSpace(std::move(nameSpace))
+{
+    SetUrl(customUrl.url);
 }
 
 std::string SFSUrlBuilder::GetLatestVersionUrl(const std::string& product)
