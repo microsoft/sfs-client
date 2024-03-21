@@ -85,7 +85,8 @@ UrlBuilder& UrlBuilder::SetHost(const std::string& host)
 
 UrlBuilder& UrlBuilder::SetPath(const std::string& path)
 {
-    THROW_IF_CURL_URL_SETUP_ERROR(curl_url_set(m_handle, CURLUPART_PATH, path.c_str(), 0 /*flags*/));
+    m_path = path;
+    THROW_IF_CURL_URL_SETUP_ERROR(curl_url_set(m_handle, CURLUPART_PATH, m_path.c_str(), 0 /*flags*/));
     return *this;
 }
 
@@ -101,29 +102,21 @@ UrlBuilder& UrlBuilder::AppendPathEncoded(const std::string& path)
 
 UrlBuilder& UrlBuilder::AppendPath(const std::string& path, bool encode)
 {
-    std::string curPathStr;
+    if (!m_path.empty() && m_path.back() != '/')
     {
-        CurlCharPtr curPath;
-        char* curPathPtr = curPath.get();
-        THROW_IF_CURL_URL_SETUP_ERROR(curl_url_get(m_handle, CURLUPART_PATH, &curPathPtr, 0 /*flags*/));
-        curPathStr = curPathPtr;
-    }
-
-    if (!curPathStr.empty() && curPathStr.back() != '/')
-    {
-        curPathStr += '/';
+        m_path += '/';
     }
 
     if (encode)
     {
-        curPathStr += EscapeString(path);
+        m_path += EscapeString(path);
     }
     else
     {
-        curPathStr += path;
+        m_path += path;
     }
 
-    THROW_IF_CURL_URL_SETUP_ERROR(curl_url_set(m_handle, CURLUPART_PATH, curPathStr.c_str(), 0 /*flags*/));
+    THROW_IF_CURL_URL_SETUP_ERROR(curl_url_set(m_handle, CURLUPART_PATH, m_path.c_str(), 0 /*flags*/));
     return *this;
 }
 

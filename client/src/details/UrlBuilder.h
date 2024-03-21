@@ -120,5 +120,6 @@ class UrlBuilder
     const ReportingHandler& m_handler;
 
     CURLU* m_handle = nullptr;
+    std::string m_path;
 };
 } // namespace SFS::details
