@@ -129,9 +129,9 @@ class UrlBuilder
     UrlBuilder& AppendPath(const std::string& path, bool encode);
 
     /**
-     * @brief URL-escape a given string
+     * @brief URL-encode (or percent-encode) a given string
      */
-    std::string EscapeString(const std::string& str) const;
+    std::string URLEncode(const std::string& str) const;
 
     const ReportingHandler& m_handler;
 

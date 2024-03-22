@@ -112,7 +112,7 @@ UrlBuilder& UrlBuilder::AppendPath(const std::string& path, bool encode)
 
     if (encode)
     {
-        m_path += EscapeString(path);
+        m_path += URLEncode(path);
     }
     else
     {
@@ -133,7 +133,7 @@ UrlBuilder& UrlBuilder::ResetPath()
 UrlBuilder& UrlBuilder::SetQuery(const std::string& key, const std::string& value)
 {
     THROW_CODE_IF_LOG(InvalidArg, key.empty() || value.empty(), m_handler, "Query key and value must not empty");
-    const std::string query = EscapeString(key) + "=" + EscapeString(value);
+    const std::string query = URLEncode(key) + "=" + URLEncode(value);
     THROW_IF_CURL_URL_SETUP_ERROR(curl_url_set(m_handle, CURLUPART_QUERY, query.c_str(), 0 /*flags*/));
     return *this;
 }
@@ -141,7 +141,7 @@ UrlBuilder& UrlBuilder::SetQuery(const std::string& key, const std::string& valu
 UrlBuilder& UrlBuilder::AppendQuery(const std::string& key, const std::string& value)
 {
     THROW_CODE_IF_LOG(InvalidArg, key.empty() || value.empty(), m_handler, "Query key and value must not empty");
-    const std::string query = EscapeString(key) + "=" + EscapeString(value);
+    const std::string query = URLEncode(key) + "=" + URLEncode(value);
     THROW_IF_CURL_URL_SETUP_ERROR(curl_url_set(m_handle, CURLUPART_QUERY, query.c_str(), CURLU_APPENDQUERY));
     return *this;
 }
@@ -159,9 +159,9 @@ UrlBuilder& UrlBuilder::SetUrl(const std::string& url)
     return *this;
 }
 
-std::string UrlBuilder::EscapeString(const std::string& str) const
+std::string UrlBuilder::URLEncode(const std::string& str) const
 {
-    CurlCharPtr escapedStr{curl_easy_escape(nullptr /*ignored*/, str.c_str(), static_cast<int>(str.length()))};
-    THROW_CODE_IF_NOT_LOG(ConnectionUrlSetupFailed, escapedStr, m_handler, "Failed to escape URL string");
-    return escapedStr.get();
+    CurlCharPtr encodedStr{curl_easy_escape(nullptr /*ignored*/, str.c_str(), static_cast<int>(str.length()))};
+    THROW_CODE_IF_NOT_LOG(ConnectionUrlSetupFailed, encodedStr, m_handler, "Failed to URL-encode string");
+    return encodedStr.get();
 }
