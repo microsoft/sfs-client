@@ -79,12 +79,14 @@ UrlBuilder& UrlBuilder::SetScheme(Scheme scheme)
 
 UrlBuilder& UrlBuilder::SetHost(const std::string& host)
 {
+    THROW_CODE_IF_LOG(InvalidArg, host.empty(), m_handler, "Host must not empty");
     THROW_IF_CURL_URL_SETUP_ERROR(curl_url_set(m_handle, CURLUPART_HOST, host.c_str(), 0 /*flags*/));
     return *this;
 }
 
 UrlBuilder& UrlBuilder::SetPath(const std::string& path)
 {
+    THROW_CODE_IF_LOG(InvalidArg, path.empty(), m_handler, "Path must not empty");
     m_path = path;
     THROW_IF_CURL_URL_SETUP_ERROR(curl_url_set(m_handle, CURLUPART_PATH, m_path.c_str(), 0 /*flags*/));
     return *this;
@@ -102,6 +104,7 @@ UrlBuilder& UrlBuilder::AppendPathEncoded(const std::string& path)
 
 UrlBuilder& UrlBuilder::AppendPath(const std::string& path, bool encode)
 {
+    THROW_CODE_IF_LOG(InvalidArg, path.empty(), m_handler, "Path must not empty");
     if (!m_path.empty() && m_path.back() != '/')
     {
         m_path += '/';
@@ -129,6 +132,7 @@ UrlBuilder& UrlBuilder::ResetPath()
 
 UrlBuilder& UrlBuilder::SetQuery(const std::string& key, const std::string& value)
 {
+    THROW_CODE_IF_LOG(InvalidArg, key.empty() || value.empty(), m_handler, "Query key and value must not empty");
     const std::string query = key + "=" + value;
     THROW_IF_CURL_URL_SETUP_ERROR(curl_url_set(m_handle, CURLUPART_QUERY, query.c_str(), 0 /*flags*/));
     return *this;
@@ -136,6 +140,7 @@ UrlBuilder& UrlBuilder::SetQuery(const std::string& key, const std::string& valu
 
 UrlBuilder& UrlBuilder::AppendQuery(const std::string& key, const std::string& value)
 {
+    THROW_CODE_IF_LOG(InvalidArg, key.empty() || value.empty(), m_handler, "Query key and value must not empty");
     const std::string query = key + "=" + value;
     THROW_IF_CURL_URL_SETUP_ERROR(curl_url_set(m_handle, CURLUPART_QUERY, query.c_str(), CURLU_APPENDQUERY));
     return *this;
@@ -149,6 +154,7 @@ UrlBuilder& UrlBuilder::ResetQuery()
 
 UrlBuilder& UrlBuilder::SetUrl(const std::string& url)
 {
+    THROW_CODE_IF_LOG(InvalidArg, url.empty(), m_handler, "Url must not empty");
     THROW_IF_CURL_URL_SETUP_ERROR(curl_url_set(m_handle, CURLUPART_URL, url.c_str(), 0 /*flags*/));
     return *this;
 }

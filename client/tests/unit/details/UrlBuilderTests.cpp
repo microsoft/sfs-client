@@ -36,12 +36,16 @@ TEST("UrlBuilder")
         REQUIRE_THROWS_CODE_MSG(builder.SetHost("a&b"), ConnectionUrlSetupFailed, "Curl URL error: Bad hostname");
         REQUIRE_THROWS_CODE_MSG(builder.SetHost("a\nb"), ConnectionUrlSetupFailed, "Curl URL error: Bad hostname");
         REQUIRE_THROWS_CODE_MSG(builder.SetHost("a\tb"), ConnectionUrlSetupFailed, "Curl URL error: Bad hostname");
+
+        REQUIRE_THROWS_CODE_MSG(builder.SetHost(""), InvalidArg, "Host must not empty");
     }
 
     SECTION("SetPath")
     {
         builder.SetPath("index.html");
         REQUIRE(builder.GetUrl() == "https://www.example.com/index.html");
+
+        REQUIRE_THROWS_CODE_MSG(builder.SetPath(""), InvalidArg, "Path must not empty");
 
         builder.ResetPath();
         REQUIRE(builder.GetUrl() == "https://www.example.com/");
@@ -68,6 +72,8 @@ TEST("UrlBuilder")
         INFO("Calling SetPath() resets the path");
         builder.SetPath("index");
         REQUIRE(builder.GetUrl() == "https://www.example.com/index");
+
+        REQUIRE_THROWS_CODE_MSG(builder.AppendPath(""), InvalidArg, "Path must not empty");
     }
 
     SECTION("SetQuery, AppendQuery")
@@ -81,6 +87,14 @@ TEST("UrlBuilder")
         builder.SetQuery("key2", "value2");
         REQUIRE(builder.GetUrl() == "https://www.example.com/?key2=value2");
 
+        REQUIRE_THROWS_CODE_MSG(builder.SetQuery("", "value"), InvalidArg, "Query key and value must not empty");
+        REQUIRE_THROWS_CODE_MSG(builder.SetQuery("key", ""), InvalidArg, "Query key and value must not empty");
+        REQUIRE_THROWS_CODE_MSG(builder.SetQuery("", ""), InvalidArg, "Query key and value must not empty");
+
+        REQUIRE_THROWS_CODE_MSG(builder.AppendQuery("", "value"), InvalidArg, "Query key and value must not empty");
+        REQUIRE_THROWS_CODE_MSG(builder.AppendQuery("key", ""), InvalidArg, "Query key and value must not empty");
+        REQUIRE_THROWS_CODE_MSG(builder.AppendQuery("", ""), InvalidArg, "Query key and value must not empty");
+
         builder.ResetQuery();
         REQUIRE(builder.GetUrl() == "https://www.example.com/");
     }
@@ -92,6 +106,8 @@ TEST("UrlBuilder")
         REQUIRE_THROWS_CODE_MSG(builder.SetUrl("https://www.+.com"),
                                 ConnectionUrlSetupFailed,
                                 "Curl URL error: Bad hostname");
+
+        REQUIRE_THROWS_CODE_MSG(builder.SetUrl(""), InvalidArg, "Url must not empty");
     }
 
     SECTION("SetScheme, SetHost, SetPath, SetQuery")
