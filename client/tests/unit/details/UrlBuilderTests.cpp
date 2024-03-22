@@ -72,13 +72,13 @@ TEST("UrlBuilder")
 
     SECTION("SetQuery, AppendQuery")
     {
-        builder.SetQuery("key=value");
+        builder.SetQuery("key", "value");
         REQUIRE(builder.GetUrl() == "https://www.example.com/?key=value");
 
-        builder.AppendQuery("key2=value2");
+        builder.AppendQuery("key2", "value2");
         REQUIRE(builder.GetUrl() == "https://www.example.com/?key=value&key2=value2");
 
-        builder.SetQuery("key2=value2");
+        builder.SetQuery("key2", "value2");
         REQUIRE(builder.GetUrl() == "https://www.example.com/?key2=value2");
 
         builder.ResetQuery();
@@ -96,7 +96,7 @@ TEST("UrlBuilder")
 
     SECTION("SetScheme, SetHost, SetPath, SetQuery")
     {
-        builder.SetScheme(Scheme::Https).SetHost("www.example.com").SetPath("index.html").SetQuery("key=value");
+        builder.SetScheme(Scheme::Https).SetHost("www.example.com").SetPath("index.html").SetQuery("key", "value");
         REQUIRE(builder.GetUrl() == "https://www.example.com/index.html?key=value");
     }
 
@@ -105,7 +105,7 @@ TEST("UrlBuilder")
         builder.SetScheme(Scheme::Https)
             .SetHost("www.example.com")
             .AppendPathEncoded("index@.html")
-            .SetQuery("key=value");
+            .SetQuery("key", "value");
         REQUIRE(builder.GetUrl() == "https://www.example.com/index%40.html?key=value");
     }
 

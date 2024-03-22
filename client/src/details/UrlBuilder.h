@@ -85,20 +85,22 @@ class UrlBuilder
     UrlBuilder& ResetPath();
 
     /**
-     * @brief Set a query to the URL
-     * @param query The query to set to the URL. Ex: key=value
+     * @brief Set a query to the URL (?key=value)
+     * @param key The key of the query string. Ex: value
+     * @param value The value of the query string. Ex: value
      * @throws SFSException if the string is invalid
      * @return The reference to the current object
      */
-    UrlBuilder& SetQuery(const std::string& query);
+    UrlBuilder& SetQuery(const std::string& key, const std::string& value);
 
     /**
-     * @brief Append a query to the URL
-     * @param query The query to append to the URL. Ex: key=value
+     * @brief Append a query to the URL (&key=value)
+     * @param key The key of the query string. Ex: value
+     * @param value The value of the query string. Ex: value
      * @throws SFSException if the string is invalid
      * @return The reference to the current object
      */
-    UrlBuilder& AppendQuery(const std::string& query);
+    UrlBuilder& AppendQuery(const std::string& key, const std::string& value);
 
     /**
      * @brief Reset the query of the URL

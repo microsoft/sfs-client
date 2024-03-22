@@ -127,14 +127,16 @@ UrlBuilder& UrlBuilder::ResetPath()
     return *this;
 }
 
-UrlBuilder& UrlBuilder::SetQuery(const std::string& query)
+UrlBuilder& UrlBuilder::SetQuery(const std::string& key, const std::string& value)
 {
+    const std::string query = key + "=" + value;
     THROW_IF_CURL_URL_SETUP_ERROR(curl_url_set(m_handle, CURLUPART_QUERY, query.c_str(), 0 /*flags*/));
     return *this;
 }
 
-UrlBuilder& UrlBuilder::AppendQuery(const std::string& query)
+UrlBuilder& UrlBuilder::AppendQuery(const std::string& key, const std::string& value)
 {
+    const std::string query = key + "=" + value;
     THROW_IF_CURL_URL_SETUP_ERROR(curl_url_set(m_handle, CURLUPART_QUERY, query.c_str(), CURLU_APPENDQUERY));
     return *this;
 }

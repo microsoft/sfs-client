@@ -35,14 +35,14 @@ std::string SFSUrlBuilder::GetLatestVersionUrl(const std::string& product)
 {
     SetVersionsUrlPath(product);
     AppendPath("latest");
-    SetQuery("action=select");
+    SetQuery("action", "select");
     return GetUrl();
 }
 
 std::string SFSUrlBuilder::GetLatestVersionBatchUrl()
 {
     SetNamesUrlPath();
-    SetQuery("action=BatchUpdates");
+    SetQuery("action", "BatchUpdates");
     return GetUrl();
 }
 
@@ -58,7 +58,7 @@ std::string SFSUrlBuilder::GetDownloadInfoUrl(const std::string& product, const 
     SetVersionsUrlPath(product);
     AppendPathEncoded(version);
     AppendPath("files");
-    SetQuery("action=GenerateDownloadInfo");
+    SetQuery("action", "GenerateDownloadInfo");
     return GetUrl();
 }
 
