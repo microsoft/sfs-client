@@ -87,6 +87,12 @@ TEST("UrlBuilder")
         builder.SetQuery("key2", "value2");
         REQUIRE(builder.GetUrl() == "https://www.example.com/?key2=value2");
 
+        builder.AppendQuery("key3", "valu/e@2");
+        REQUIRE(builder.GetUrl() == "https://www.example.com/?key2=value2&key3=valu%2fe%402");
+
+        builder.SetQuery("ke$y4", "valu/e@3");
+        REQUIRE(builder.GetUrl() == "https://www.example.com/?ke%24y4=valu%2fe%403");
+
         REQUIRE_THROWS_CODE_MSG(builder.SetQuery("", "value"), InvalidArg, "Query key and value must not empty");
         REQUIRE_THROWS_CODE_MSG(builder.SetQuery("key", ""), InvalidArg, "Query key and value must not empty");
         REQUIRE_THROWS_CODE_MSG(builder.SetQuery("", ""), InvalidArg, "Query key and value must not empty");

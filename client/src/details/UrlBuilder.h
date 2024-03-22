@@ -88,6 +88,7 @@ class UrlBuilder
      * @brief Set a query to the URL (?key=value)
      * @param key The key of the query string. Ex: value
      * @param value The value of the query string. Ex: value
+     * @note Both key and value will be URL encoded
      * @throws SFSException if the string is invalid
      * @return The reference to the current object
      */
@@ -97,6 +98,7 @@ class UrlBuilder
      * @brief Append a query to the URL (&key=value)
      * @param key The key of the query string. Ex: value
      * @param value The value of the query string. Ex: value
+     * @note Both key and value will be URL encoded
      * @throws SFSException if the string is invalid
      * @return The reference to the current object
      */

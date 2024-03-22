@@ -133,7 +133,7 @@ UrlBuilder& UrlBuilder::ResetPath()
 UrlBuilder& UrlBuilder::SetQuery(const std::string& key, const std::string& value)
 {
     THROW_CODE_IF_LOG(InvalidArg, key.empty() || value.empty(), m_handler, "Query key and value must not empty");
-    const std::string query = key + "=" + value;
+    const std::string query = EscapeString(key) + "=" + EscapeString(value);
     THROW_IF_CURL_URL_SETUP_ERROR(curl_url_set(m_handle, CURLUPART_QUERY, query.c_str(), 0 /*flags*/));
     return *this;
 }
@@ -141,7 +141,7 @@ UrlBuilder& UrlBuilder::SetQuery(const std::string& key, const std::string& valu
 UrlBuilder& UrlBuilder::AppendQuery(const std::string& key, const std::string& value)
 {
     THROW_CODE_IF_LOG(InvalidArg, key.empty() || value.empty(), m_handler, "Query key and value must not empty");
-    const std::string query = key + "=" + value;
+    const std::string query = EscapeString(key) + "=" + EscapeString(value);
     THROW_IF_CURL_URL_SETUP_ERROR(curl_url_set(m_handle, CURLUPART_QUERY, query.c_str(), CURLU_APPENDQUERY));
     return *this;
 }
