@@ -38,7 +38,6 @@ class SFSUrlBuilder : private UrlBuilder
     using UrlBuilder::GetUrl;
 
   private:
-    SFSUrlBuilder& ResetPathAndQuery();
     SFSUrlBuilder& SetNamesUrlPath();
     SFSUrlBuilder& SetVersionsUrlPath(const std::string& product);
 

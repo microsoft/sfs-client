@@ -79,6 +79,12 @@ class UrlBuilder
     UrlBuilder& AppendPathEncoded(const std::string& path);
 
     /**
+     * @brief Reset the path of the URL
+     * @return The reference to the current object
+     */
+    UrlBuilder& ResetPath();
+
+    /**
      * @brief Set a query to the URL
      * @param query The query to set to the URL. Ex: key=value
      * @throws SFSException if the string is invalid
@@ -93,6 +99,12 @@ class UrlBuilder
      * @return The reference to the current object
      */
     UrlBuilder& AppendQuery(const std::string& query);
+
+    /**
+     * @brief Reset the query of the URL
+     * @return The reference to the current object
+     */
+    UrlBuilder& ResetQuery();
 
     /**
      * @brief Set the URL through a string. Other methods can still be called later to modify the URl

@@ -120,6 +120,13 @@ UrlBuilder& UrlBuilder::AppendPath(const std::string& path, bool encode)
     return *this;
 }
 
+UrlBuilder& UrlBuilder::ResetPath()
+{
+    m_path.clear();
+    THROW_IF_CURL_URL_SETUP_ERROR(curl_url_set(m_handle, CURLUPART_PATH, "", 0 /*flags*/));
+    return *this;
+}
+
 UrlBuilder& UrlBuilder::SetQuery(const std::string& query)
 {
     THROW_IF_CURL_URL_SETUP_ERROR(curl_url_set(m_handle, CURLUPART_QUERY, query.c_str(), 0 /*flags*/));
@@ -129,6 +136,12 @@ UrlBuilder& UrlBuilder::SetQuery(const std::string& query)
 UrlBuilder& UrlBuilder::AppendQuery(const std::string& query)
 {
     THROW_IF_CURL_URL_SETUP_ERROR(curl_url_set(m_handle, CURLUPART_QUERY, query.c_str(), CURLU_APPENDQUERY));
+    return *this;
+}
+
+UrlBuilder& UrlBuilder::ResetQuery()
+{
+    THROW_IF_CURL_URL_SETUP_ERROR(curl_url_set(m_handle, CURLUPART_QUERY, "", 0 /*flags*/));
     return *this;
 }
 

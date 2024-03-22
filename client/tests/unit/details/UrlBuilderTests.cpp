@@ -42,6 +42,9 @@ TEST("UrlBuilder")
     {
         builder.SetPath("index.html");
         REQUIRE(builder.GetUrl() == "https://www.example.com/index.html");
+
+        builder.ResetPath();
+        REQUIRE(builder.GetUrl() == "https://www.example.com/");
     }
 
     SECTION("AppendPath")
@@ -77,6 +80,9 @@ TEST("UrlBuilder")
 
         builder.SetQuery("key2=value2");
         REQUIRE(builder.GetUrl() == "https://www.example.com/?key2=value2");
+
+        builder.ResetQuery();
+        REQUIRE(builder.GetUrl() == "https://www.example.com/");
     }
 
     SECTION("SetUrl")

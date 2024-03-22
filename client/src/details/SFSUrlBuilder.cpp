@@ -62,15 +62,9 @@ std::string SFSUrlBuilder::GetDownloadInfoUrl(const std::string& product, const 
     return GetUrl();
 }
 
-SFSUrlBuilder& SFSUrlBuilder::ResetPathAndQuery()
-{
-    SetPath("").SetQuery("");
-    return *this;
-}
-
 SFSUrlBuilder& SFSUrlBuilder::SetNamesUrlPath()
 {
-    ResetPathAndQuery();
+    ResetPath().ResetQuery();
     AppendPath("api").AppendPath(c_apiVersion);
     AppendPath("contents").AppendPathEncoded(m_instanceId);
     AppendPath("namespaces").AppendPathEncoded(m_nameSpace);
