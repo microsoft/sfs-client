@@ -9,7 +9,7 @@
 
 #### How was the change tested?
 
-<!-- Mark the boxes below with an X -->
-- [ ] Current tests test this behavior: <!--Which?-->
-- [ ] New tests are being added: <!--Which?-->
-- [ ] Not a functional change. Ex: modifying documentation, auxiliary files, etc
+<!-- Uncomment the relevant line below -->
+<!-- - Current tests test this behavior: <testnames> -->
+<!-- - New tests are being added: <testnames> -->
+<!-- - Not a functional change. Ex: modifying documentation, auxiliary files, etc -->
