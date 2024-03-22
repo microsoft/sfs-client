@@ -46,8 +46,9 @@ function Install-PipDependencies {
     $PipInstalledPackageString = "Requirement already satisfied"
     python -m pip install --upgrade pip | Select-String -Pattern $PipInstalledPackageString -NotMatch
 
+    # Installing to user site packages
     $PipReqs = Join-Path $PSScriptRoot "pip.requirements.txt" -Resolve
-    pip install -r $PipReqs | Select-String -Pattern $PipInstalledPackageString -NotMatch
+    pip install --user -r $PipReqs | Select-String -Pattern $PipInstalledPackageString -NotMatch
 }
 
 function Install-CMake {
