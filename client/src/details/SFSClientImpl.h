@@ -9,6 +9,7 @@
 #include "Content.h"
 #include "Logging.h"
 #include "Result.h"
+#include "SFSUrlBuilder.h"
 
 #include <memory>
 #include <optional>
@@ -97,9 +98,9 @@ class SFSClientImpl : public SFSClientInterface
     void SetCustomBaseUrl(std::string customBaseUrl);
 
     /**
-     * @return The URL for the SFS service based on the parameters passed to the constructor
+     * @return A SFSUrlBuilder object that can be used to build URLs for the SFS service
      */
-    std::string GetBaseUrl() const;
+    SFSUrlBuilder MakeUrlBuilder() const;
 
   private:
     std::string m_accountId;

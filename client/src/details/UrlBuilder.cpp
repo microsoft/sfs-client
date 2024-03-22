@@ -66,7 +66,7 @@ std::string UrlBuilder::GetUrl() const
     return urlPtr;
 }
 
-void UrlBuilder::SetScheme(Scheme scheme)
+UrlBuilder& UrlBuilder::SetScheme(Scheme scheme)
 {
     switch (scheme)
     {
@@ -74,34 +74,94 @@ void UrlBuilder::SetScheme(Scheme scheme)
         THROW_IF_CURL_URL_SETUP_ERROR(curl_url_set(m_handle, CURLUPART_SCHEME, "https", 0 /*flags*/));
         break;
     }
+    return *this;
 }
 
-void UrlBuilder::SetHost(const std::string& host)
+UrlBuilder& UrlBuilder::SetHost(const std::string& host)
 {
+    THROW_CODE_IF_LOG(InvalidArg, host.empty(), m_handler, "Host must not empty");
     THROW_IF_CURL_URL_SETUP_ERROR(curl_url_set(m_handle, CURLUPART_HOST, host.c_str(), 0 /*flags*/));
+    return *this;
 }
 
-void UrlBuilder::SetPath(const std::string& path, bool encode)
+UrlBuilder& UrlBuilder::SetPath(const std::string& path)
 {
-    unsigned flags = 0;
+    THROW_CODE_IF_LOG(InvalidArg, path.empty(), m_handler, "Path must not empty");
+    m_path = path;
+    THROW_IF_CURL_URL_SETUP_ERROR(curl_url_set(m_handle, CURLUPART_PATH, m_path.c_str(), 0 /*flags*/));
+    return *this;
+}
+
+UrlBuilder& UrlBuilder::AppendPath(const std::string& path)
+{
+    return AppendPath(path, false /*encode*/);
+}
+
+UrlBuilder& UrlBuilder::AppendPathEncoded(const std::string& path)
+{
+    return AppendPath(path, true /*encode*/);
+}
+
+UrlBuilder& UrlBuilder::AppendPath(const std::string& path, bool encode)
+{
+    THROW_CODE_IF_LOG(InvalidArg, path.empty(), m_handler, "Path must not empty");
+    if (!m_path.empty() && m_path.back() != '/')
+    {
+        m_path += '/';
+    }
+
     if (encode)
     {
-        flags |= CURLU_URLENCODE;
+        m_path += EscapeString(path);
     }
-    THROW_IF_CURL_URL_SETUP_ERROR(curl_url_set(m_handle, CURLUPART_PATH, path.c_str(), flags));
+    else
+    {
+        m_path += path;
+    }
+
+    THROW_IF_CURL_URL_SETUP_ERROR(curl_url_set(m_handle, CURLUPART_PATH, m_path.c_str(), 0 /*flags*/));
+    return *this;
 }
 
-void UrlBuilder::SetQuery(const std::string& query)
+UrlBuilder& UrlBuilder::ResetPath()
 {
+    m_path.clear();
+    THROW_IF_CURL_URL_SETUP_ERROR(curl_url_set(m_handle, CURLUPART_PATH, "", 0 /*flags*/));
+    return *this;
+}
+
+UrlBuilder& UrlBuilder::SetQuery(const std::string& key, const std::string& value)
+{
+    THROW_CODE_IF_LOG(InvalidArg, key.empty() || value.empty(), m_handler, "Query key and value must not empty");
+    const std::string query = key + "=" + value;
     THROW_IF_CURL_URL_SETUP_ERROR(curl_url_set(m_handle, CURLUPART_QUERY, query.c_str(), 0 /*flags*/));
+    return *this;
 }
 
-void UrlBuilder::AppendQuery(const std::string& query)
+UrlBuilder& UrlBuilder::AppendQuery(const std::string& key, const std::string& value)
 {
+    THROW_CODE_IF_LOG(InvalidArg, key.empty() || value.empty(), m_handler, "Query key and value must not empty");
+    const std::string query = key + "=" + value;
     THROW_IF_CURL_URL_SETUP_ERROR(curl_url_set(m_handle, CURLUPART_QUERY, query.c_str(), CURLU_APPENDQUERY));
+    return *this;
 }
 
-void UrlBuilder::SetUrl(const std::string& url)
+UrlBuilder& UrlBuilder::ResetQuery()
 {
+    THROW_IF_CURL_URL_SETUP_ERROR(curl_url_set(m_handle, CURLUPART_QUERY, "", 0 /*flags*/));
+    return *this;
+}
+
+UrlBuilder& UrlBuilder::SetUrl(const std::string& url)
+{
+    THROW_CODE_IF_LOG(InvalidArg, url.empty(), m_handler, "Url must not empty");
     THROW_IF_CURL_URL_SETUP_ERROR(curl_url_set(m_handle, CURLUPART_URL, url.c_str(), 0 /*flags*/));
+    return *this;
+}
+
+std::string UrlBuilder::EscapeString(const std::string& str) const
+{
+    CurlCharPtr escapedStr{curl_easy_escape(nullptr /*ignored*/, str.c_str(), static_cast<int>(str.length()))};
+    THROW_CODE_IF_NOT_LOG(ConnectionUrlSetupFailed, escapedStr, m_handler, "Failed to escape URL string");
+    return escapedStr.get();
 }

@@ -38,7 +38,7 @@ target_sources(
             src/details/ReportingHandler.cpp
             src/details/SFSClientImpl.cpp
             src/details/SFSException.cpp
-            src/details/SFSUrlComponents.cpp
+            src/details/SFSUrlBuilder.cpp
             src/details/TestOverride.cpp
             src/details/UrlBuilder.cpp
             src/details/Util.cpp

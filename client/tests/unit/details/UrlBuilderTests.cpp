@@ -36,6 +36,8 @@ TEST("UrlBuilder")
         REQUIRE_THROWS_CODE_MSG(builder.SetHost("a&b"), ConnectionUrlSetupFailed, "Curl URL error: Bad hostname");
         REQUIRE_THROWS_CODE_MSG(builder.SetHost("a\nb"), ConnectionUrlSetupFailed, "Curl URL error: Bad hostname");
         REQUIRE_THROWS_CODE_MSG(builder.SetHost("a\tb"), ConnectionUrlSetupFailed, "Curl URL error: Bad hostname");
+
+        REQUIRE_THROWS_CODE_MSG(builder.SetHost(""), InvalidArg, "Host must not empty");
     }
 
     SECTION("SetPath")
@@ -43,27 +45,58 @@ TEST("UrlBuilder")
         builder.SetPath("index.html");
         REQUIRE(builder.GetUrl() == "https://www.example.com/index.html");
 
-        builder.SetPath("index.html", true);
+        REQUIRE_THROWS_CODE_MSG(builder.SetPath(""), InvalidArg, "Path must not empty");
+
+        builder.ResetPath();
+        REQUIRE(builder.GetUrl() == "https://www.example.com/");
+    }
+
+    SECTION("AppendPath")
+    {
+        builder.SetPath("index.html");
         REQUIRE(builder.GetUrl() == "https://www.example.com/index.html");
 
-        builder.SetPath("index>@", true);
-        REQUIRE(builder.GetUrl() == "https://www.example.com/index%3e%40");
+        builder.AppendPathEncoded("index.html");
+        REQUIRE(builder.GetUrl() == "https://www.example.com/index.html/index.html");
 
-        INFO("Encoding skips the / character");
-        builder.SetPath("index>@/index", true);
-        REQUIRE(builder.GetUrl() == "https://www.example.com/index%3e%40/index");
+        builder.AppendPath("a/");
+        REQUIRE(builder.GetUrl() == "https://www.example.com/index.html/index.html/a/");
+
+        builder.AppendPath("b/");
+        REQUIRE(builder.GetUrl() == "https://www.example.com/index.html/index.html/a/b/");
+
+        INFO("Encoding for append includes the / character");
+        builder.AppendPathEncoded("c/");
+        REQUIRE(builder.GetUrl() == "https://www.example.com/index.html/index.html/a/b/c%2f");
+
+        INFO("Calling SetPath() resets the path");
+        builder.SetPath("index");
+        REQUIRE(builder.GetUrl() == "https://www.example.com/index");
+
+        REQUIRE_THROWS_CODE_MSG(builder.AppendPath(""), InvalidArg, "Path must not empty");
     }
 
     SECTION("SetQuery, AppendQuery")
     {
-        builder.SetQuery("key=value");
+        builder.SetQuery("key", "value");
         REQUIRE(builder.GetUrl() == "https://www.example.com/?key=value");
 
-        builder.AppendQuery("key2=value2");
+        builder.AppendQuery("key2", "value2");
         REQUIRE(builder.GetUrl() == "https://www.example.com/?key=value&key2=value2");
 
-        builder.SetQuery("key2=value2");
+        builder.SetQuery("key2", "value2");
         REQUIRE(builder.GetUrl() == "https://www.example.com/?key2=value2");
+
+        REQUIRE_THROWS_CODE_MSG(builder.SetQuery("", "value"), InvalidArg, "Query key and value must not empty");
+        REQUIRE_THROWS_CODE_MSG(builder.SetQuery("key", ""), InvalidArg, "Query key and value must not empty");
+        REQUIRE_THROWS_CODE_MSG(builder.SetQuery("", ""), InvalidArg, "Query key and value must not empty");
+
+        REQUIRE_THROWS_CODE_MSG(builder.AppendQuery("", "value"), InvalidArg, "Query key and value must not empty");
+        REQUIRE_THROWS_CODE_MSG(builder.AppendQuery("key", ""), InvalidArg, "Query key and value must not empty");
+        REQUIRE_THROWS_CODE_MSG(builder.AppendQuery("", ""), InvalidArg, "Query key and value must not empty");
+
+        builder.ResetQuery();
+        REQUIRE(builder.GetUrl() == "https://www.example.com/");
     }
 
     SECTION("SetUrl")
@@ -73,25 +106,22 @@ TEST("UrlBuilder")
         REQUIRE_THROWS_CODE_MSG(builder.SetUrl("https://www.+.com"),
                                 ConnectionUrlSetupFailed,
                                 "Curl URL error: Bad hostname");
+
+        REQUIRE_THROWS_CODE_MSG(builder.SetUrl(""), InvalidArg, "Url must not empty");
     }
 
     SECTION("SetScheme, SetHost, SetPath, SetQuery")
     {
-        builder.SetScheme(Scheme::Https);
-        builder.SetHost("www.example.com");
-        builder.SetPath("index.html");
-        builder.SetQuery("key=value");
-
+        builder.SetScheme(Scheme::Https).SetHost("www.example.com").SetPath("index.html").SetQuery("key", "value");
         REQUIRE(builder.GetUrl() == "https://www.example.com/index.html?key=value");
     }
 
-    SECTION("SetScheme, SetHost, SetPath, SetQuery with encoding")
+    SECTION("SetScheme, SetHost, AppendPathEncoded, SetQuery")
     {
-        builder.SetScheme(Scheme::Https);
-        builder.SetHost("www.example.com");
-        builder.SetPath("index@.html", true);
-        builder.SetQuery("key=value");
-
+        builder.SetScheme(Scheme::Https)
+            .SetHost("www.example.com")
+            .AppendPathEncoded("index@.html")
+            .SetQuery("key", "value");
         REQUIRE(builder.GetUrl() == "https://www.example.com/index%40.html?key=value");
     }
 
