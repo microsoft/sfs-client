@@ -88,6 +88,7 @@ class UrlBuilder
      * @brief Set a query to the URL (?key=value)
      * @param key The key of the query string. Ex: value
      * @param value The value of the query string. Ex: value
+     * @note Both key and value will be URL encoded
      * @throws SFSException if the string is invalid
      * @return The reference to the current object
      */
@@ -97,6 +98,7 @@ class UrlBuilder
      * @brief Append a query to the URL (&key=value)
      * @param key The key of the query string. Ex: value
      * @param value The value of the query string. Ex: value
+     * @note Both key and value will be URL encoded
      * @throws SFSException if the string is invalid
      * @return The reference to the current object
      */
@@ -127,9 +129,9 @@ class UrlBuilder
     UrlBuilder& AppendPath(const std::string& path, bool encode);
 
     /**
-     * @brief URL-escape a given string
+     * @brief URL-encode (or percent-encode) a given string
      */
-    std::string EscapeString(const std::string& str) const;
+    std::string URLEncode(const std::string& str) const;
 
     const ReportingHandler& m_handler;
 
