@@ -18,7 +18,7 @@
 #   .*: Matches any number of characters (. means any character except newline, and * means match any number of the character before, including 0)
 #   (\.cpp|\.h): Match either .cpp or .h. The . character is escaped because it has a special meaning in regex.
 #   $: Match end of string
-pattern_to_include_in_clang_format='^client/.*(\.cpp|\.h)$'
+pattern_to_include_in_clang_format='(\.cpp|\.h)$'
 pattern_to_include_in_cmake_format='CMakeLists.txt'
 
 # Get the names of staged files (--cached) that are not deleted (--diff-filter=d)
