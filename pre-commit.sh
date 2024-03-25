@@ -22,7 +22,8 @@ pattern_to_include_in_cmake_format='CMakeLists.txt'
 all_staged_files=$(git diff --cached --name-only --diff-filter=d)
 mapfile -t filtered_files <<<"$all_staged_files"
 
-files_with_unstaged_changes=()
+declare -A files_with_unstaged_changes
+
 clang_format_files=()
 cmake_format_files=()
 
@@ -39,7 +40,7 @@ for ((i = 0; i < max_index; i++)); do
 		# Collect files that will be analyzed but have unstaged changes, as we don't want to overwrite these changes
 		# `git diff` is empty if a file has no unstaged changes
 		if [[ -n "$(git diff "${filtered_files[$i]}")" ]]; then
-			files_with_unstaged_changes+=("${filtered_files[$i]}")
+            files_with_unstaged_changes["${filtered_files[$i]}"]=1
 		fi
 	fi
 done
@@ -52,19 +53,6 @@ fi
 RED='\033[0;31m'
 YELLOW='\033[0;33m'
 NC='\033[0m' # No color
-
-IFS=$'\n' sorted_files_with_unstaged_changes=($(sort <<<"${files_with_unstaged_changes[*]}"))
-unset IFS
-
-# Early stop if files have unstaged changes
-if [[ ${sorted_files_with_unstaged_changes[*]} != "" ]]; then
-	echo -e "${RED}There are files that need to be checked by the formatters but have unstaged changes. Either stage the files or discard the unstaged changes:"
-	for file in "${sorted_files_with_unstaged_changes[@]}"; do
-		echo -e "M\t$file"
-	done
-	echo -e "${NC}"
-	exit 1
-fi
 
 #
 # clang-format
@@ -81,15 +69,25 @@ if [[ ! -x "$(command -v "$clang_format")" ]]; then
 fi
 
 formatted_files=()
+unformatted_files=()
 for file in "${clang_format_files[@]}"; do
-	# Check if file will be modified so we can properly inform the user of modified files
-	# Use `clang-format -n` which does a dry run and outputs a non-empty response if there's something to format
-	if [[ -n $("$clang_format" "$file" -n 2>&1) ]]; then
-		formatted_files+=("$file")
-		# Now actually format in-place
-		"$clang_format" -i "$file"
-	fi
+    # Check if file will be modified so we can properly inform the user of modified files
+    # Use `clang-format -n` which does a dry run and outputs a non-empty response if there's something to format
+    # Pass contents through stdin to get only the staged changes. --assume-filename is used to find the closest .clang-format
+    # `git show :<file>` outputs the staged version of a file
+    if [[ -n $(git show ":$file" | "$clang_format" -n --assume-filename "$file" 2>&1) ]]; then
+
+        # If the file has unstaged changes, we can't format it
+        if [[ -v "files_with_unstaged_changes["$file"]" ]] ; then
+            unformatted_files+=("$file")
+        else
+            # Collect file that will be formatted and then actually format in-place
+            formatted_files+=("$file")
+            "$clang_format" -i "$file"
+        fi
+    fi
 done
+
 
 # Report modified files at end so we can run both formatters and report all changes at once
 
@@ -104,19 +102,33 @@ if [[ ! -x "$(command -v "$cmake_format")" ]]; then
 	exit 1
 fi
 
+tmp_formatted_name="tmp_formatted"
+
 for file in "${cmake_format_files[@]}"; do
-	# Check if file will be modified so we can properly inform the user of modified files
+    # Check if file will be modified so we can properly inform the user of modified files
+    # First create a temporary file with only staged changes since cmake-format does not support stdin
+    git show ":$file" > $tmp_formatted_name
 	# Use `cmake-format --check` which does a dry run and returns 1 if there's something to format
-    "$cmake_format" --check "$file" > /dev/null 2>&1
+    "$cmake_format" --check "$tmp_formatted_name" > /dev/null 2>&1
 	if [[ $? -ne 0 ]]; then
-		formatted_files+=("$file")
-		# Now actually format in-place
-		"$cmake_format" -i "$file"
-	fi
+
+        # If the file has unstaged changes, we can't format it
+        if [[ -v "files_with_unstaged_changes["$file"]" ]] ; then
+            unformatted_files+=("$file")
+        else
+            # Collect file that will be formatted and then actually format in-place
+            formatted_files+=("$file")
+		    "$cmake_format" -i "$file"
+        fi
+    fi
+    rm $tmp_formatted_name
 done
 
 IFS=$'\n' sorted_formatted_files=($(sort <<<"${formatted_files[*]}"))
+IFS=$'\n' sorted_unformatted_files=($(sort <<<"${unformatted_files[*]}"))
 unset IFS
+
+exit_code=0
 
 # If there were formatted files, we report the changes
 if [[ ${sorted_formatted_files[*]} != "" ]]; then
@@ -125,7 +137,17 @@ if [[ ${sorted_formatted_files[*]} != "" ]]; then
 		echo -e "M\t$file"
 	done
 	echo -e "${NC}"
-	exit 1
+    exit_code=1
 fi
 
-# If no modifications to staged files, we can exit the script
+# If there were files that could not be formatted, we report them
+if [[ ${unformatted_files[*]} != "" ]]; then
+    echo -e "${RED}There are files that need to be formatted but have unstaged changes. Either stage the files or stash/discard the unstaged changes:"
+    for file in "${unformatted_files[@]}"; do
+        echo -e "M\t$file"
+    done
+    echo -e "${NC}"
+    exit_code=1
+fi
+
+exit $exit_code

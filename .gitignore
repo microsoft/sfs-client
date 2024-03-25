@@ -40,3 +40,6 @@
 # Vcpkg
 /vcpkg
 /vcpkg_installed
+
+# Formatting temporary file
+/.tmp_formatted
