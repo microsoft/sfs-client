@@ -12,10 +12,7 @@
 # Get files that need to be checked against clang-format into an array
 
 # To understand the regex format in bash, take a look at https://tldp.org/LDP/abs/html/x17129.html
-# For example, this is how the regex ^client/.*(\.cpp|\.h)$ matches the example file client\include\SFSClient.h:
-#   ^: Matches beginning of string
-#   client/: direct string match
-#   .*: Matches any number of characters (. means any character except newline, and * means match any number of the character before, including 0)
+# For example, this is how the regex (\.cpp|\.h)$ matches the example file client/include/SFSClient.h:
 #   (\.cpp|\.h): Match either .cpp or .h. The . character is escaped because it has a special meaning in regex.
 #   $: Match end of string
 pattern_to_include_in_clang_format='(\.cpp|\.h)$'
