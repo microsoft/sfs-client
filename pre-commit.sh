@@ -109,8 +109,7 @@ for file in "${cmake_format_files[@]}"; do
     # First create a temporary file with only staged changes since cmake-format does not support stdin
     git show ":$file" > $tmp_formatted_name
     # Use `cmake-format --check` which does a dry run and returns 1 if there's something to format
-    "$cmake_format" --check "$tmp_formatted_name" > /dev/null 2>&1
-    if [[ $? -ne 0 ]]; then
+    if ! "$cmake_format" --check "$tmp_formatted_name" > /dev/null 2>&1; then
 
         # If the file has unstaged changes, we can't format it
         if [[ -v "files_with_unstaged_changes["$file"]" ]] ; then
