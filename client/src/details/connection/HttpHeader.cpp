@@ -5,6 +5,8 @@
 
 #include <correlation_vector/correlation_vector.h>
 
+constexpr const char* c_userAgent = "Microsoft-SFSClient/" SFS_VERSION;
+
 std::string SFS::details::ToString(HttpHeader header)
 {
     switch (header)
@@ -20,4 +22,9 @@ std::string SFS::details::ToString(HttpHeader header)
     }
 
     return "";
+}
+
+std::string SFS::details::GetUserAgentValue()
+{
+    return c_userAgent;
 }

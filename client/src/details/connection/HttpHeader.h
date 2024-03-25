@@ -16,4 +16,6 @@ enum class HttpHeader
 };
 
 std::string ToString(HttpHeader header);
+
+std::string GetUserAgentValue();
 } // namespace SFS::details

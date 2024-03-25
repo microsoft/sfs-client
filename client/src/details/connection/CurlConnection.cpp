@@ -33,8 +33,6 @@ using namespace SFS;
 using namespace SFS::details;
 using namespace std::chrono_literals;
 
-constexpr const char* c_userAgent = "Microsoft-SFSClient/" SFS_VERSION;
-
 namespace
 {
 // Curl callback for writing data to a std::string. Must return the number of bytes written.
@@ -427,7 +425,7 @@ void CurlConnection::ProcessRetry(int attempt, const Result& httpResult)
 
 void CurlConnection::SetHeaders(CurlHeaderList& headers, const std::string cv)
 {
-    headers.Add(HttpHeader::UserAgent, c_userAgent);
+    headers.Add(HttpHeader::UserAgent, GetUserAgentValue());
     headers.Add(HttpHeader::MSCV, cv);
 
     THROW_IF_CURL_SETUP_ERROR(curl_easy_setopt(m_handle, CURLOPT_HTTPHEADER, headers.m_slist));

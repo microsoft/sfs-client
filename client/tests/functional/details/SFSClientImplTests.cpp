@@ -92,7 +92,7 @@ TEST("Testing class SFSClientImpl()")
     ConnectionConfig config;
     config.baseCV = cv;
     auto connection = sfsClient.MakeConnection(config);
-    server.RegisterExpectedRequestHeader(HttpHeader::UserAgent, "Microsoft-SFSClient/" SFS_VERSION);
+    server.RegisterExpectedRequestHeader(HttpHeader::UserAgent, GetUserAgentValue());
 
     SECTION("Generic products")
     {
