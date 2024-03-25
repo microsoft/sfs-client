@@ -50,11 +50,6 @@ class CurlConnection : public Connection
      */
     void ProcessRetry(int attempt, const Result& httpResult);
 
-    /**
-     * @brief Build and set the request headers for the current request from given base headers
-     */
-    void BuildAndSetHeaders(CurlHeaderList& baseHeaders, const std::string& cv);
-
   protected:
     /**
      * @brief Perform a REST request to the given @param url with the given @param headers
