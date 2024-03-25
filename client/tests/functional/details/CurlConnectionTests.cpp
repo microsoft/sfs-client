@@ -461,32 +461,32 @@ TEST("Testing retry behavior")
 
             long long allowedTimeDeviation = 200LL;
             std::queue<HttpCode> forcedHttpErrors({retriableError});
-            SECTION("Should take at least 1000ms with a single retriable error with 1s in Retry-After")
+            SECTION("Should take at least 2000ms with a single retriable error, with 2s in Retry-After")
             {
                 server.SetForcedHttpErrors(forcedHttpErrors);
                 const auto time = RunTimedGet();
-                REQUIRE(time >= 1000LL);
-                REQUIRE(time < 1000LL + allowedTimeDeviation);
+                REQUIRE(time >= 2000LL);
+                REQUIRE(time < 2000LL + allowedTimeDeviation);
             }
 
             SECTION(
-                "Should take at least 1000ms + 200ms with a retriable error with 1s in Retry-After and one with 200ms*2 as default value")
+                "Should take at least 2000ms + 200ms*2 (exponential backoff) with two retriable errors, with 2s in Retry-After of the first error")
             {
                 forcedHttpErrors.push(retriableError2);
                 server.SetForcedHttpErrors(forcedHttpErrors);
                 const auto time = RunTimedGet();
-                REQUIRE(time >= 1400LL);
-                REQUIRE(time < 1400LL + allowedTimeDeviation);
+                REQUIRE(time >= 2400LL);
+                REQUIRE(time < 2400LL + allowedTimeDeviation);
             }
         };
 
         SECTION("Using seconds")
         {
-            testForRetryAfterValue("1"); // 1s delay
+            testForRetryAfterValue("2"); // 2s delay
         }
         SECTION("Using date")
         {
-            const auto time = std::chrono::system_clock::now() + std::chrono::seconds(1);
+            const auto time = std::chrono::system_clock::now() + std::chrono::seconds(2);
             testForRetryAfterValue(TimestampToHttpDateString(time));
         }
     }
