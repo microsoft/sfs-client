@@ -423,7 +423,7 @@ void CurlConnection::ProcessRetry(int attempt, const Result& httpResult)
     std::this_thread::sleep_for(retryDelay);
 }
 
-void CurlConnection::SetHeaders(CurlHeaderList& headers, const std::string cv)
+void CurlConnection::SetHeaders(CurlHeaderList& headers, const std::string& cv)
 {
     headers.Add(HttpHeader::UserAgent, GetUserAgentValue());
     headers.Add(HttpHeader::MSCV, cv);

@@ -53,7 +53,7 @@ class CurlConnection : public Connection
     /**
      * @brief Set the headers for the request
      */
-    void SetHeaders(CurlHeaderList& headers, const std::string cv);
+    void SetHeaders(CurlHeaderList& headers, const std::string& cv);
 
   protected:
     /**
