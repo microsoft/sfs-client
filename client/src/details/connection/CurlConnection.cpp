@@ -327,7 +327,7 @@ std::string CurlConnection::CurlPerform(const std::string& url, CurlHeaderList& 
     THROW_IF_CURL_SETUP_ERROR(curl_easy_setopt(m_handle, CURLOPT_URL, url.c_str()));
 
     const std::string cv = m_cv.IncrementAndGet();
-    SetHeaders(headers, cv);
+    BuildAndSetHeaders(headers, cv);
 
     // Setting up error buffer where error messages get written - this gets unset in the destructor
     CurlErrorBuffer errorBuffer(m_handle, m_handler);
@@ -423,7 +423,7 @@ void CurlConnection::ProcessRetry(int attempt, const Result& httpResult)
     std::this_thread::sleep_for(retryDelay);
 }
 
-void CurlConnection::SetHeaders(CurlHeaderList& headers, const std::string& cv)
+void CurlConnection::BuildAndSetHeaders(CurlHeaderList& headers, const std::string& cv)
 {
     headers.Add(HttpHeader::UserAgent, GetUserAgentValue());
     headers.Add(HttpHeader::MSCV, cv);

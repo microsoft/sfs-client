@@ -51,9 +51,9 @@ class CurlConnection : public Connection
     void ProcessRetry(int attempt, const Result& httpResult);
 
     /**
-     * @brief Set the headers for the request
+     * @brief Build and set the request headers for the current request from given base headers
      */
-    void SetHeaders(CurlHeaderList& headers, const std::string& cv);
+    void BuildAndSetHeaders(CurlHeaderList& baseHeaders, const std::string& cv);
 
   protected:
     /**
