@@ -15,6 +15,8 @@ std::string SFS::details::ToString(HttpHeader header)
         return microsoft::correlation_vector::HEADER_NAME;
     case HttpHeader::RetryAfter:
         return "Retry-After";
+    case HttpHeader::UserAgent:
+        return "User-Agent";
     }
 
     return "";

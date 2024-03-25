@@ -33,6 +33,8 @@ using namespace SFS;
 using namespace SFS::details;
 using namespace std::chrono_literals;
 
+constexpr const char* c_userAgent = "Microsoft-SFSClient/" SFS_VERSION;
+
 namespace
 {
 // Curl callback for writing data to a std::string. Must return the number of bytes written.
@@ -284,7 +286,6 @@ CurlConnection::CurlConnection(const ConnectionConfig& config, const ReportingHa
                           m_handler,
                           "Failed to set up curl");
 
-    // TODO #40: Allow passing user agent in the header
     // TODO #41: Pass AAD token in the header if it is available
     // TODO #42: Cert pinning with service
 }
@@ -328,8 +329,7 @@ std::string CurlConnection::CurlPerform(const std::string& url, CurlHeaderList& 
     THROW_IF_CURL_SETUP_ERROR(curl_easy_setopt(m_handle, CURLOPT_URL, url.c_str()));
 
     const std::string cv = m_cv.IncrementAndGet();
-    headers.Add(HttpHeader::MSCV, cv);
-    THROW_IF_CURL_SETUP_ERROR(curl_easy_setopt(m_handle, CURLOPT_HTTPHEADER, headers.m_slist));
+    SetHeaders(headers, cv);
 
     // Setting up error buffer where error messages get written - this gets unset in the destructor
     CurlErrorBuffer errorBuffer(m_handle, m_handler);
@@ -423,4 +423,12 @@ void CurlConnection::ProcessRetry(int attempt, const Result& httpResult)
     LOG_IF_FAILED(httpResult, m_handler);
     LOG_INFO(m_handler, "Sleeping for %lld ms", static_cast<long long>(retryDelay.count()));
     std::this_thread::sleep_for(retryDelay);
+}
+
+void CurlConnection::SetHeaders(CurlHeaderList& headers, const std::string cv)
+{
+    headers.Add(HttpHeader::UserAgent, c_userAgent);
+    headers.Add(HttpHeader::MSCV, cv);
+
+    THROW_IF_CURL_SETUP_ERROR(curl_easy_setopt(m_handle, CURLOPT_HTTPHEADER, headers.m_slist));
 }
