@@ -35,6 +35,7 @@ target_sources(
             src/details/entity/VersionEntity.cpp
             src/details/Env.cpp
             src/details/ErrorHandling.cpp
+            src/details/OSInfo.cpp
             src/details/ReportingHandler.cpp
             src/details/SFSClientImpl.cpp
             src/details/SFSException.cpp
