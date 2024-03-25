@@ -29,6 +29,10 @@ jobs:
         shell: pwsh
         run: .\scripts\Setup.ps1 -NoBuildTools
 
+      - name: Check formatting
+        shell: pwsh
+        run: python .\scripts\check-format.py
+
       - name: Build and Test (no test overrides)
         shell: pwsh
         run: |
@@ -56,6 +60,9 @@ jobs:
 
       - name: Setup
         run: source ./scripts/setup.sh
+
+      - name: Check formatting
+        run: python ./scripts/check-format.py
 
       - name: Build and Test (no test overrides)
         run: |
