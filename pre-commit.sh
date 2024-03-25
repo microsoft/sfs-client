@@ -30,24 +30,24 @@ cmake_format_files=()
 # Only those that match a pattern will be analyzed
 max_index=${#filtered_files[@]}
 for ((i = 0; i < max_index; i++)); do
-	if [[ "${filtered_files[$i]}" =~ $pattern_to_include_in_clang_format || "${filtered_files[$i]}" =~ $pattern_to_include_in_cmake_format ]]; then
+    if [[ "${filtered_files[$i]}" =~ $pattern_to_include_in_clang_format || "${filtered_files[$i]}" =~ $pattern_to_include_in_cmake_format ]]; then
         if [[ "${filtered_files[$i]}" =~ $pattern_to_include_in_clang_format ]]; then
             clang_format_files+=("${filtered_files[$i]}")
         elif [[ "${filtered_files[$i]}" =~ $pattern_to_include_in_cmake_format ]]; then
             cmake_format_files+=("${filtered_files[$i]}")
         fi
 
-		# Collect files that will be analyzed but have unstaged changes, as we don't want to overwrite these changes
-		# `git diff` is empty if a file has no unstaged changes
-		if [[ -n "$(git diff "${filtered_files[$i]}")" ]]; then
+        # Collect files that will be analyzed but have unstaged changes, as we don't want to overwrite these changes
+        # `git diff` is empty if a file has no unstaged changes
+        if [[ -n "$(git diff "${filtered_files[$i]}")" ]]; then
             files_with_unstaged_changes["${filtered_files[$i]}"]=1
-		fi
-	fi
+        fi
+    fi
 done
 
 # Early stop if no files to check
 if [[ ${clang_format_files[*]} == "" && ${cmake_format_files[*]} == "" ]]; then
-	exit 0
+    exit 0
 fi
 
 RED='\033[0;31m'
@@ -63,9 +63,9 @@ python_dir="$(python -c 'import os,sysconfig;print(sysconfig.get_path("scripts",
 clang_format="$python_dir/clang-format.exe"
 
 if [[ ! -x "$(command -v "$clang_format")" ]]; then
-	echo -e "${RED}There are staged changes that need to be checked by the formatter."
-	echo -e "${RED}clang-format toolset was not found. Re-run scripts\Setup.ps1 to install it.${NC}"
-	exit 1
+    echo -e "${RED}There are staged changes that need to be checked by the formatter."
+    echo -e "${RED}clang-format toolset was not found. Re-run scripts\Setup.ps1 to install it.${NC}"
+    exit 1
 fi
 
 formatted_files=()
@@ -97,9 +97,9 @@ done
 cmake_format="$python_dir/cmake-format.exe"
 
 if [[ ! -x "$(command -v "$cmake_format")" ]]; then
-	echo -e "${RED}There are staged changes that need to be checked by the formatter."
-	echo -e "${RED}cmake-format toolset was not found. Re-run scripts\Setup.ps1 to install it.${NC}"
-	exit 1
+    echo -e "${RED}There are staged changes that need to be checked by the formatter."
+    echo -e "${RED}cmake-format toolset was not found. Re-run scripts\Setup.ps1 to install it.${NC}"
+    exit 1
 fi
 
 tmp_formatted_name="tmp_formatted"
@@ -108,9 +108,9 @@ for file in "${cmake_format_files[@]}"; do
     # Check if file will be modified so we can properly inform the user of modified files
     # First create a temporary file with only staged changes since cmake-format does not support stdin
     git show ":$file" > $tmp_formatted_name
-	# Use `cmake-format --check` which does a dry run and returns 1 if there's something to format
+    # Use `cmake-format --check` which does a dry run and returns 1 if there's something to format
     "$cmake_format" --check "$tmp_formatted_name" > /dev/null 2>&1
-	if [[ $? -ne 0 ]]; then
+    if [[ $? -ne 0 ]]; then
 
         # If the file has unstaged changes, we can't format it
         if [[ -v "files_with_unstaged_changes["$file"]" ]] ; then
@@ -118,7 +118,7 @@ for file in "${cmake_format_files[@]}"; do
         else
             # Collect file that will be formatted and then actually format in-place
             formatted_files+=("$file")
-		    "$cmake_format" -i "$file"
+            "$cmake_format" -i "$file"
         fi
     fi
     rm $tmp_formatted_name
@@ -132,11 +132,11 @@ exit_code=0
 
 # If there were formatted files, we report the changes
 if [[ ${sorted_formatted_files[*]} != "" ]]; then
-	echo -e "${YELLOW}There are files that have been automatically formatted. Review and stage the changes before committing:"
-	for file in "${sorted_formatted_files[@]}"; do
-		echo -e "M\t$file"
-	done
-	echo -e "${NC}"
+    echo -e "${YELLOW}There are files that have been automatically formatted. Review and stage the changes before committing:"
+    for file in "${sorted_formatted_files[@]}"; do
+        echo -e "M\t$file"
+    done
+    echo -e "${NC}"
     exit_code=1
 fi
 
