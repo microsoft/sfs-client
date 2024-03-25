@@ -56,6 +56,9 @@ set_target_properties(${PROJECT_NAME} PROPERTIES RUNTIME_OUTPUT_DIRECTORY
 
 set_compile_options_for_target(${PROJECT_NAME})
 
+target_compile_definitions(${PROJECT_NAME}
+                           PRIVATE SFS_VERSION="${SFS_LIBRARY_VERSION}")
+
 if(SFS_ENABLE_TEST_OVERRIDES)
     target_compile_definitions(${PROJECT_NAME}
                                PRIVATE SFS_ENABLE_TEST_OVERRIDES=1)
