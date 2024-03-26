@@ -96,6 +96,7 @@ TEST("Testing CurlConnection()")
     CurlConnectionManager connectionManager(handler);
     auto connection = connectionManager.MakeConnection({});
     SFSUrlBuilder urlBuilder(SFSCustomUrl(server.GetBaseUrl()), c_instanceId, c_namespace, handler);
+    server.RegisterExpectedRequestHeader(HttpHeader::UserAgent, GetUserAgentValue());
 
     SECTION("Testing CurlConnection::Get()")
     {

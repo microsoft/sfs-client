@@ -12,7 +12,10 @@ enum class HttpHeader
     ContentType,
     MSCV,
     RetryAfter,
+    UserAgent,
 };
 
 std::string ToString(HttpHeader header);
+
+std::string GetUserAgentValue();
 } // namespace SFS::details
