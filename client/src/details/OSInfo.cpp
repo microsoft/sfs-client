@@ -9,7 +9,7 @@
 
 #include <sysinfoapi.h>
 
-#elif __GNUG__
+#elif __linux__
 
 #include <sys/utsname.h>
 
@@ -20,12 +20,12 @@ using namespace SFS::details;
 namespace
 {
 #ifdef _WIN32
-std::string GetWindowsOSVersion()
+std::string GetPlatform()
 {
     return "Windows";
 }
 
-std::string GetWindowsMachineInfo()
+std::string GetOSMachineInfo()
 {
     SYSTEM_INFO systemInfo;
     GetNativeSystemInfo(&systemInfo);
@@ -44,10 +44,10 @@ std::string GetWindowsMachineInfo()
         return "Unknown";
     }
 }
-#endif
 
-#ifdef __GNUG__
-std::string GetLinuxOSVersion()
+#elif __linux__
+
+std::string GetPlatform()
 {
     // Return kernel name, usually "Linux"
     utsname buf;
@@ -58,7 +58,7 @@ std::string GetLinuxOSVersion()
     return "Unknown";
 }
 
-std::string GetLinuxMachineInfo()
+std::string GetOSMachineInfo()
 {
     utsname buf;
     if (uname(&buf) >= 0)
@@ -67,27 +67,28 @@ std::string GetLinuxMachineInfo()
     }
     return "Unknown";
 }
+
+#else
+
+std::string GetPlatform()
+{
+    return "Unknown";
+}
+
+std::string GetOSMachineInfo()
+{
+    return "Unknown Machine";
+}
+
 #endif
 } // namespace
 
-std::string osinfo::GetOSVersion()
+std::string osinfo::GetPlatform()
 {
-#ifdef _WIN32
-    return GetWindowsOSVersion();
-#elif __GNUG__
-    return GetLinuxOSVersion();
-#else
-    return "Unknown OS";
-#endif
+    return ::GetPlatform();
 }
 
 std::string osinfo::GetOSMachineInfo()
 {
-#ifdef _WIN32
-    return GetWindowsMachineInfo();
-#elif __GNUG__
-    return GetLinuxMachineInfo();
-#else
-    return "Unknown Machine";
-#endif
+    return ::GetOSMachineInfo();
 }

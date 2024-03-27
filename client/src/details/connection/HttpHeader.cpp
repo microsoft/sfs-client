@@ -34,5 +34,5 @@ std::string SFS::details::GetUserAgentValue()
     // - Microsoft-SFSClient/1.0.0 (Windows; x64)
     // - Microsoft-SFSClient/1.0.0 (Linux; x86_64)
 
-    return c_userAgent + " ("s + osinfo::GetOSVersion() + "; "s + osinfo::GetOSMachineInfo() + ")"s;
+    return c_userAgent + " ("s + osinfo::GetPlatform() + "; "s + osinfo::GetOSMachineInfo() + ")"s;
 }

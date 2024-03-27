@@ -7,6 +7,6 @@
 
 namespace SFS::details::osinfo
 {
-std::string GetOSVersion();
+std::string GetPlatform();
 std::string GetOSMachineInfo();
 } // namespace SFS::details::osinfo
