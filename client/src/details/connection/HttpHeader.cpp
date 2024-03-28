@@ -31,8 +31,8 @@ std::string SFS::details::ToString(HttpHeader header)
 std::string SFS::details::GetUserAgentValue()
 {
     // Examples:
-    // - Microsoft-SFSClient/1.0.0 (Windows NT 10.0; x64)
-    // - Microsoft-SFSClient/1.0.0 (Ubuntu 22.04.3 LTS; x86_64)
+    // - Microsoft-SFSClient/1.0.0 (Windows; x64)
+    // - Microsoft-SFSClient/1.0.0 (Linux; x86_64)
 
-    return c_userAgent + " ("s + osinfo::GetOSVersion() + "; "s + osinfo::GetOSMachineInfo() + ")"s;
+    return c_userAgent + " ("s + osinfo::GetPlatform() + "; "s + osinfo::GetOSMachineInfo() + ")"s;
 }
