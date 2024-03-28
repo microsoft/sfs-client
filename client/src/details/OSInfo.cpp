@@ -69,17 +69,7 @@ std::string GetOSMachineInfo()
 }
 
 #else
-
-std::string GetPlatform()
-{
-    return "Unknown";
-}
-
-std::string GetOSMachineInfo()
-{
-    return "Unknown Machine";
-}
-
+#error "Unsupported platform"
 #endif
 } // namespace
 
