@@ -53,7 +53,7 @@ target_sources(
 target_include_directories(
     ${PROJECT_NAME}
     PUBLIC $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include/sfsclient>
-           $<INSTALL_INTERFACE:include/sfsclient> # <prefix>/include/sfsclient
+           $<INSTALL_INTERFACE:include> # <prefix>/include
 )
 
 target_link_libraries(${PROJECT_NAME} PRIVATE CURL::libcurl)
