@@ -45,15 +45,15 @@ class CurlConnectionTimeout : public CurlConnection
 
     std::string Get(const std::string& url) override
     {
-        // Timeout within 100ms
-        curl_easy_setopt(m_handle, CURLOPT_TIMEOUT_MS, 100L);
+        // Timeout within 1ms
+        curl_easy_setopt(m_handle, CURLOPT_TIMEOUT_MS, 1L);
         return CurlConnection::Get(url);
     }
 
     std::string Post(const std::string& url, const std::string& data) override
     {
-        // Timeout within 100ms
-        curl_easy_setopt(m_handle, CURLOPT_TIMEOUT_MS, 100L);
+        // Timeout within 1ms
+        curl_easy_setopt(m_handle, CURLOPT_TIMEOUT_MS, 1L);
         return CurlConnection::Post(url, data);
     }
 };
