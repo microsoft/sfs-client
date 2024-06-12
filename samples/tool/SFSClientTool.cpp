@@ -308,7 +308,6 @@ void DisplayResults(const json& results)
 {
     if (results.empty())
     {
-        std::cout << "No results found." << std::endl;
         return;
     }
 
@@ -318,6 +317,11 @@ void DisplayResults(const json& results)
 
 Result JSONToFile(const json& results, const std::string& filename)
 {
+    if (results.empty())
+    {
+        return Result::Unexpected;
+    }
+
     const std::filesystem::path filepath = std::filesystem::absolute(filename);
     try
     {
@@ -428,6 +432,12 @@ Result GetLatestDownloadInfo(const SFSClient& sfsClient, const Settings& setting
         }
 
         out = ContentsToJson(contents);
+    }
+
+    if (out.empty())
+    {
+        PrintError("No results found.");
+        return Result::Unexpected;
     }
 
     return Result::Success;
