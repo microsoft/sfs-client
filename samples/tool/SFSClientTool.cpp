@@ -90,6 +90,11 @@ struct Settings
     std::string nameSpace;
     std::string customUrl;
     std::string outputFile;
+
+    bool ShouldOutputToFile() const
+    {
+        return !outputFile.empty();
+    }
 };
 
 void ParseArguments(const std::vector<std::string_view>& args, Settings& settings)
@@ -445,12 +450,7 @@ Result GetLatestDownloadInfo(const SFSClient& sfsClient, const Settings& setting
 
 Result HandleJSONContents(const Settings& settings, const json& contents)
 {
-    if (settings.outputFile.empty())
-    {
-        DisplayResults(contents);
-        return Result::Success;
-    }
-    else
+    if (settings.ShouldOutputToFile())
     {
         auto result = JSONToFile(contents, settings.outputFile);
         if (!result)
@@ -458,6 +458,11 @@ Result HandleJSONContents(const Settings& settings, const json& contents)
             PrintError("Failed to save to file.");
             return result.GetCode();
         }
+    }
+    else
+    {
+        DisplayResults(contents);
+        return Result::Success;
     }
 
     return Result::Success;
