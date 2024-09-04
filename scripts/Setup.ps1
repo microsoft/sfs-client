@@ -83,7 +83,8 @@ function Install-CppBuildTools {
     }
 
     # - Microsoft.VisualStudio.Workload.VCTools is the C++ workload in the Visual Studio Build Tools
-    $ExistingBuildTools = vswhere -products * -requires Microsoft.VisualStudio.Workload.VCTools -format json | ConvertFrom-Json
+    # - Microsoft.VisualStudio.Workload.NativeDesktop is the C++ workload that comes pre-installed in the github runner image
+    $ExistingBuildTools = vswhere -products * -requires Microsoft.VisualStudio.Workload.VCTools Microsoft.VisualStudio.Workload.NativeDesktop -requiresAny -format json | ConvertFrom-Json
     if ($null -eq $ExistingBuildTools)
     {
         Write-Host "`nTools not found, installing..."
