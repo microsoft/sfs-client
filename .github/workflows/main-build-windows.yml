@@ -24,7 +24,7 @@ jobs:
 
       - name: Setup
         shell: pwsh
-        run: .\scripts\Setup.ps1 -NoBuildTools
+        run: .\scripts\Setup.ps1
 
       - name: Build and Test (no test overrides)
         shell: pwsh
