@@ -83,14 +83,13 @@ function Install-CppBuildTools {
     }
 
     # - Microsoft.VisualStudio.Workload.VCTools is the C++ workload in the Visual Studio Build Tools
-    # - Microsoft.VisualStudio.Component.VC.CMake.Project are the C++ CMake tools in the Visual Studio Build Tools
-    $ExistingBuildTools = vswhere -products * -requires Microsoft.VisualStudio.Workload.VCTools Microsoft.VisualStudio.Component.VC.CMake.Project -format json | ConvertFrom-Json
+    $ExistingBuildTools = vswhere -products * -requires Microsoft.VisualStudio.Workload.VCTools -format json | ConvertFrom-Json
     if ($null -eq $ExistingBuildTools)
     {
         Write-Host "`nTools not found, installing..."
 
         # --wait makes the install synchronous
-        winget install Microsoft.VisualStudio.2022.BuildTools --silent --override "--wait --add Microsoft.VisualStudio.Workload.VCTools --includeRecommended"
+        winget install Microsoft.VisualStudio.2022.BuildTools --silent --override "--wait --quiet --add Microsoft.VisualStudio.Workload.VCTools --includeRecommended --remove Microsoft.VisualStudio.Component.VC.CMake.Project"
         if (!$?) {
             Write-Host -ForegroundColor Red "Failed to install build tools"
             exit 1
