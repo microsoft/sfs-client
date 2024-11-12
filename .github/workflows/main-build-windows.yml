@@ -19,6 +19,11 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
+      - name: Initialize CodeQL
+        uses: github/codeql-action/init@v2
+        with:
+          languages: cpp, python
+
       - name: Install Winget
         uses: ./.github/workflows/install-winget
 
@@ -43,3 +48,6 @@ jobs:
         run: |
             .\scripts\Build.ps1 -BuildType Release
             .\scripts\Test.ps1 -OutputOnFailure
+      
+      - name: Perform CodeQL Analysis
+        uses: github/codeql-action/analyze@v2
