@@ -7,6 +7,6 @@ runs:
 
   steps:
     - name: Initialize CodeQL
-        uses: github/codeql-action/init@v2
-        with:
+      uses: github/codeql-action/init@v2
+      with:
           languages: cpp
