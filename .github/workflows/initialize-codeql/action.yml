@@ -1,0 +1,12 @@
+name: Initialize CodeQl
+
+description: Initializes CodeQl action to be used in build workflows
+
+runs:
+  using: "composite"
+
+  steps:
+    - name: Initialize CodeQL
+        uses: github/codeql-action/init@v2
+        with:
+          languages: cpp

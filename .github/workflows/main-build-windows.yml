@@ -19,10 +19,8 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Initialize CodeQL
-        uses: github/codeql-action/init@v2
-        with:
-          languages: cpp, python
+      - name: Initialize CodeQl
+        uses: ./.github/workflows/initialize-codeql
 
       - name: Install Winget
         uses: ./.github/workflows/install-winget
