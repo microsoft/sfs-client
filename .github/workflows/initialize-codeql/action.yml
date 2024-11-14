@@ -2,11 +2,15 @@ name: Initialize CodeQL
 
 description: Initializes CodeQL action to be used in build workflows
 
+#Permissions to enable the writing/uploading of CodeQL scan results
+permissions:
+  security-events: write
+
 runs:
   using: "composite"
 
   steps:
     - name: Initialize CodeQL
-      uses: github/codeql-action/init@v2
+      uses: github/codeql-action/init@v3
       with:
           languages: cpp
