@@ -19,6 +19,9 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
+      - name: Initialize CodeQL
+        uses: ./.github/workflows/initialize-codeql
+
       - name: Setup
         run: source ./scripts/setup.sh
 
@@ -36,3 +39,6 @@ jobs:
         run: |
           ./scripts/build.sh --build-type Release
           ./scripts/test.sh --output-on-failure
+
+      - name: Perform CodeQL Analysis
+        uses: github/codeql-action/analyze@v2
