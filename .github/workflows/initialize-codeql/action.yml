@@ -1,6 +1,6 @@
-name: Initialize CodeQl
+name: Initialize CodeQL
 
-description: Initializes CodeQl action to be used in build workflows
+description: Initializes CodeQL action to be used in build workflows
 
 runs:
   using: "composite"

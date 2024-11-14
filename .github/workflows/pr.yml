@@ -22,7 +22,7 @@ jobs:
             core.exportVariable('ACTIONS_CACHE_URL', process.env.ACTIONS_CACHE_URL || '');
             core.exportVariable('ACTIONS_RUNTIME_TOKEN', process.env.ACTIONS_RUNTIME_TOKEN || '');
 
-      - name: Initialize CodeQl
+      - name: Initialize CodeQL
         uses: ./.github/workflows/initialize-codeql
 
       - name: Install Winget
@@ -64,7 +64,7 @@ jobs:
             core.exportVariable('ACTIONS_CACHE_URL', process.env.ACTIONS_CACHE_URL || '');
             core.exportVariable('ACTIONS_RUNTIME_TOKEN', process.env.ACTIONS_RUNTIME_TOKEN || '');
 
-      - name: Initialize CodeQl
+      - name: Initialize CodeQL
         uses: ./.github/workflows/initialize-codeql
 
       - name: Setup
