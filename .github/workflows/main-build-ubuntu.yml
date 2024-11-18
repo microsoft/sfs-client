@@ -41,4 +41,4 @@ jobs:
           ./scripts/test.sh --output-on-failure
 
       - name: Perform CodeQL Analysis
-        uses: github/codeql-action/analyze@v2
+        uses: github/codeql-action/analyze@v3
