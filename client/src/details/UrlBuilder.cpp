@@ -66,6 +66,31 @@ std::string UrlBuilder::GetUrl() const
     return urlPtr;
 }
 
+std::string UrlBuilder::GetPath() const
+{
+    CurlCharPtr path;
+    char* pathPtr = path.get();
+    THROW_IF_CURL_URL_SETUP_ERROR(curl_url_get(m_handle, CURLUPART_PATH, &pathPtr, 0 /*flags*/));
+    return pathPtr;
+}
+
+std::string UrlBuilder::GetQuery() const
+{
+    std::string ret;
+    CurlCharPtr query;
+    char* queryPtr = query.get();
+    const auto queryResult = curl_url_get(m_handle, CURLUPART_QUERY, &queryPtr, 0 /*flags*/);
+    if (queryResult == CURLUE_OK)
+    {
+        ret = queryPtr;
+    }
+    else if (queryResult != CURLUE_NO_QUERY)
+    {
+        THROW_IF_CURL_URL_SETUP_ERROR(queryResult);
+    }
+    return ret;
+}
+
 UrlBuilder& UrlBuilder::SetScheme(Scheme scheme)
 {
     switch (scheme)
