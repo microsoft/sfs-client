@@ -25,6 +25,7 @@ class StatusCodeException : public std::exception
 
   private:
     httplib::StatusCode m_status;
+    std::string m_message;
 };
 
 #define BUILD_BUFFERED_LOG_DATA(message) BuildBufferedLogData(message, __FILE__, __LINE__, __FUNCTION__)

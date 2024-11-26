@@ -19,13 +19,13 @@ static std::string ToString(httplib::StatusCode status)
     return std::to_string(status) + " " + std::string(httplib::status_message(status));
 }
 
-StatusCodeException::StatusCodeException(httplib::StatusCode status) : m_status(status)
+StatusCodeException::StatusCodeException(httplib::StatusCode status) : m_status(status), m_message(::ToString(m_status))
 {
 }
 
 const char* StatusCodeException::what() const noexcept
 {
-    return ::ToString(m_status).c_str();
+    return m_message.c_str();
 }
 
 httplib::StatusCode StatusCodeException::GetStatusCode() const
