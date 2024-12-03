@@ -240,8 +240,9 @@ TEST("Testing SFSClient::GetLatestAppDownloadInfo()")
         params.productRequests = {{c_productName, {}}};
         auto result = sfsClient->GetLatestAppDownloadInfo(params, contents);
         REQUIRE(result.GetCode() == Result::ServiceUnexpectedContentType);
-        REQUIRE(result.GetMsg() ==
-                "Unexpected content type [Generic] returned by the service does not match the expected [App]");
+        REQUIRE(
+            result.GetMsg() ==
+            R"(The service returned entity "testProduct" with content type [Generic] while the expected type was [App])");
         REQUIRE(contents.empty());
     }
 }
