@@ -255,7 +255,7 @@ TEST("Testing CurlConnection()")
         REQUIRE_THROWS_CODE(connection->Post(url + "/names", "{}"), HttpNotFound);
 
         url = server.GetBaseUrl() + "/api/v1/contents/" + c_instanceId + "/namespaces/" + c_namespace + "/names/" +
-              c_productName + "/versYions/" + c_version + "/files?action=GenerateDownloadInfo";
+              c_productName + "/versionYs/" + c_version + "/files?action=GenerateDownloadInfo";
 
         std::string out;
         REQUIRE_THROWS_CODE(connection->Get(url), HttpNotFound);
