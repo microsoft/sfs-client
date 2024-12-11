@@ -503,7 +503,7 @@ void MockWebServerImpl::ConfigureGetSpecificVersion()
                 throw StatusCodeException(httplib::StatusCode::InternalServerError_500);
             }
 
-            // TODO: Are apps suppported?
+            // TODO: Are apps supported?
 
             const std::string& version = req.path_params.at("version");
             if (version.empty() || !versions.count(version))
