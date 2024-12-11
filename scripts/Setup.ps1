@@ -70,7 +70,7 @@ function Install-CMake {
 function Install-CppBuildTools {
     Write-Host -ForegroundColor Cyan "`nInstalling C++ Builds tools if they are not installed"
 
-    # Instaling vswhere, which will be used to query for the required build tools
+    # Installing vswhere, which will be used to query for the required build tools
     try {
         vswhere -? 2>&1 | Out-Null
     }
