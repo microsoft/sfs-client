@@ -27,7 +27,7 @@ void LoggingCallback(const SFS::LogData& logData)
 Notes:
 - The callback itself is processed in the main thread. Do not use a blocking callback. If heavy processing has to be done, consider capturing the data and processing another thread.
 - The LogData contents only exist within the callback call. If the processing will be done later, you should copy the data elsewhere.
-- The callback should not do any re-entrant calls (e.g. call `SFSClient` methods).
+- The callback should not do any reentrant calls (e.g. call `SFSClient` methods).
 
 ## Class instances
 
