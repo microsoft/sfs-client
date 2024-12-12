@@ -78,13 +78,13 @@ std::unique_ptr<AppContent> GetAppContent(const std::string& contentNameSpace,
                                           const std::vector<AppFile>& files)
 {
     std::unique_ptr<ContentId> contentId = GetContentId(contentNameSpace, contentName, contentVersion);
-    std::vector<AppPrerequisiteContent> clonedPreqs;
+    std::vector<AppPrerequisiteContent> clonedPrereqs;
     for (const auto& prereq : prerequisites)
     {
-        clonedPreqs.push_back(std::move(*GetPrerequisiteContent(prereq.GetContentId().GetNameSpace(),
-                                                                prereq.GetContentId().GetName(),
-                                                                prereq.GetContentId().GetVersion(),
-                                                                prereq.GetFiles())));
+        clonedPrereqs.push_back(std::move(*GetPrerequisiteContent(prereq.GetContentId().GetNameSpace(),
+                                                                  prereq.GetContentId().GetName(),
+                                                                  prereq.GetContentId().GetVersion(),
+                                                                  prereq.GetFiles())));
     }
 
     std::vector<AppFile> clonedFiles;
@@ -100,9 +100,11 @@ std::unique_ptr<AppContent> GetAppContent(const std::string& contentNameSpace,
     }
 
     std::unique_ptr<AppContent> appContent;
-    REQUIRE(
-        AppContent::Make(std::move(contentId), updateId, std::move(clonedPreqs), std::move(clonedFiles), appContent) ==
-        Result::Success);
+    REQUIRE(AppContent::Make(std::move(contentId),
+                             updateId,
+                             std::move(clonedPrereqs),
+                             std::move(clonedFiles),
+                             appContent) == Result::Success);
     REQUIRE(appContent != nullptr);
     return appContent;
 }
