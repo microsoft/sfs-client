@@ -30,7 +30,7 @@ class AppPrerequisiteContent
     const ContentId& GetContentId() const noexcept;
 
     /**
-     * @return Files belonging to this Prequisite
+     * @return Files belonging to this Prerequisite
      */
     const std::vector<AppFile>& GetFiles() const noexcept;
 

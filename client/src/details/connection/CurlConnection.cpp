@@ -417,7 +417,7 @@ void CurlConnection::ProcessRetry(int attempt, const Result& httpResult)
 
         std::chrono::milliseconds baseRetryDelay = s_baseRetryDelay;
 
-        // Value can be overriden in tests
+        // Value can be overridden in tests
         if (auto override = test::GetTestOverrideAsInt(test::TestOverride::BaseRetryDelayMs))
         {
             baseRetryDelay = std::chrono::milliseconds{*override};

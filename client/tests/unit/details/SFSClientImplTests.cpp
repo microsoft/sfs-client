@@ -387,7 +387,7 @@ TEST("Testing test override SFS_TEST_OVERRIDE_BASE_URL")
     REQUIRE(sfsClient.MakeUrlBuilder().GetUrl() == "http://customUrl.com/");
 
     {
-        INFO("Can also override a custom base base url with the test key");
+        INFO("Can also override a custom base url with the test key");
         ScopedTestOverride override(TestOverride::BaseUrl, "http://override.com");
         if (AreTestOverridesAllowed())
         {
