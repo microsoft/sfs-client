@@ -28,12 +28,12 @@ else()
         # 1. Run bootstrap script to install Linux dependencies
         # 2. Build & install DO Agent, which acts as a service for the REST API
         set(DO_PATCH_COMMAND
-            "cd <SOURCE_DIR> && \
+            "cd <source_dir> && \
             if [ -f ./build/scripts/bootstrap.sh ]; then \
                 sudo ./build/scripts/bootstrap.sh --install || echo 'Bootstrap warning (continuing)'; \
             fi && \
-            mkdir -p <SOURCE_DIR>/build && \
-            cd <SOURCE_DIR>/build && \
+            mkdir -p <source_dir>/build && \
+            cd <source_dir>/build && \
             if [ -f ./build.py ]; then \
                 python3 ./build.py --project agent --package-for deb || echo 'Build warning (continuing)'; \
             fi && \
