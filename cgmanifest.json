@@ -99,25 +99,6 @@
         }
       },
       "developmentDependency": false
-    },
-    {
-      "component": {
-        "type": "git",
-        "git": {
-          "repositoryUrl": "https://github.com/google/brotli",
-          "commitHash": "028fb5a23661f123017c060daa546b55cf4bde29"
-        }
-      },
-      "developmentDependency": true,
-      "dependencyRoots": [
-        {
-          "type": "git",
-          "git": {
-            "repositoryUrl": "https://github.com/yhirose/cpp-httplib",
-            "commitHash": "5c00bbf36ba8ff47b4fb97712fc38cb2884e5b98"
-          }
-        }
-      ]
     }
   ]
 }

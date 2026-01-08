@@ -6,7 +6,10 @@
       "description": "Build tests",
       "dependencies": [
         "catch2",
-        "cpp-httplib"
+        {
+          "name": "cpp-httplib",
+          "default-features": false
+        }
       ]
     }
   },
@@ -53,10 +56,6 @@
     {
       "name": "openssl",
       "version": "3.1.4#1"
-    },
-    {
-      "name": "brotli",
-      "version": "1.2.0"
     }
   ],
   "vcpkg-configuration": {
