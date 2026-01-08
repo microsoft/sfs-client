@@ -99,6 +99,17 @@
         }
       },
       "developmentDependency": false
+    },
+    {
+      "$comment": "brotli is a transitive dependency of cpp-httplib",
+      "component": {
+        "type": "git",
+        "git": {
+          "repositoryUrl": "https://github.com/google/brotli",
+          "commitHash": "028fb5a23661f123017c060daa546b55cf4bde29"
+        }
+      },
+      "developmentDependency": true
     }
   ]
 }
