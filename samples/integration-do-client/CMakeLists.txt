@@ -60,3 +60,13 @@ add_dependencies(${PROJECT_NAME} ${DO_SDK_LIB_NAME})
 target_link_libraries(${PROJECT_NAME} PRIVATE ${DO_SDK_LIB_NAME})
 
 target_include_directories(${PROJECT_NAME} PUBLIC ../../client/include)
+
+if(SFS_BUILD_TESTS)
+    find_package(Catch2 CONFIG REQUIRED)
+    include(Catch)
+    enable_testing()
+    add_executable(FileIdHelperTests FileIdHelperTests.cpp)
+    target_link_libraries(FileIdHelperTests PRIVATE Catch2::Catch2WithMain)
+    set_compile_options_for_target(FileIdHelperTests)
+    catch_discover_tests(FileIdHelperTests)
+endif()

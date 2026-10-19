@@ -72,6 +72,8 @@ if(SFS_WINDOWS_STATIC_ONLY AND MSVC)
     set(CMAKE_MSVC_RUNTIME_LIBRARY "MultiThreaded$<$<CONFIG:Debug>:Debug>")
 endif()
 
+enable_testing()
+
 add_subdirectory(client)
 
 if(SFS_BUILD_SAMPLES)

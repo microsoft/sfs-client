@@ -51,10 +51,9 @@ script_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")" > /dev/null 2>&1 && pwd)"
 git_root=$(git -C "$script_dir" rev-parse --show-toplevel)
 build_folder="$git_root/build"
 
-cmd="ctest --test-dir \"$build_folder/client\""
-
+options=()
 if $output_on_failure ; then
-    cmd+=" --output-on-failure"
+    options+=(--output-on-failure)
 fi
 
-eval "$cmd"
+ctest --test-dir "$build_folder" "${options[@]}"
