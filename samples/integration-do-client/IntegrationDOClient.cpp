@@ -4,6 +4,8 @@
 #include <do_download.h>
 #include <sfsclient/SFSClient.h>
 
+#include "FileIdHelpers.h"
+
 #include <filesystem>
 #include <iomanip>
 #include <iostream>
@@ -264,10 +266,27 @@ int Download(const SFS::Content& content, const std::string& baseOutDir)
 
     for (const auto& file : content.GetFiles())
     {
-        PrintLog("Downloading file " + file.GetFileId() + " from " + file.GetUrl());
-        auto outFilePath = outDir / file.GetFileId();
+        if (!SFS::sample::IsValidFileId(file.GetFileId()))
+        {
+            PrintError("Invalid FileId. Expected one or more ASCII letters, digits, '.', '_' or '-'.");
+            return 1;
+        }
 
-        if (std::filesystem::exists(outFilePath))
+        // Hex encoding doubles the length, so FileIds longer than 125 characters exceed the common 255-character
+        // filename limit. In production code, use a cryptographic hash such as SHA-256 to avoid collisions and keep
+        // the file name a fixed size.
+        const auto fileName = SFS::sample::FileIdToFileName(file.GetFileId());
+        PrintLog("Downloading file " + fileName + " from " + file.GetUrl());
+        const auto outFilePath = outDir / fileName;
+
+        std::error_code pathError;
+        const bool fileExists = std::filesystem::exists(outFilePath, pathError);
+        if (pathError)
+        {
+            PrintError("Failed to check download destination: " + pathError.message());
+            return 1;
+        }
+        if (fileExists)
         {
             // In a real implementation, one would check the file sha1 or sha256 hash to see if the file is the same as
             // the current one

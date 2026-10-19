@@ -19,10 +19,11 @@ param (
 $GitRoot = (Resolve-Path (&git -C $PSScriptRoot rev-parse --show-toplevel)).Path
 $BuildFolder = "$GitRoot/build"
 
-$cmd = "ctest --test-dir ""$BuildFolder/client"""
+$Options = @()
 if ($OutputOnFailure)
 {
-    $cmd += " --output-on-failure"
+    $Options += "--output-on-failure"
 }
 
-Invoke-Expression $cmd
+& ctest --test-dir $BuildFolder @Options
+exit $LASTEXITCODE

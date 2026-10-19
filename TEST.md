@@ -1,3 +1,11 @@
+## Running tests
+
+After building, run `.\scripts\Test.ps1 -OutputOnFailure` on Windows or
+`./scripts/test.sh --output-on-failure` on Linux.
+Both scripts invoke CTest at the build root, where CMake registers all enabled tests.
+With `SFS_BUILD_TESTS=ON`, this includes the client tests and, when `SFS_BUILD_SAMPLES=ON`,
+the integration sample's FileId tests. Both scripts return CTest's exit code, which is nonzero if tests fail.
+
 ## Testing overrides
 
 Some test behaviors are controlled by test overrides set via environment variables.
